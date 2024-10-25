@@ -63,7 +63,8 @@ class CTReportDataset(Dataset):
         df = pd.read_csv(csv_file)
         accession_to_text = {}
         for index, row in df.iterrows():
-            accession_to_text[row['AccessionNo']] = row["Findings_EN"],row['Impressions_EN']
+            accession_number = row['VolumeName'].split("/")[-1]
+            accession_to_text[accession_number] = row["Findings_EN"],row['Impressions_EN']
 
         return accession_to_text
 
@@ -102,7 +103,11 @@ class CTReportDataset(Dataset):
         nii_img = nib.load(str(path))
         img_data = nii_img.get_fdata()
 
-        df = pd.read_csv("train_metadata.csv") #select the metadata
+        # todo: change this line to be auto config
+        df = pd.read_csv("../csv_dir/metadata/train_metadata.csv") #select the metadata
+
+        # todo: maybe the resize process in the function is not needed, see if remove is reasonable
+
         file_name = path.split("/")[-1]
         row = df[df['VolumeName'] == file_name]
         slope = float(row["RescaleSlope"].iloc[0])

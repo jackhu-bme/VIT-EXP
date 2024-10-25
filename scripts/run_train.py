@@ -43,15 +43,15 @@ clip = CTCLIP(
 )
 trainer = CTClipTrainer(
     clip,
-    reports_file_train= "path_to_train_reports_csv",
-    reports_file_valid= "path_to_validation_reports_csv",
-    data_train= "path_to_preprocessed_train",
-    data_valid = "path_to_preprocessed_valid",
-    labels = "path_to_validation_labels_csv",
-    batch_size = 8,
-    results_folder="output_folder",
-    num_train_steps = 100001,
-    num_workers = 4,
+    reports_file_train= "../csv_dir/reports/train_reports.csv",
+    reports_file_valid= "../csv_dir/reports/train_reports.csv",
+    data_train= "../data_dir/sub30_dataset_train",
+    data_valid = "../data_dir/sub30_dataset_val",
+    labels = "../csv_dir/labels/train_predicted_labels.csv",
+    batch_size = 2,
+    results_folder="../output_train_scratch",
+    num_train_steps = 100,
+    num_workers = 0,
 )
 
 trainer.train()
