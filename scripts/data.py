@@ -98,32 +98,32 @@ class CTReportDataset(Dataset):
 
     # since the data is stored in mnt and the loading is too slow for training dataset, so the multi-preocessing is used
 
+    def process_patient_folder(patient_folder, accession_to_text, paths):
+        samples = []
+        accession_folders = glob.glob(os.path.join(patient_folder, '*'))
+        for accession_folder in accession_folders:
+            nii_files = glob.glob(os.path.join(accession_folder, '*.nii.gz'))
+            for nii_file in nii_files:
+                accession_number = nii_file.split("/")[-1]
+                if accession_number not in accession_to_text:
+                    continue
+
+                impression_text = accession_to_text[accession_number]
+                if impression_text == "Not given.":
+                    impression_text = ""
+
+                input_text_concat = "".join(str(text) for text in impression_text) if impression_text else ""
+                samples.append((nii_file, input_text_concat))
+                paths.append(nii_file)
+        return samples
+
     def prepare_samples(self):
-        def process_patient_folder(patient_folder):
-            samples = []
-            accession_folders = glob.glob(os.path.join(patient_folder, '*'))
-            for accession_folder in accession_folders:
-                nii_files = glob.glob(os.path.join(accession_folder, '*.nii.gz'))
-                for nii_file in nii_files:
-                    accession_number = nii_file.split("/")[-1]
-                    if accession_number not in self.accession_to_text:
-                        continue
-
-                    impression_text = self.accession_to_text[accession_number]
-                    if impression_text == "Not given.":
-                        impression_text = ""
-
-                    input_text_concat = "".join(str(text) for text in impression_text) if impression_text else ""
-                    samples.append((nii_file, input_text_concat))
-                    self.paths.append(nii_file)
-
-            return samples
-
         patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
         with Pool() as pool:
-            results = pool.map(process_patient_folder, patient_folders)
+            # Use a lambda or partial to pass additional arguments
+            results = pool.starmap(self.process_patient_folder, [(folder, self.accession_to_text, self.paths) for folder in patient_folders])
 
-        # 合并所有患者文件夹的结果
+        # Combine all patient folder results
         samples = [item for sublist in results for item in sublist]
         return samples
 
