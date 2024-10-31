@@ -114,17 +114,20 @@ class CTReportDataset(Dataset):
 
                 input_text_concat = "".join(str(text) for text in impression_text) if impression_text else ""
                 samples.append((nii_file, input_text_concat))
+                print(f"appending sample:{nii_file}")
                 paths.append(nii_file)
         return samples
 
     def prepare_samples(self):
         patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
+        print(f"start prepraring samples")
         with Pool() as pool:
             # Use a lambda or partial to pass additional arguments
             results = pool.starmap(self.process_patient_folder, [(folder, self.accession_to_text, self.paths) for folder in patient_folders])
 
         # Combine all patient folder results
         samples = [item for sublist in results for item in sublist]
+        print(f"finished preparing samples, the number of samples: {len(samples)}")
         return samples
 
     def __len__(self):
