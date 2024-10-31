@@ -141,7 +141,7 @@ class CTReportDataset(Dataset):
         img_data = nii_img.get_fdata()
 
         # todo: change this line to be auto config
-        df = pd.read_csv("../csv_dir/metadata/train_metadata.csv") #select the metadata
+        df = pd.read_csv("/mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv") #select the metadata
 
         # todo: maybe the resize process in the function is not needed, see if remove is reasonable
 
