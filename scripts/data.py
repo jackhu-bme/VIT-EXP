@@ -98,7 +98,7 @@ class CTReportDataset(Dataset):
 
     # since the data is stored in mnt and the loading is too slow for training dataset, so the multi-preocessing is used
 
-    def process_patient_folder(patient_folder, accession_to_text, paths):
+    def process_patient_folder(self, patient_folder, accession_to_text, paths):
         samples = []
         accession_folders = glob.glob(os.path.join(patient_folder, '*'))
         for accession_folder in accession_folders:
