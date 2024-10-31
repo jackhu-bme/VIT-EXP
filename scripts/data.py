@@ -12,6 +12,8 @@ import torch.nn.functional as F
 import nibabel as nib
 import tqdm
 
+from multiprocessing import Pool
+
 def resize_array(array, current_spacing, target_spacing):
     """
     Resize the array to match the target spacing.
@@ -69,29 +71,60 @@ class CTReportDataset(Dataset):
         return accession_to_text
 
 
+    # def prepare_samples(self):
+    #     samples = []
+    #     for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
+    #         for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
+
+    #             for nii_file in glob.glob(os.path.join(accession_folder, '*.nii.gz')):
+    #                 accession_number = nii_file.split("/")[-1]
+    #                 #accession_number = accession_number.replace(".npz", ".nii.gz")
+    #                 if accession_number not in self.accession_to_text:
+    #                     continue
+
+    #                 impression_text = self.accession_to_text[accession_number]
+
+    #                 if impression_text == "Not given.":
+    #                     impression_text=""
+
+    #                 input_text_concat = ""
+    #                 for text in impression_text:
+    #                     input_text_concat = input_text_concat + str(text)
+    #                 input_text_concat = impression_text[0]
+    #                 input_text = f'{impression_text}'
+    #                 samples.append((nii_file, input_text_concat))
+    #                 self.paths.append(nii_file)
+    #     return samples
+
+    # since the data is stored in mnt and the loading is too slow for training dataset, so the multi-preocessing is used
+
     def prepare_samples(self):
+        def process_file(nii_file, accession_to_text):
+            accession_number = nii_file.split("/")[-1]
+            if accession_number not in accession_to_text:
+                return None
+
+            impression_text = accession_to_text[accession_number]
+            if impression_text == "Not given.":
+                impression_text = ""
+
+            input_text_concat = "".join(str(text) for text in impression_text) if impression_text else ""
+            return (nii_file, input_text_concat)
+
         samples = []
-        for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
-            for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
+        with Pool() as pool:
+            patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
+            for patient_folder in tqdm.tqdm(patient_folders):
+                accession_folders = glob.glob(os.path.join(patient_folder, '*'))
+                nii_files = [nii_file for accession_folder in accession_folders for nii_file in glob.glob(os.path.join(accession_folder, '*.nii.gz'))]
 
-                for nii_file in glob.glob(os.path.join(accession_folder, '*.nii.gz')):
-                    accession_number = nii_file.split("/")[-1]
-                    #accession_number = accession_number.replace(".npz", ".nii.gz")
-                    if accession_number not in self.accession_to_text:
-                        continue
+                # 处理文件并收集结果
+                results = pool.starmap(process_file, [(nii_file, self.accession_to_text) for nii_file in nii_files])
+                samples.extend(filter(None, results))  # 过滤掉 None 值
 
-                    impression_text = self.accession_to_text[accession_number]
+                # 记录所有的 nii 文件路径
+                self.paths.extend(nii_files)
 
-                    if impression_text == "Not given.":
-                        impression_text=""
-
-                    input_text_concat = ""
-                    for text in impression_text:
-                        input_text_concat = input_text_concat + str(text)
-                    input_text_concat = impression_text[0]
-                    input_text = f'{impression_text}'
-                    samples.append((nii_file, input_text_concat))
-                    self.paths.append(nii_file)
         return samples
 
     def __len__(self):
