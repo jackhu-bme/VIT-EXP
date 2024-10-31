@@ -99,32 +99,32 @@ class CTReportDataset(Dataset):
     # since the data is stored in mnt and the loading is too slow for training dataset, so the multi-preocessing is used
 
     def prepare_samples(self):
-        def process_file(nii_file, accession_to_text):
-            accession_number = nii_file.split("/")[-1]
-            if accession_number not in accession_to_text:
-                return None
+        def process_patient_folder(patient_folder):
+            samples = []
+            accession_folders = glob.glob(os.path.join(patient_folder, '*'))
+            for accession_folder in accession_folders:
+                nii_files = glob.glob(os.path.join(accession_folder, '*.nii.gz'))
+                for nii_file in nii_files:
+                    accession_number = nii_file.split("/")[-1]
+                    if accession_number not in self.accession_to_text:
+                        continue
 
-            impression_text = accession_to_text[accession_number]
-            if impression_text == "Not given.":
-                impression_text = ""
+                    impression_text = self.accession_to_text[accession_number]
+                    if impression_text == "Not given.":
+                        impression_text = ""
 
-            input_text_concat = "".join(str(text) for text in impression_text) if impression_text else ""
-            return (nii_file, input_text_concat)
+                    input_text_concat = "".join(str(text) for text in impression_text) if impression_text else ""
+                    samples.append((nii_file, input_text_concat))
+                    self.paths.append(nii_file)
 
-        samples = []
+            return samples
+
+        patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
         with Pool() as pool:
-            patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
-            for patient_folder in tqdm.tqdm(patient_folders):
-                accession_folders = glob.glob(os.path.join(patient_folder, '*'))
-                nii_files = [nii_file for accession_folder in accession_folders for nii_file in glob.glob(os.path.join(accession_folder, '*.nii.gz'))]
+            results = pool.map(process_patient_folder, patient_folders)
 
-                # 处理文件并收集结果
-                results = pool.starmap(process_file, [(nii_file, self.accession_to_text) for nii_file in nii_files])
-                samples.extend(filter(None, results))  # 过滤掉 None 值
-
-                # 记录所有的 nii 文件路径
-                self.paths.extend(nii_files)
-
+        # 合并所有患者文件夹的结果
+        samples = [item for sublist in results for item in sublist]
         return samples
 
     def __len__(self):
