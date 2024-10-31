@@ -45,7 +45,7 @@ trainer = CTClipTrainer(
     clip,
     reports_file_train= "/mnt/input/CT-RATE/organized_dataset/csv_dir/reports/train_reports.csv",
     reports_file_valid= "/mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv",
-    data_train= "/mnt/input/CT-RATE/organized_dataset/train_images",
+    data_train= "/mnt/input/CT-RATE/data_volumes/dataset/train",
     data_valid = "/mnt/input/CT-RATE/organized_dataset/val_images_preprocessed",
     labels = "/mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv",
     batch_size = 1,
