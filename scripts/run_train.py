@@ -51,7 +51,7 @@ trainer = CTClipTrainer(
     batch_size = 2,
     results_folder="../output_train_scratch",
     num_train_steps = 100,
-    num_workers = 0,
+    num_workers = 8,
 )
 
 trainer.train()
