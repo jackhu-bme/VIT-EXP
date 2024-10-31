@@ -103,7 +103,7 @@ class CTReportDataset(Dataset):
         accession_folders = glob.glob(os.path.join(patient_folder, '*'))
         for accession_folder in accession_folders:
             nii_files = glob.glob(os.path.join(accession_folder, '*.nii.gz'))
-            print(f"nii files: {nii_files}")
+            print(f"nii files: {nii_files}, accession folder")
             for nii_file in nii_files:
                 accession_number = nii_file.split("/")[-1]
                 if accession_number not in accession_to_text:
