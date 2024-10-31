@@ -43,15 +43,15 @@ clip = CTCLIP(
 )
 trainer = CTClipTrainer(
     clip,
-    reports_file_train= "../csv_dir/reports/train_reports.csv",
-    reports_file_valid= "../csv_dir/reports/train_reports.csv",
-    data_train= "../data_dir/sub30_dataset_train",
-    data_valid = "../data_dir/sub30_dataset_val",
-    labels = "../csv_dir/labels/train_predicted_labels.csv",
-    batch_size = 2,
+    reports_file_train= "/mnt/input/CT-RATE/organized_dataset/csv_dir/reports/train_reports.csv",
+    reports_file_valid= "/mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv",
+    data_train= "/mnt/input/CT-RATE/organized_dataset/train_images",
+    data_valid = "/mnt/input/CT-RATE/organized_dataset/val_images_preprocessed",
+    labels = "/mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv",
+    batch_size = 1,
     results_folder="../output_train_scratch",
-    num_train_steps = 100,
-    num_workers = 8,
+    num_train_steps = 100001,
+    num_workers = 16,
 )
 
 trainer.train()

@@ -1,6 +1,7 @@
 **.pyc
 csv_dir
 data_dir/
-**/__pycache__/**
+**/__pycache__
 output_*/
+**/*.pyc
 **.egg-info/
