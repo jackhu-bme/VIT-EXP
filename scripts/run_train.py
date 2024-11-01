@@ -18,7 +18,11 @@ import os
 def main(config):
     # fix the random seed based on the config args
     # 设置随机种子
-    seed = config["random_seed"]
+    seed = int(config["random_seed"])
+
+    print(f"Setting random seed to {seed}")
+
+
     torch.manual_seed(seed)  # 设置 PyTorch 的随机种子
     torch.cuda.manual_seed(seed)  # 设置 CUDA 随机种子（如果使用 GPU）
     torch.cuda.manual_seed_all(seed)  # 如果使用多 GPU，设置所有 GPU 的随机种子
@@ -90,6 +94,8 @@ if __name__ == "__main__":
     args = args.parse_args()
 
     cofig_path = os.path.join("configs/train_from_scratch", args.config)
+
+    print(f"loading config path: {cofig_path}")
 
     with open(args.config, "r") as ymlfile:
         config = yaml.load(ymlfile, Loader=yaml.FullLoader)
