@@ -93,11 +93,11 @@ if __name__ == "__main__":
     args.add_argument('--config', required=True, help='path to the config file')
     args = args.parse_args()
 
-    cofig_path = os.path.join("configs/train_from_scratch", args.config)
+    config_path = os.path.join("configs/train_from_scratch", args.config)
 
-    print(f"loading config path: {cofig_path}")
+    print(f"loading config path: {config_path}")
 
-    with open(args.config, "r") as ymlfile:
+    with open(config_path, "r") as ymlfile:
         config = yaml.load(ymlfile, Loader=yaml.FullLoader)
 
     main(config)
