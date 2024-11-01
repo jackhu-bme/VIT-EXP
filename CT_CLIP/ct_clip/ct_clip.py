@@ -734,7 +734,7 @@ class CTCLIP(nn.Module):
         #print(enc_image.shape, flush=True)
         #enc_image = enc_image[:,0,:]
         #print(enc_image.shape, flush=True)
-        print("test all pooling")
+        # print("test all pooling")
     
 
         enc_image = enc_image.view(enc_image.shape[0], -1)
