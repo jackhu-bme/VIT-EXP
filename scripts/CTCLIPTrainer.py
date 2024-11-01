@@ -268,6 +268,8 @@ class CTClipTrainer(nn.Module):
 
         steps = int(self.steps.item())
 
+        print(f"start training step {steps}")
+
         self.CTClip.train()
 
         # logs
@@ -303,6 +305,8 @@ class CTClipTrainer(nn.Module):
 
                 models_to_evaluate = ((self.CTClip, str(steps)),)
 
+                print(f"evaluating model: {steps}")
+
                 for model, filename in models_to_evaluate:
                     model.eval()
                     predictedall=[]
@@ -310,7 +314,7 @@ class CTClipTrainer(nn.Module):
 
                     #Fast inference on 100 images
                     for i in range(10):
-                        print("test")
+                        print(f"test i: {i}")
                         valid_data, text, onehotlabels, name_acc = next(self.valid_dl_iter)
                         valid_data = valid_data.to(device)
 
@@ -365,10 +369,13 @@ class CTClipTrainer(nn.Module):
         # save model every so often
 
         if self.is_main and not (steps % self.save_model_every):
+            print(f"Saving model at step {steps}")
             model_path = str(self.results_folder / f'CTClip.{steps}.pt')
             state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
 
             self.accelerator.save(state_dict, model_path)
+
+            print(f"finished saving model at step {steps}")
 
             self.print(f'{steps}: saving model to {str(self.results_folder)}')
 
