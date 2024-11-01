@@ -286,8 +286,9 @@ class CTClipTrainer(nn.Module):
         text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
 
         #video = video
-        with self.accelerator.autocast():
-            loss = self.CTClip(text_tokens, video, return_loss=True, device=device)
+        with self.accelerator.accumulate(self.CTClip):
+            with self.accelerator.autocast():
+                loss = self.CTClip(text_tokens, video, return_loss=True, device=device)
 
         self.accelerator.backward(loss)
         accum_log(logs, {'loss': loss.item()})
