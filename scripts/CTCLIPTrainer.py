@@ -268,7 +268,7 @@ class CTClipTrainer(nn.Module):
 
         steps = int(self.steps.item())
 
-        print(f"start training step {steps}")
+        # print(f"start training step {steps}")
 
         self.CTClip.train()
 
@@ -277,7 +277,7 @@ class CTClipTrainer(nn.Module):
 
         # update CTClip model
         video, text = next(self.dl_iter)
-        print(video.shape)
+        # print(video.shape)
         device=self.device
         video=video.to(device)
         mask = torch.ones((video.shape[0], video.shape[2])).bool().to(device)
@@ -369,13 +369,13 @@ class CTClipTrainer(nn.Module):
         # save model every so often
 
         if self.is_main and not (steps % self.save_model_every):
-            print(f"Saving model at step {steps}")
+            # print(f"Saving model at step {steps}")
             model_path = str(self.results_folder / f'CTClip.{steps}.pt')
             state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
 
             self.accelerator.save(state_dict, model_path)
 
-            print(f"finished saving model at step {steps}")
+            # print(f"finished saving model at step {steps}")
 
             self.print(f'{steps}: saving model to {str(self.results_folder)}')
 
