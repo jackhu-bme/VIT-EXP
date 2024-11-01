@@ -19,7 +19,8 @@ from data_inference import CTReportDatasetinfer
 
 import numpy as np
 import pandas as pd
-import tqdm
+# import tqdm
+from tqdm import tqdm
 
 
 from einops import rearrange
@@ -377,11 +378,23 @@ class CTClipTrainer(nn.Module):
 
 
 
-    def train(self, log_fn=noop):
-        device = next(self.CTClip.parameters()).device
-        device=torch.device('cuda')
-        while self.steps < self.num_train_steps:
-            logs = self.train_step()
-            log_fn(logs)
+    # def train(self, log_fn=noop):
+    #     device = next(self.CTClip.parameters()).device
+    #     device=torch.device('cuda')
+    #     while self.steps < self.num_train_steps:
+    #         logs = self.train_step()
+    #         log_fn(logs)
 
-        self.print('training complete')
+    #     self.print('training complete')
+
+    def train(self, log_fn=noop):
+        # device = next(self.CTClip.parameters()).device
+        # device = torch.device('cuda')
+        
+        # 创建 tqdm 进度条
+        with tqdm(total=self.num_train_steps, desc='Training', unit='step') as pbar:
+            while self.steps < self.num_train_steps:
+                logs = self.train_step()
+                log_fn(logs)
+                self.steps += 1  # 更新步数
+                pbar.update(1)  # 更新进度条
