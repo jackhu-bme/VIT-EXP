@@ -158,15 +158,15 @@ class CTClipTrainer(nn.Module):
         lr = 1.25e-6,
         wd = 0.,
         max_grad_norm = 0.5,
-        save_results_every = 10,
-        save_model_every = 10 ,
+        save_results_every = 1000,
+        save_model_every = 1000 ,
         results_folder = '/shares/menze.dqbm.uzh/ihamam/ctclip/',
         num_workers = 8,
         accelerate_kwargs: dict = dict()
     ):
         super().__init__()
         ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
-        kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=60))
+        kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=3600))
         self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], **accelerate_kwargs)
         self.CTClip = CTClip
         if tokenizer != None:
