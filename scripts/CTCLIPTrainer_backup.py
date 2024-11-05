@@ -162,8 +162,7 @@ class CTClipTrainer(nn.Module):
         save_model_every = 1000 ,
         results_folder = '/shares/menze.dqbm.uzh/ihamam/ctclip/',
         num_workers = 8,
-        accelerate_kwargs: dict = dict(),
-        resume_path = None,
+        accelerate_kwargs: dict = dict()
     ):
         super().__init__()
         ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
@@ -234,15 +233,7 @@ class CTClipTrainer(nn.Module):
 
         self.results_folder.mkdir(parents=True, exist_ok=True)
 
-        if resume_path is not None:
-            self.load(resume_path)
-            self.print(f"resuming the sheduler and the model from {resume_path}")
-            # set the step according to the model's name
-            self.step = int(os.path.basename(resume_path).split(".")[-2])
-            print(f"resuming from step {self.step} according to the model's name: {resume_path}")
-            # restore the state of the dataloader
-            self.dl = accelerate.skip_first_batches(self.dl, self.step)
-        
+
 
     def save(self, path):
         if not self.accelerator.is_local_main_process:
