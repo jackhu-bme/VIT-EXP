@@ -238,10 +238,10 @@ class CTClipTrainer(nn.Module):
             self.load_model(resume_path)
             self.print(f"resuming the sheduler and the model from {resume_path}")
             # set the step according to the model's name
-            self.step = int(os.path.basename(resume_path).split(".")[-2])
-            print(f"resuming from step {self.step} according to the model's name: {resume_path}")
+            self.steps = int(os.path.basename(resume_path).split(".")[-2])
+            print(f"resuming from step {self.steps} according to the model's name: {resume_path}")
             # restore the state of the dataloader
-            self.dl = accelerate.skip_first_batches(self.dl, self.step)
+            self.dl = accelerate.skip_first_batches(self.dl, self.steps)
         
 
     def save(self, path):
