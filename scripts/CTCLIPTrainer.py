@@ -415,5 +415,4 @@ class CTClipTrainer(nn.Module):
             while self.steps < self.num_train_steps:
                 logs = self.train_step()
                 log_fn(logs)
-                self.steps += 1  # 更新步数
                 pbar.update(1)  # 更新进度条
