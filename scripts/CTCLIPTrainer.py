@@ -235,7 +235,7 @@ class CTClipTrainer(nn.Module):
         self.results_folder.mkdir(parents=True, exist_ok=True)
 
         if resume_path is not None:
-            self.load(resume_path)
+            self.load_model(resume_path)
             self.print(f"resuming the sheduler and the model from {resume_path}")
             # set the step according to the model's name
             self.step = int(os.path.basename(resume_path).split(".")[-2])
@@ -253,6 +253,15 @@ class CTClipTrainer(nn.Module):
             optim=self.optim.state_dict(),
         )
         torch.save(pkg, path)
+
+    def load_model(self, path):
+        path = Path(path)
+        assert path.exists()
+        pkg = torch.load(path)
+
+        CTClip = self.accelerator.unwrap_model(self.CTClip)
+        CTClip.load_state_dict(pkg)
+
 
     def load(self, path):
         path = Path(path)
@@ -398,8 +407,6 @@ class CTClipTrainer(nn.Module):
             if self.is_main:
                 model_path = str(self.results_folder / f'CTClip.{steps}.pt')
                 self.accelerator.save(state_dict, model_path)
-
-
 
         self.steps += 1
         return logs
