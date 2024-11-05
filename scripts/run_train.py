@@ -76,7 +76,7 @@ def main(config):
         data_valid = "/mnt/input/CT-RATE/organized_dataset/val_images_preprocessed",
         labels = "/mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv",
         batch_size = 2,
-        results_folder="../output_train_scratch",
+        results_folder="../output_train_scratch_exp2",
         num_train_steps = 200002,
         num_workers = 16,
         accelerate_kwargs = {"gradient_accumulation_steps":2},
