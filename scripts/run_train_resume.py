@@ -80,7 +80,7 @@ def main(config):
         num_train_steps = 200002,
         num_workers = 16,
         accelerate_kwargs = {"gradient_accumulation_steps":2},
-        resume_path="../output_train_scratch"
+        resume_path="../ckpts/CTClip.60500.pt"
     )
 
     trainer.train()
