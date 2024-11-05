@@ -238,9 +238,10 @@ class CTClipTrainer(nn.Module):
             self.load_model(resume_path)
             self.print(f"resuming the sheduler and the model from {resume_path}")
             # set the step according to the model's name
-            print(f"before loading, steps: {self.steps}")
-            self.steps += int(os.path.basename(resume_path).split(".")[-2])
-            print(f"resuming from step {self.steps} according to the model's name: {resume_path}")
+            self.print(f"before loading, steps: {self.steps}")
+            self.resume_step = int(os.path.basename(resume_path).split(".")[-2])
+            self.steps += self.resume_step
+            self.print(f"resuming from step {self.steps} according to the model's name: {resume_path}")
             # restore the state of the dataloader
             self.dl = accelerate.skip_first_batches(self.dl, self.steps)
         
@@ -429,6 +430,8 @@ class CTClipTrainer(nn.Module):
         
         # 创建 tqdm 进度条
         with tqdm(total=self.num_train_steps, desc='Training', unit='step') as pbar:
+            if self.resume_step is not None:
+                pbar.update(self.resume_step)
             while self.steps < self.num_train_steps:
                 logs = self.train_step()
                 log_fn(logs)
