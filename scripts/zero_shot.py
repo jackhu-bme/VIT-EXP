@@ -212,6 +212,14 @@ class CTClipInference(nn.Module):
         self.results_folder.mkdir(parents=True, exist_ok=True)
 
 
+    def load_model(self, path):
+        path = Path(path)
+        assert path.exists()
+        pkg = torch.load(path)
+
+        CTClip = self.accelerator.unwrap_model(self.CTClip)
+        CTClip.load_state_dict(pkg)
+
 
     def save(self, path):
         if not self.accelerator.is_local_main_process:
