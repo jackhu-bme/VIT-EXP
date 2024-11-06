@@ -36,7 +36,7 @@ clip = CTCLIP(
 
 )
 
-clip.load("/mnt/input/CT-CLIP/ckpt/split_1_sub_2/CTClip.107000.pt")
+
 
 inference = CTClipInference(
     clip,
@@ -47,5 +47,9 @@ inference = CTClipInference(
     results_folder="../results_inference_zeroshot_demo/",
     num_train_steps = 1,
 )
+
+clip_model_path_for_infer = "/mnt/input/CT-CLIP/ckpt/split_1_sub_2/CTClip.107000.pt"
+
+inference.load_model(clip_model_path_for_infer)
 
 inference.infer()
