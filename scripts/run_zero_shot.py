@@ -36,15 +36,15 @@ clip = CTCLIP(
 
 )
 
-clip.load("path_to_pretrained_model")
+clip.load("/mnt/input/CT-CLIP/ckpt/split_1_sub_2/CTClip.107000.pt")
 
 inference = CTClipInference(
     clip,
-    data_folder = 'path_to_preprocessed_validation_folder',
-    reports_file= "path_to_validation_reports_csv",
-    labels = "path_to_validation_labels_csv",
+    data_folder = '/mnt/input/CT-RATE/organized_dataset/val_images_preprocessed',
+    reports_file= "/mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv",
+    labels = "/mnt/input/CT-RATE/organized_dataset/csv_dir/labels/valid_predicted_labels.csv",
     batch_size = 1,
-    results_folder="inference_zeroshot/",
+    results_folder="../results_inference_zeroshot_demo/",
     num_train_steps = 1,
 )
 
