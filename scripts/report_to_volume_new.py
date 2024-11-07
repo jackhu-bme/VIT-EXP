@@ -17,6 +17,7 @@ def find_top_k_indices(values, k):
     return top_k_indices
 
 data_folder = "../../results_report_to_volume/"
+os.makedirs(data_folder, exist_ok=True)
 
 # Scan the folder for image and text .npz files
 image_npz_files = [f for f in os.listdir("../../valid_latents/image") if f.endswith('.npz')]
