@@ -36,7 +36,7 @@ clip = CTCLIP(
 
 )
 
-clip_model_path_for_infer = "/mnt/input/CT-CLIP/ckpt/split_1_sub_2/CTClip.107000.pt"
+clip_model_path_for_infer = "../../output_train_scratch_resume/CTClip.100000.pt"
 clip.load(clip_model_path_for_infer, check=True)
 
 
