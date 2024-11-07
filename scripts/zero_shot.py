@@ -244,13 +244,8 @@ class CTClipInference(nn.Module):
         device = self.device
 
         steps = int(self.steps.item())
-
-
         # logs
         logs = {}
-
-
-
         if True:
             with torch.no_grad():
 
