@@ -48,7 +48,8 @@ text_data = np.array(text_data_list)
 print(image_data.shape)
 
 list_texts = []
-list_ks = [5,10,50,100]
+# list_ks = [5,10,50,100]
+list_ks = [5] # for debug only
 for value in tqdm.tqdm(list_ks):
     num_is_in = 0
     num_random = 0
