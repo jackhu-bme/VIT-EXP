@@ -272,8 +272,8 @@ class CTClipInference(nn.Module):
                     
                     
                     for i in tqdm.tqdm(range(len(self.ds))):
-                        if i > 10:
-                            break
+                        # if i > 10:
+                        #     break
                         valid_data, text, onehotlabels, acc_name = next(self.dl_iter)
                         print(f"i: {i}, acc_name: {acc_name}")
 
