@@ -251,6 +251,8 @@ class CTClipInference(nn.Module):
 
         txt_latent_save_dir = os.path.join(self.result_folder_txt, "text")
         img_latent_save_dir = os.path.join(self.result_folder_txt, "image")
+        os.makedirs(txt_latent_save_dir, exist_ok=True)
+        os.makedirs(img_latent_save_dir, exist_ok=True)
 
         if True:
             with torch.no_grad():
@@ -288,8 +290,8 @@ class CTClipInference(nn.Module):
                         # text_latent_list.append(text_latents.detach().cpu().numpy())
                         # image_latent_list.append(image_latents.detach().cpu().numpy())
 
-                        txt_latent_save_path = os.path.join(txt_latent_save_dir, f"{acc_name}.npz")
-                        img_latent_save_path = os.path.join(img_latent_save_dir, f"{acc_name}.npz")
+                        txt_latent_save_path = os.path.join(txt_latent_save_dir, f"{acc_name[0]}.npz")
+                        img_latent_save_path = os.path.join(img_latent_save_dir, f"{acc_name[0]}.npz")
 
                         np.savez(txt_latent_save_path, arr=text_latents.detach().cpu().numpy())
                         np.savez(img_latent_save_path, arr=image_latents.detach().cpu().numpy())
@@ -299,11 +301,6 @@ class CTClipInference(nn.Module):
 
                         # for pathology in pathologies:
                         #     text = [f"{pathology} is present.", f"{pathology} is not present."]
-                            
-
-                        
-                        
-                        
                             
                             # output = model(text_tokens, valid_data.cuda(),  device=device)
 
