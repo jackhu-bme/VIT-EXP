@@ -590,11 +590,21 @@ class CTCLIP(nn.Module):
     def load_state_dict(self, *args, **kwargs):
         return super().load_state_dict(*args, **kwargs)
 
-    def load(self, path):
+    def load(self, path, check=True):
         path = Path(path)
         assert path.exists()
-        pt = torch.load(str(path))
-        self.load_state_dict(pt)
+        try:
+            pt = torch.load(str(path))
+            self.load_state_dict(pt)
+        except Exception as e:
+            if not check:
+                raise e
+            else:
+                print(f'failed to load model dirctly from {path}, due to error: {e}, try remove the module name from state dict')
+                pt_new = {k[7:]:v for k,v in pt.items()}
+                self.load_state_dict(pt_new)
+                print(f'successfully loaded model from {path}')
+
 
     def tokenize(self, prompt):
         text_tokens=self.tokenizer(prompt, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(torch.cuda)
