@@ -281,7 +281,10 @@ class CTClipInference(nn.Module):
                         text_tokens=self.tokenizer(
                                             text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
 
-                        text_latents, image_latents = model(text_tokens, valid_data.cuda(),  device=device, return_latents=True)
+                        outs = model(text_tokens, valid_data.cuda(),  device=device, return_latents=True)
+                        for j, out in enumerate(outs):
+                            print(f"out shape: {out.shape}, j = {j}")
+                        text_latents, image_latents, *_ = outs
                         # text_latent_list.append(text_latents.detach().cpu().numpy())
                         # image_latent_list.append(image_latents.detach().cpu().numpy())
 
