@@ -16,14 +16,19 @@ def find_top_k_indices(values, k):
 
     return top_k_indices
 
-data_folder = "../../results_report_to_volume/"
+data_folder = "../../results_volume_to_report/"
 os.makedirs(data_folder, exist_ok=True)
 
 # Scan the folder for image and text .npz files
-image_npz_files = [f for f in os.listdir("../../valid_latents/image") if f.endswith('.npz')]
+
+
+# todo: currently implement this by reversing the loading of code from report2volume_new.py, but ugly
+# need to change variable names in the future
+
+image_npz_files = [f for f in os.listdir("../../valid_latents/text") if f.endswith('.npz')]
 # sort
 image_npz_files = sorted(image_npz_files, key=lambda x: x.split(".")[0].split("_")[-1])
-text_npz_files = [f for f in os.listdir("../../valid_latents/text") if f.endswith('.npz')]
+text_npz_files = [f for f in os.listdir("../../valid_latents/image") if f.endswith('.npz')]
 # sort
 text_npz_files = sorted(text_npz_files, key=lambda x: x.split(".")[0].split("_")[-1])
 
@@ -85,7 +90,7 @@ for value in tqdm.tqdm(list_ks):
     write_str = f"K={value}, clip = {clip}, rand= {rand}"
     list_texts.append(write_str)
 
-output_file_path = data_folder + f"internal_accessions_t2i_{list_ks[0]}.txt"
+output_file_path = data_folder + f"internal_accessions_i2t_{list_ks[0]}.txt"
 
 # Open the file for writing (you can also use "a" to append if the file already exists)
 with open(output_file_path, "w") as file:

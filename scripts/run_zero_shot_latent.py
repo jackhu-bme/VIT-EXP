@@ -2,7 +2,7 @@ import torch
 from transformer_maskgit import CTViT
 from transformers import BertTokenizer, BertModel
 from ct_clip import CTCLIP
-from zero_shot import CTClipInference
+from zero_shot_latents import CTClipInference
 import accelerate
 
 tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
@@ -45,10 +45,9 @@ inference = CTClipInference(
     reports_file= "/mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv",
     labels = "/mnt/input/CT-RATE/organized_dataset/csv_dir/labels/valid_predicted_labels.csv",
     batch_size = 1,
-    results_folder="../results_inference_zeroshot_demo/",
+    results_folder="../../valid_latents/",
     num_train_steps = 1,
 )
-
 
 
 inference.infer()

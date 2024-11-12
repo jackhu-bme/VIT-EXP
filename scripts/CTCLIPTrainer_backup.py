@@ -162,8 +162,7 @@ class CTClipTrainer(nn.Module):
         save_model_every = 1000 ,
         results_folder = '/shares/menze.dqbm.uzh/ihamam/ctclip/',
         num_workers = 8,
-        accelerate_kwargs: dict = dict(),
-        resume_path = None,
+        accelerate_kwargs: dict = dict()
     ):
         super().__init__()
         ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
@@ -234,17 +233,7 @@ class CTClipTrainer(nn.Module):
 
         self.results_folder.mkdir(parents=True, exist_ok=True)
 
-        if resume_path is not None:
-            self.load_model(resume_path)
-            self.print(f"resuming the sheduler and the model from {resume_path}")
-            # set the step according to the model's name
-            self.print(f"before loading, steps: {self.steps}")
-            self.resume_step = int(os.path.basename(resume_path).split(".")[-2])
-            self.steps += self.resume_step
-            self.print(f"resuming from step {self.steps} according to the model's name: {resume_path}")
-            # restore the state of the dataloader
-            self.dl = accelerate.skip_first_batches(self.dl, self.steps)
-        
+
 
     def save(self, path):
         if not self.accelerator.is_local_main_process:
@@ -255,15 +244,6 @@ class CTClipTrainer(nn.Module):
             optim=self.optim.state_dict(),
         )
         torch.save(pkg, path)
-
-    def load_model(self, path):
-        path = Path(path)
-        assert path.exists()
-        pkg = torch.load(path)
-
-        CTClip = self.accelerator.unwrap_model(self.CTClip)
-        CTClip.load_state_dict(pkg)
-
 
     def load(self, path):
         path = Path(path)
@@ -410,6 +390,8 @@ class CTClipTrainer(nn.Module):
                 model_path = str(self.results_folder / f'CTClip.{steps}.pt')
                 self.accelerator.save(state_dict, model_path)
 
+
+
         self.steps += 1
         return logs
 
@@ -430,8 +412,6 @@ class CTClipTrainer(nn.Module):
         
         # 创建 tqdm 进度条
         with tqdm(total=self.num_train_steps, desc='Training', unit='step') as pbar:
-            if self.resume_step is not None:
-                pbar.update(self.resume_step)
             while self.steps < self.num_train_steps:
                 logs = self.train_step()
                 log_fn(logs)

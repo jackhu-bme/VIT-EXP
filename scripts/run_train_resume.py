@@ -15,7 +15,7 @@ import os
 
 
 
-def main(config):
+def main(config, args):
     # fix the random seed based on the config args
     # 设置随机种子
     seed = int(config["random_seed"])
@@ -76,10 +76,12 @@ def main(config):
         data_valid = "/mnt/input/CT-RATE/organized_dataset/val_images_preprocessed",
         labels = "/mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv",
         batch_size = 2,
-        results_folder="../output_train_scratch_exp2",
+        results_folder="../output_train_scratch_resume",
         num_train_steps = 200002,
         num_workers = 16,
         accelerate_kwargs = {"gradient_accumulation_steps":2},
+        resume_path = args.resume
+        # resume_path="../ckpts/CTClip.60500.pt"
     )
 
     trainer.train()
@@ -92,6 +94,7 @@ if __name__ == "__main__":
     # read the config and set the args
     args = argparse.ArgumentParser(description='CT-CLIP')
     args.add_argument('--config', required=True, help='path to the config file')
+    args.add_argument('--resume', required=True, help='path to the resume file')
     args = args.parse_args()
 
     config_path = os.path.join("configs/train_from_scratch", args.config)
@@ -101,7 +104,7 @@ if __name__ == "__main__":
     with open(config_path, "r") as ymlfile:
         config = yaml.load(ymlfile, Loader=yaml.FullLoader)
 
-    main(config)
+    main(config, args)
 
 
 
