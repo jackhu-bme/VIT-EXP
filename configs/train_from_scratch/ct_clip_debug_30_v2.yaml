@@ -7,9 +7,12 @@ data_train: ../data/data_dir/sub30_dataset_train
 data_valid: ../data/data_dir/sub30_dataset_val
 labels: ../data/csv_dir/labels/train_predicted_labels.csv
 batch_size: 2
-results_folder: ../output_train_scratch
+results_folder: ./output_train_scratch
 num_train_steps: 100
 num_workers: 0
 gradient_accumulation_steps: 1
 
+
+project_name: ct-clip
+exp_name: train_from_scratch_ori_debug
 

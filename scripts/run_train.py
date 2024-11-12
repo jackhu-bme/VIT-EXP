@@ -13,9 +13,44 @@ import numpy as np
 
 import os
 
+import wandb
+
+import time
 
 
-def main(config):
+
+def main(config, args):
+
+    project_name = config.get("project_name", "CT-CLIP-EXP")
+    exp_name = config.get("exp_name", "train_from_scratch_default")
+    current_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+
+    exp_folder = os.path.join(config["results_folder"], exp_name, current_time)
+    ckpt_folder = os.path.join(exp_folder, "checkpoints")
+    os.makedirs(ckpt_folder, exist_ok=True)
+
+    wandb_folder = os.path.join(exp_folder, "wandb")
+    os.makedirs(wandb_folder, exist_ok=True)
+
+    wandb_mode = "offline" if args.debug else "online"
+
+    wandb_logger = wandb.init(project=project_name, name=exp_name, config=config, mode=wandb_mode, dir=wandb_folder)
+
+    txt_folder = os.path.join(exp_folder, "txt")
+    os.makedirs(txt_folder, exist_ok=True)
+
+    # write the output of git status and git log the file
+    os.system("git status > " + os.path.join(txt_folder, "git_status.txt"))
+    os.system("git log > " + os.path.join(txt_folder, "git_log.txt"))
+    #copy to wandb folder
+    os.system("cp " + os.path.join(txt_folder, "git_status.txt") + " " + os.path.join(wandb_folder, "git_status.txt"))
+    os.system("cp " + os.path.join(txt_folder, "git_log.txt") + " " + os.path.join(wandb_folder, "git_log.txt"))
+
+    # save the txt folder to wandb
+    wandb.save(os.path.join(wandb_folder, "git_status.txt"))
+    wandb.save(os.path.join(wandb_folder, "git_log.txt"))
+
+
     # fix the random seed based on the config args
     # 设置随机种子
     seed = int(config["random_seed"])
@@ -68,6 +103,9 @@ def main(config):
         use_all_token_embeds = False
 
     )
+
+    resume_path = args.resume if args.resume else None
+
     trainer = CTClipTrainer(
         clip,
         reports_file_train= config["reports_file_train"],
@@ -77,11 +115,14 @@ def main(config):
         data_valid = config["data_valid"],
         labels = config["labels"],
         batch_size = config["batch_size"],
-        results_folder = config["results_folder"],
+        results_folder = ckpt_folder,
+        # results_folder = config["results_folder"],
         num_train_steps = config["num_train_steps"],
         num_workers = config["num_workers"],
         accelerate_kwargs = {"gradient_accumulation_steps": config["gradient_accumulation_steps"]},
-    )
+        wandb_logger = wandb_logger,
+        resume_path = resume_path,
+        )
 
     trainer.train()
 
@@ -93,6 +134,8 @@ if __name__ == "__main__":
     # read the config and set the args
     args = argparse.ArgumentParser(description='CT-CLIP')
     args.add_argument('--config', required=True, help='path to the config file')
+    args.add_argument('--resume', default=None, help='path to the checkpoint to resume training')
+    args.add_argument('--debug', action='store_true', help='debug mode')
     args = args.parse_args()
 
     config_path = os.path.join("configs/train_from_scratch", args.config)
@@ -102,7 +145,7 @@ if __name__ == "__main__":
     with open(config_path, "r") as ymlfile:
         config = yaml.load(ymlfile, Loader=yaml.FullLoader)
 
-    main(config)
+    main(config, args)
 
 
 

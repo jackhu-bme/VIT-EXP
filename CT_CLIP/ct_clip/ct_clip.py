@@ -627,6 +627,7 @@ class CTCLIP(nn.Module):
             image,
             device,
             return_loss = False,
+            return_loss_dict = False,
             return_encodings = False,
             return_latents = False,
             freeze_image_encoder = False,   # image encoder is not trained if this is set to True, proposed by LiT paper
@@ -642,6 +643,7 @@ class CTCLIP(nn.Module):
         text_mask =text.attention_mask
 
         # ssl
+        loss_dict = {}
 
         text_ssl_loss = 0
         image_ssl_loss = 0
@@ -652,7 +654,9 @@ class CTCLIP(nn.Module):
             #print(text.attention_mask.shape)
             #print("------------")
             text_ssl_loss = self.mlm(text.input_ids, attention_mask = text.attention_mask) if self.use_mlm else 0
+            loss_dict['text_ssl_loss'] = text_ssl_loss.item() if self.use_mlm else 0
             image_ssl_loss = self.visual_ssl(image) if self.use_visual_ssl else 0
+            loss_dict['image_ssl_loss'] = image_ssl_loss.item() if self.use_visual_ssl else 0
 
         # concat augmented texts and images and do some asserts
 
@@ -883,13 +887,21 @@ class CTCLIP(nn.Module):
         text_to_image_loss = (-log(text_to_image_pos) + log(text_to_image_denom)).mean(dim = -1)
         image_to_text_loss = (-log(image_to_text_pos) + log(image_to_text_denom)).mean(dim = -1)
 
+        loss_dict['text_to_image_loss'] = text_to_image_loss.detach().mean().item()
+        loss_dict['image_to_text_loss'] = image_to_text_loss.detach().mean().item()
+
         # calculate CL loss
 
         cl_losses = (text_to_image_loss + image_to_text_loss) / 2
 
+        loss_dict['cl_loss_total'] = cl_losses.detach().mean().item()
+
         # get main CL loss vs multiview CL losses
 
         cl_loss, multiview_cl_loss = cl_losses[0], cl_losses[1:]
+
+        loss_dict['cl_loss'] = cl_loss.mean().item()
+        loss_dict['multiview_cl_loss'] = multiview_cl_loss.mean().item() if len(multiview_cl_loss) > 0 else 0
 
         # if no augmented text or images passed in, multiview loss weight is 0
 
@@ -903,9 +915,14 @@ class CTCLIP(nn.Module):
                + (text_ssl_loss * self.text_ssl_loss_weight) \
                + (image_ssl_loss * self.image_ssl_loss_weight)
 
+        loss_dict['loss_total'] = loss.item()
+
         # add multiview CL loss with weight
 
         if is_multiview:
             loss = loss + multiview_cl_loss.mean() * multiview_loss_weight
 
-        return loss
+        if not return_loss_dict:
+            return loss
+        else:
+            return loss, loss_dict

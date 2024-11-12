@@ -34,6 +34,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 from ct_clip import CTCLIP
 import os
 
+import wandb
 
 # helpers
 def apply_softmax(array):
@@ -165,6 +166,7 @@ class CTClipTrainer(nn.Module):
         accelerate_kwargs: dict = dict(),
         resume_path = None,
         metadata_train = "train_metadata.csv",
+        wandb_logger = None,
     ):
         super().__init__()
         ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
@@ -248,6 +250,8 @@ class CTClipTrainer(nn.Module):
         else:
             self.resume_step = None
         
+        self.wandb_logger = wandb_logger
+        
 
     def save(self, path):
         if not self.accelerator.is_local_main_process:
@@ -311,18 +315,21 @@ class CTClipTrainer(nn.Module):
         #video = video
         with self.accelerator.accumulate(self.CTClip):
             with self.accelerator.autocast():
-                loss = self.CTClip(text_tokens, video, return_loss=True, device=device)
+                loss, loss_dict = self.CTClip(text_tokens, video, return_loss=True, return_loss_dict=True, device=device)
 
         self.accelerator.backward(loss)
-        accum_log(logs, {'loss': loss.item()})
+        to_acc_dict = loss_dict.copy()
+        to_acc_dict["step"] = self.steps.item()
+        accum_log(logs, to_acc_dict)
         if exists(self.max_grad_norm):
             self.accelerator.clip_grad_norm_(self.CTClip.parameters(), self.max_grad_norm)
 
         self.optim.step()
         self.optim.zero_grad()
-        self.print(f"{steps}: loss: {logs['loss']}")
+        # self.print(f"{steps}: loss: {logs['loss']}")
+        self.print(f"log: {logs}")
 
-
+        self.wandb_logger.log(logs)
 
         # if self.is_main and not (steps % self.save_results_every):
         #     with torch.no_grad():
