@@ -1,4 +1,4 @@
-from transformer_maskgit import CTViT
+from transformer_maskgit import CTViT, CTViT3D
 from transformers import BertTokenizer, BertModel
 from ct_clip import CTCLIP, TextTransformer
 from CTCLIPTrainer import CTClipTrainer
@@ -76,18 +76,30 @@ def main(config, args):
     print(tokenizer.mask_token_id)
     print("-----------")
 
-
-    image_encoder = CTViT(
-        dim = 512,
-        codebook_size = 8192,
-        image_size = 480,
-        patch_size = 20,
-        temporal_patch_size = 10,
-        spatial_depth = 4,
-        temporal_depth = 4,
-        dim_head = 32,
-        heads = 8
-    )
+    if config.get("arch_name") == "CTViT3D":
+        image_encoder = CTViT3D(
+            dim = 512,
+            codebook_size = 8192,
+            image_size = 480,
+            patch_size = 20,
+            temporal_patch_size = 10,
+            transformer_blocks = 8,
+            dim_head = 32,
+            heads = 8,
+            use_flash_attention = config.get("use_flash_attention", True),
+        )
+    else:
+        image_encoder = CTViT(
+            dim = 512,
+            codebook_size = 8192,
+            image_size = 480,
+            patch_size = 20,
+            temporal_patch_size = 10,
+            spatial_depth = 4,
+            temporal_depth = 4,
+            dim_head = 32,
+            heads = 8
+        )
     #dim_image = 131072,
 
 
@@ -144,6 +156,15 @@ if __name__ == "__main__":
 
     with open(config_path, "r") as ymlfile:
         config = yaml.load(ymlfile, Loader=yaml.FullLoader)
+
+    # 启用 Flash Attention
+    torch.backends.cuda.enable_flash_sdp(True)
+
+    # 启用数学内核（如果需要）
+    torch.backends.cuda.enable_math_sdp(True)
+
+    # 启用内存高效内核（如果需要）
+    torch.backends.cuda.enable_mem_efficient_sdp(True)
 
     main(config, args)
 

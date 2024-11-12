@@ -1,12 +1,16 @@
 import math
 import torch
 import torch.nn.functional as F
+
+from torch.nn.functional import scaled_dot_product_attention as sdpa
+
 from torch import nn, einsum
 
 from beartype import beartype
 from typing import Tuple
 
 from einops import rearrange, repeat
+
 
 # helpers
 
@@ -180,6 +184,106 @@ class Attention(nn.Module):
         out = rearrange(out, 'b h n d -> b n (h d)')
         return self.to_out(out)
 
+class FlashAttention(nn.Module):
+    def __init__(
+        self,
+        dim,
+        dim_context = None,
+        dim_head = 64,
+        heads = 8,
+        causal = False,
+        num_null_kv = 0,
+        norm_context = True,
+        dropout = 0.,
+        scale = 8
+    ):
+        super().__init__()
+        self.heads = heads
+        self.causal = causal
+        self.scale = scale
+        inner_dim = dim_head * heads
+        dim_context = default(dim_context, dim)
+
+        if causal:
+            self.rel_pos_bias = AlibiPositionalBias(heads = heads)
+
+        self.dropout_p = dropout
+
+        self.norm = LayerNorm(dim)
+        self.context_norm = LayerNorm(dim_context) if norm_context else nn.Identity()
+
+        self.num_null_kv = num_null_kv
+        self.null_kv = nn.Parameter(torch.randn(heads, 2 * num_null_kv, dim_head))
+
+        self.to_q = nn.Linear(dim, inner_dim, bias = False)
+        self.to_kv = nn.Linear(dim_context, inner_dim * 2, bias = False)
+
+        self.q_scale = nn.Parameter(torch.ones(dim_head))
+        self.k_scale = nn.Parameter(torch.ones(dim_head))
+
+        self.to_out = nn.Linear(inner_dim, dim, bias = False)
+
+    def forward(
+        self,
+        x,
+        mask = None,
+        context = None,
+        attn_bias = None
+    ):
+        batch, device, dtype = x.shape[0], x.device, x.dtype
+        device=torch.device('cuda')
+        if exists(context):
+            context = self.context_norm(context)
+
+        kv_input = default(context, x)
+
+        x = self.norm(x)
+
+        q, k, v = self.to_q(x), *self.to_kv(kv_input).chunk(2, dim = -1)
+
+        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.heads), (q, k, v))
+
+        nk, nv = repeat(self.null_kv, 'h (n r) d -> b h n r d', b = batch, r = 2).unbind(dim = -2)
+
+        k = torch.cat((nk, k), dim = -2)
+        v = torch.cat((nv, v), dim = -2)
+
+        q, k = map(l2norm, (q, k))
+        q = q * self.q_scale
+        k = k * self.k_scale
+        
+        out = sdpa(q, k, v, attn_mask=mask, dropout_p=self.dropout_p, is_causal = self.causal)
+
+        # sim = einsum('b h i d, b h j d -> b h i j', q, k) * self.scale
+
+        # i, j = sim.shape[-2:]
+
+        # if exists(attn_bias):
+        #     attn_bias = F.pad(attn_bias, (self.num_null_kv, 0), value = 0.)
+        #     sim = sim + attn_bias
+
+        # if exists(mask):
+        #     mask = F.pad(mask, (self.num_null_kv, 0), value = True)
+        #     mask = rearrange(mask, 'b j -> b 1 1 j')
+        #     sim = sim.masked_fill(~mask, -torch.finfo(sim.dtype).max)
+
+        # if self.causal:
+        #     sim = sim + self.rel_pos_bias(sim)
+        #     device=torch.device('cuda')
+        #     causal_mask = torch.ones((i, j), device = device, dtype = torch.bool).triu(j - i + 1)
+        #     sim = sim.masked_fill(causal_mask, -torch.finfo(sim.dtype).max)
+
+        # attn = sim.softmax(dim = -1)
+        # attn = self.attn_dropout(attn)
+
+        # out = einsum('b h i j, b h j d -> b h i d', attn, v)
+
+        out = rearrange(out, 'b h n d -> b n (h d)')
+        return self.to_out(out)
+
+
+
+
 # alibi positional bias for extrapolation
 
 class AlibiPositionalBias(nn.Module):
@@ -293,18 +397,31 @@ class Transformer(nn.Module):
         attn_num_null_kv = 2,
         has_cross_attn = False,
         attn_dropout = 0.,
-        ff_dropout = 0.
+        ff_dropout = 0.,
+        use_flash_attention = False
     ):
         super().__init__()
         self.layers = nn.ModuleList([])
+        
+        if use_flash_attention:
+            for _ in range(depth):
+                self.layers.append(nn.ModuleList([
+                    PEG(dim = dim, causal = peg_causal) if peg else None,
+                    FlashAttention(dim = dim, dim_head = dim_head, heads = heads, causal = causal, num_null_kv = attn_num_null_kv, dropout = attn_dropout),
+                    # the second Attention serve as the possible cross-attention
+                    Attention(dim = dim, dim_head = dim_head, dim_context = dim_context, heads = heads, causal = False, num_null_kv = attn_num_null_kv, dropout = attn_dropout) if has_cross_attn else None,
+                    FeedForward(dim = dim, mult = ff_mult, dropout = ff_dropout)
+                ]))
 
-        for _ in range(depth):
-            self.layers.append(nn.ModuleList([
-                PEG(dim = dim, causal = peg_causal) if peg else None,
-                Attention(dim = dim, dim_head = dim_head, heads = heads, causal = causal, dropout = attn_dropout),
-                Attention(dim = dim, dim_head = dim_head, dim_context = dim_context, heads = heads, causal = False, num_null_kv = attn_num_null_kv, dropout = attn_dropout) if has_cross_attn else None,
-                FeedForward(dim = dim, mult = ff_mult, dropout = ff_dropout)
-            ]))
+        else:
+            for _ in range(depth):
+                self.layers.append(nn.ModuleList([
+                    PEG(dim = dim, causal = peg_causal) if peg else None,
+                    Attention(dim = dim, dim_head = dim_head, heads = heads, causal = causal, dropout = attn_dropout),
+                    # the second Attention serve as the possible cross-attention
+                    Attention(dim = dim, dim_head = dim_head, dim_context = dim_context, heads = heads, causal = False, num_null_kv = attn_num_null_kv, dropout = attn_dropout) if has_cross_attn else None,
+                    FeedForward(dim = dim, mult = ff_mult, dropout = ff_dropout)
+                ]))
 
         self.norm_out = LayerNorm(dim)
 
