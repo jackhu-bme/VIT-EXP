@@ -72,6 +72,7 @@ def main(config, args):
         clip,
         reports_file_train= config["reports_file_train"],
         reports_file_valid= config["reports_file_valid"],
+        metadata_train= config["metadata_train"],
         data_train= config["data_train"],
         data_valid = config["data_valid"],
         labels = config["labels"],

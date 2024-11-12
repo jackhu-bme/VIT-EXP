@@ -245,6 +245,8 @@ class CTClipTrainer(nn.Module):
             self.print(f"resuming from step {self.steps} according to the model's name: {resume_path}")
             # restore the state of the dataloader
             self.dl = accelerate.skip_first_batches(self.dl, self.steps)
+        else:
+            self.resume_step = None
         
 
     def save(self, path):
