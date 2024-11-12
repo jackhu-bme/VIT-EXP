@@ -78,10 +78,10 @@ class CTReportDatasetinfer(Dataset):
         img_data = np.load(path)['arr_0']
         img_data= np.transpose(img_data, (1, 2, 0))
         img_data = img_data*1000
-        hu_min, hu_max = -1000, 200
+        hu_min, hu_max = -1000, 1000
         img_data = np.clip(img_data, hu_min, hu_max)
 
-        img_data = (((img_data+400 ) / 600)).astype(np.float32)
+        img_data = (img_data / 1000).astype(np.float32)
         slices=[]
 
         tensor = torch.tensor(img_data)
