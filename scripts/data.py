@@ -39,7 +39,7 @@ def resize_array(array, current_spacing, target_spacing):
     return resized_array
 
 class CTReportDataset(Dataset):
-    def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True):
+    def __init__(self, data_folder, csv_file, metadata_train=None, min_slices=20, resize_dim=500, force_num_frames=True):
         self.data_folder = data_folder
         self.min_slices = min_slices
         self.accession_to_text = self.load_accession_text(csv_file)
@@ -52,6 +52,8 @@ class CTReportDataset(Dataset):
         print(len(self.samples))
         self.count = 0
 
+        # "/mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv"
+        self.metadata = pd.read_csv(metadata_train)
 
         #self.resize_dim = resize_dim
         #self.resize_transform = transforms.Resize((resize_dim, resize_dim))
@@ -141,7 +143,8 @@ class CTReportDataset(Dataset):
         img_data = nii_img.get_fdata()
 
         # todo: change this line to be auto config
-        df = pd.read_csv("/mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv") #select the metadata
+        # df = pd.read_csv("/mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv") #select the metadata
+        df = self.metadata
 
         # todo: maybe the resize process in the function is not needed, see if remove is reasonable
 

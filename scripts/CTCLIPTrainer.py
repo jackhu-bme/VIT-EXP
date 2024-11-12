@@ -164,6 +164,7 @@ class CTClipTrainer(nn.Module):
         num_workers = 8,
         accelerate_kwargs: dict = dict(),
         resume_path = None,
+        metadata_train = "train_metadata.csv",
     ):
         super().__init__()
         ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
@@ -187,7 +188,7 @@ class CTClipTrainer(nn.Module):
         self.max_grad_norm = max_grad_norm
         self.lr=lr
         # Load the pre-trained weights
-        self.ds = CTReportDataset(data_folder=data_train, csv_file=reports_file_train)
+        self.ds = CTReportDataset(data_folder=data_train, csv_file=reports_file_train, metadata_train=metadata_train)
 
         self.valid_ds = CTReportDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels = labels)
 

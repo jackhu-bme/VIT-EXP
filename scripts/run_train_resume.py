@@ -70,16 +70,16 @@ def main(config, args):
     )
     trainer = CTClipTrainer(
         clip,
-        reports_file_train= "/mnt/input/CT-RATE/organized_dataset/csv_dir/reports/train_reports.csv",
-        reports_file_valid= "/mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv",
-        data_train= "/mnt/input/CT-RATE/data_volumes/dataset/train",
-        data_valid = "/mnt/input/CT-RATE/organized_dataset/val_images_preprocessed",
-        labels = "/mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv",
-        batch_size = 2,
-        results_folder="../output_train_scratch_resume",
-        num_train_steps = 200002,
-        num_workers = 16,
-        accelerate_kwargs = {"gradient_accumulation_steps":2},
+        reports_file_train= config["reports_file_train"],
+        reports_file_valid= config["reports_file_valid"],
+        data_train= config["data_train"],
+        data_valid = config["data_valid"],
+        labels = config["labels"],
+        batch_size = config["batch_size"],
+        results_folder = config["results_folder"],
+        num_train_steps = config["num_train_steps"],
+        num_workers = config["num_workers"],
+        accelerate_kwargs = {"gradient_accumulation_steps": config["gradient_accumulation_steps"]},
         resume_path = args.resume
         # resume_path="../ckpts/CTClip.60500.pt"
     )
