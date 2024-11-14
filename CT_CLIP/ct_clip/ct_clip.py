@@ -887,21 +887,21 @@ class CTCLIP(nn.Module):
         text_to_image_loss = (-log(text_to_image_pos) + log(text_to_image_denom)).mean(dim = -1)
         image_to_text_loss = (-log(image_to_text_pos) + log(image_to_text_denom)).mean(dim = -1)
 
-        loss_dict['text_to_image_loss'] = text_to_image_loss.detach().mean().item()
-        loss_dict['image_to_text_loss'] = image_to_text_loss.detach().mean().item()
+        # loss_dict['text_to_image_loss'] = text_to_image_loss.detach().mean().item()
+        # loss_dict['image_to_text_loss'] = image_to_text_loss.detach().mean().item()
 
         # calculate CL loss
 
         cl_losses = (text_to_image_loss + image_to_text_loss) / 2
 
-        loss_dict['cl_loss_total'] = cl_losses.detach().mean().item()
+        # loss_dict['cl_loss_total'] = cl_losses.detach().mean().item()
 
         # get main CL loss vs multiview CL losses
 
         cl_loss, multiview_cl_loss = cl_losses[0], cl_losses[1:]
 
-        loss_dict['cl_loss'] = cl_loss.mean().item()
-        loss_dict['multiview_cl_loss'] = multiview_cl_loss.mean().item() if len(multiview_cl_loss) > 0 else 0
+        # loss_dict['cl_loss'] = cl_loss.mean().item()
+        # loss_dict['multiview_cl_loss'] = multiview_cl_loss.mean().item() if len(multiview_cl_loss) > 0 else 0
 
         # if no augmented text or images passed in, multiview loss weight is 0
 

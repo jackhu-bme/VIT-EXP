@@ -19,3 +19,14 @@ exp_name: train_from_scratch_ori_debug
 arch_name: CTViT3D # this is vit_vanilla_3D
 
 use_flash_attention: True
+
+
+# arch
+dim: 768
+image_size: 480
+patch_size: 20
+temporal_size: 240
+temporal_patch_size: 10
+transformer_blocks: 8
+dim_head: 32
+heads: 8

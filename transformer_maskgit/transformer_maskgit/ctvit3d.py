@@ -3,6 +3,7 @@ import copy
 import math
 from functools import wraps
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn, einsum
@@ -117,14 +118,68 @@ def pick_video_frame(video, frame_indices):
     images = rearrange(images, 'b 1 c ... -> b c ...')
     return images
 
+def get_3d_sincos_pos_embed(embed_dim, grid_size_list):
+    """
+    grid_size: int of the grid height and width
+    return:
+    pos_embed: [grid_size_list[0]*grid_size_list[1]*grod_size_list[2], embed_dim]
+    """
+    n_t, n_h, n_w = grid_size_list
+    grid_t = np.arange(n_t, dtype=np.float32)
+    grid_h = np.arange(n_h, dtype=np.float32)
+    grid_w = np.arange(n_w, dtype=np.float32)
+    grid = np.meshgrid(grid_t, grid_w, grid_h)  # here w goes first
+    grid = np.stack(grid, axis=0)
+
+    grid = grid.reshape([3, 1, n_t, n_w, n_h])
+    pos_embed = get_3d_sincos_pos_embed_from_grid(embed_dim, grid)
+    return pos_embed
+
+
+def get_3d_sincos_pos_embed_from_grid(embed_dim, grid):
+    assert embed_dim % 6 == 0
+
+    # use one third of dimensions to encode grid_t, grid_h, grid_w respectively
+    emb_t = get_1d_sincos_pos_embed_from_grid(embed_dim // 3, grid[0])  # (T*H*W, D/3)
+    emb_h = get_1d_sincos_pos_embed_from_grid(embed_dim // 3, grid[1])  # (T*H*W, D/3)
+    emb_w = get_1d_sincos_pos_embed_from_grid(embed_dim // 3, grid[2])  # (T*H*W, D/3)
+
+    emb = np.concatenate([emb_t, emb_h, emb_w], axis=1) # (H*W, D)
+    return emb
+
+
+def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
+    """
+    embed_dim: output dimension for each position
+    pos: a list of positions to be encoded: size (M,)
+    out: (M, D)
+    """
+    assert embed_dim % 2 == 0
+    omega = np.arange(embed_dim // 2, dtype=np.float32)
+    omega /= embed_dim / 2.
+    omega = 1. / 10000**omega  # (D/2,)
+
+    pos = pos.reshape(-1)  # (M,)
+    out = np.einsum('m,d->md', pos, omega)  # (M, D/2), outer product
+
+    emb_sin = np.sin(out) # (M, D/2)
+    emb_cos = np.cos(out) # (M, D/2)
+
+    emb = np.concatenate([emb_sin, emb_cos], axis=1)  # (M, D)
+    return emb
+
+
+
+
 class CTViT3D(nn.Module):
     def __init__(
         self,
         *,
         dim,
-        codebook_size,
+        # codebook_size,
         image_size,
         patch_size,
+        temporal_size,
         temporal_patch_size,
         transformer_blocks=8,
         # spatial_depth,
@@ -140,6 +195,7 @@ class CTViT3D(nn.Module):
         attn_dropout = 0.,
         ff_dropout = 0.,
         use_flash_attention = True,
+        **kwargs
     ):
         """
         einstein notations:
@@ -158,8 +214,13 @@ class CTViT3D(nn.Module):
         patch_height, patch_width = self.patch_size
 
         self.temporal_patch_size = temporal_patch_size
+        n_t, n_h, n_w = temporal_size // temporal_patch_size, image_size // patch_height, image_size // patch_width
 
-        self.spatial_rel_pos_bias = ContinuousPositionBias(dim = dim, heads = heads)
+        self.pos_embed = nn.Parameter(torch.zeros(1, n_t * n_h * n_w, dim), requires_grad = False)  # for encoder
+
+        self.init_pos_embed((n_t, n_h, n_w))
+
+        self.spatial_rel_pos_bias = ContinuousPositionBias(dim = dim, heads = heads) # used for decoder by default
 
         image_height, image_width = self.image_size
         assert (image_height % patch_height) == 0 and (image_width % patch_width) == 0
@@ -194,7 +255,7 @@ class CTViT3D(nn.Module):
 
         # self.enc_spatial_transformer = Transformer(depth = spatial_depth, **transformer_kwargs)
         # self.enc_temporal_transformer = Transformer(depth = temporal_depth, **transformer_kwargs)
-        self.vq = VectorQuantize(dim = dim, codebook_size = codebook_size, use_cosine_sim = True)
+        # self.vq = VectorQuantize(dim = dim, codebook_size = codebook_size, use_cosine_sim = True)
 
         # self.to_pixels_first_frame = nn.Sequential(
         #     nn.Linear(dim, channels * patch_width * patch_height),
@@ -207,6 +268,10 @@ class CTViT3D(nn.Module):
         )
         
         self.gen_loss = hinge_gen_loss if use_hinge_loss else bce_gen_loss
+
+    def init_pos_embed(self, grid_size_list):
+        pos_embed = get_3d_sincos_pos_embed(self.pos_embed.shape[-1], grid_size_list)
+        self.pos_embed.data.copy_(torch.tensor(pos_embed, device = self.pos_embed.device).float().unsqueeze(0))
 
     def calculate_video_token_mask(self, videos, video_frame_mask):
         *_, h, w = videos.shape
@@ -304,6 +369,8 @@ class CTViT3D(nn.Module):
         video_shape = tuple(tokens.shape[:-1])
 
         tokens = rearrange(tokens, 'b t h w d -> b (t h w) d')
+
+        tokens = tokens + self.pos_embed
 
         tokens = self.enc_3D(tokens, video_shape = video_shape)
 

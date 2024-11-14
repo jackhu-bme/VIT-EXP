@@ -78,14 +78,16 @@ def main(config, args):
 
     if config.get("arch_name") == "CTViT3D":
         image_encoder = CTViT3D(
-            dim = 512,
-            codebook_size = 8192,
-            image_size = 480,
-            patch_size = 20,
-            temporal_patch_size = 10,
-            transformer_blocks = 8,
-            dim_head = 32,
-            heads = 8,
+            # dim = 512,
+            dim = config.get("CTViT3D_dim", 768),
+            # codebook_size = 8192,
+            image_size = config.get("image_size", 480),
+            patch_size = config.get("patch_size", 20),
+            temporal_size= config.get("temporal_size", 240),
+            temporal_patch_size= config.get("temporal_patch_size", 10),
+            transformer_blocks = config.get("transformer_blocks", 8),
+            dim_head = config.get("dim_head", 32),
+            heads = config.get("heads", 8),
             use_flash_attention = config.get("use_flash_attention", True),
         )
     else:
@@ -107,8 +109,8 @@ def main(config, args):
         image_encoder = image_encoder,
         text_encoder = text_encoder,
         dim_text = 768,
-        dim_image = 294912,
-        dim_latent = 512,
+        dim_image = 442368,
+        dim_latent = 768,
         extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
         use_mlm=False,
         downsample_image_embeds = False,
