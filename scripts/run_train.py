@@ -68,8 +68,8 @@ def main(config, args):
 
     wandb_logger = accelerator.get_tracker("wandb")
 
-    wandb.save(os.path.join(wandb_folder, "git_status.txt"))
-    wandb.save(os.path.join(wandb_folder, "git_log.txt"))
+    # wandb.save(os.path.join(wandb_folder, "git_status.txt"))
+    # wandb.save(os.path.join(wandb_folder, "git_log.txt"))
 
     # fix the random seed based on the config args
     # 设置随机种子

@@ -330,7 +330,7 @@ class CTClipTrainer(nn.Module):
         self.print(f"log: {logs}")
 
         # self.wandb_logger.log(logs)
-        self.accelerator.log(logs)
+        self.accelerator.log(logs, step=self.steps.int().item())
 
         # if self.is_main and not (steps % self.save_results_every):
         #     with torch.no_grad():
