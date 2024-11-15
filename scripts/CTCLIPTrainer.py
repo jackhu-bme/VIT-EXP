@@ -329,7 +329,8 @@ class CTClipTrainer(nn.Module):
         # self.print(f"{steps}: loss: {logs['loss']}")
         self.print(f"log: {logs}")
 
-        self.wandb_logger.log(logs)
+        # self.wandb_logger.log(logs)
+        self.accelerator.log(logs)
 
         # if self.is_main and not (steps % self.save_results_every):
         #     with torch.no_grad():

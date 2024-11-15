@@ -17,6 +17,8 @@ import wandb
 
 import time
 
+from accelerate import Accelerator
+
 
 
 def main(config, args):
@@ -34,7 +36,21 @@ def main(config, args):
 
     wandb_mode = "offline" if args.debug else "online"
 
-    wandb_logger = wandb.init(project=project_name, name=exp_name, config=config, mode=wandb_mode, dir=wandb_folder)
+    # wandb_logger = wandb.init(project=project_name, name=exp_name, config=config, mode=wandb_mode, dir=wandb_folder)
+
+    accelerator = Accelerator(log_with="wandb")
+
+    accelerator.init_trackers(
+        project_name = project_name,
+        init_kwargs = {"wandb": {
+            "name": exp_name,
+            "mode": wandb_mode,
+            "dir": wandb_folder,
+            "config": config
+        }
+        }
+    )
+
 
     txt_folder = os.path.join(exp_folder, "txt")
     os.makedirs(txt_folder, exist_ok=True)
@@ -47,9 +63,13 @@ def main(config, args):
     os.system("cp " + os.path.join(txt_folder, "git_log.txt") + " " + os.path.join(wandb_folder, "git_log.txt"))
 
     # save the txt folder to wandb
-    wandb.save(os.path.join(wandb_folder, "git_status.txt"))
-    wandb.save(os.path.join(wandb_folder, "git_log.txt"))
+    # wandb.save(os.path.join(wandb_folder, "git_status.txt"))
+    # wandb.save(os.path.join(wandb_folder, "git_log.txt"))
 
+    wandb_logger = accelerator.get_tracker("wandb")
+
+    wandb_logger.save(os.path.join(wandb_folder, "git_status.txt"))
+    wandb_logger.save(os.path.join(wandb_folder, "git_log.txt"))
 
     # fix the random seed based on the config args
     # 设置随机种子
@@ -139,8 +159,7 @@ def main(config, args):
         )
 
     trainer.train()
-
-
+    accelerator.end_training()
 
 
 if __name__ == "__main__":
