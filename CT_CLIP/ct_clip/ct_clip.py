@@ -726,7 +726,11 @@ class CTCLIP(nn.Module):
             freeze = freeze_image_encoder
         )"""
 
+        print(f"image shape: {image.shape}")
+
         enc_image= self.visual_transformer(image, return_encoded_tokens=True)
+
+        print(f"encoded image shape: {enc_image.shape}")
 
         #print("This is visual encoding")
         global h_r, w_r, z_r
