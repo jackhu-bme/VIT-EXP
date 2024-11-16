@@ -127,10 +127,14 @@ class CTReportDataset(Dataset):
         return samples
 
     def prepare_samples(self):
-        if os.path.exists(os.path.join(self.cache_data_list_folder, 'samples.txt')):
-            with open(os.path.join(self.cache_data_list_folder, 'samples.txt'), 'r') as f:
-                samples_name = f.readlines()
-            samples = [sample.strip() for sample in samples_name]
+        if os.path.exists(os.path.join(self.cache_data_list_folder, 'image_samples.txt')) and os.path.exists(os.path.join(self.cache_data_list_folder, 'report_samples.txt')):
+            with open(os.path.join(self.cache_data_list_folder, 'image_samples.txt'), 'r') as f:
+                image_samples_name = f.readlines()
+            image_samples = [sample.strip() for sample in image_samples_name]
+            with open(os.path.join(self.cache_data_list_folder, 'report_samples.txt'), 'r') as f:
+                report_samples_name = f.readlines()
+            report_samples = [sample.strip() for sample in report_samples_name]
+            samples = list(zip(image_samples, report_samples))
             return samples
         else:
             patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
@@ -143,8 +147,13 @@ class CTReportDataset(Dataset):
             samples = [item for sublist in results for item in sublist]
             print(f"finished preparing samples, the number of samples: {len(samples)}")
             # Save the samples to cache
-            with open(os.path.join(self.cache_data_list_folder, 'samples.txt'), 'w') as f:
-                for sample in samples:
+            image_samples = [sample[0] for sample in samples]
+            report_samples = [sample[1] for sample in samples]
+            with open(os.path.join(self.cache_data_list_folder, 'image_samples.txt'), 'w') as f:
+                for sample in image_samples:
+                    f.write(f"{sample}\n")
+            with open(os.path.join(self.cache_data_list_folder, 'report_samples.txt'), 'w') as f:
+                for sample in report_samples:
                     f.write(f"{sample}\n")
             return samples
 
