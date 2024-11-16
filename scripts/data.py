@@ -44,6 +44,8 @@ class CTReportDataset(Dataset):
     """
     def __init__(self, data_folder, csv_file, metadata_train=None, min_slices=20, resize_dim=500, force_num_frames=True):
         self.data_folder = data_folder
+        self.cache_data_list_folder = os.path.join(data_folder, './cache_data_list')
+        os.makedirs(self.cache_data_list_folder, exist_ok=True)
         self.min_slices = min_slices
         self.accession_to_text = self.load_accession_text(csv_file)
         self.paths=[]
@@ -125,16 +127,26 @@ class CTReportDataset(Dataset):
         return samples
 
     def prepare_samples(self):
-        patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
-        print(f"start prepraring samples")
-        with Pool() as pool:
-            # Use a lambda or partial to pass additional arguments
-            results = pool.starmap(self.process_patient_folder, [(folder, self.accession_to_text, self.paths) for folder in patient_folders])
+        if os.path.exists(os.path.join(self.cache_data_list_folder, 'samples.txt')):
+            with open(os.path.join(self.cache_data_list_folder, 'samples.txt'), 'r') as f:
+                samples_name = f.readlines()
+            samples = [sample.strip() for sample in samples_name]
+            return samples
+        else:
+            patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
+            print(f"start prepraring samples")
+            with Pool() as pool:
+                # Use a lambda or partial to pass additional arguments
+                results = pool.starmap(self.process_patient_folder, [(folder, self.accession_to_text, self.paths) for folder in patient_folders])
 
-        # Combine all patient folder results
-        samples = [item for sublist in results for item in sublist]
-        print(f"finished preparing samples, the number of samples: {len(samples)}")
-        return samples
+            # Combine all patient folder results
+            samples = [item for sublist in results for item in sublist]
+            print(f"finished preparing samples, the number of samples: {len(samples)}")
+            # Save the samples to cache
+            with open(os.path.join(self.cache_data_list_folder, 'samples.txt'), 'w') as f:
+                for sample in samples:
+                    f.write(f"{sample}\n")
+            return samples
 
     def __len__(self):
         return len(self.samples)
