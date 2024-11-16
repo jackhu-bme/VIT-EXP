@@ -1,0 +1,32 @@
+random_seed: 42
+
+reports_file_train: ../data/csv_dir/reports/train_reports.csv
+reports_file_valid: ../data/csv_dir/reports/train_reports.csv
+metadata_train: ../data/csv_dir/metadata/train_metadata.csv
+data_train: ../data/data_dir/sub30_dataset_train
+data_valid: ../data/data_dir/sub30_dataset_val
+labels: ../data/csv_dir/labels/train_predicted_labels.csv
+batch_size: 1
+results_folder: ./output_train_scratch
+num_train_steps: 100
+num_workers: 0
+gradient_accumulation_steps: 1
+
+
+project_name: ct-clip-vit
+exp_name: train_from_scratch_ori_debug
+
+arch_name: CTViT3D # this is vit_vanilla_3D
+
+use_flash_attention: False
+
+
+# arch
+dim: 768
+image_size: 480
+patch_size: 20
+temporal_size: 240
+temporal_patch_size: 10
+transformer_blocks: 8
+dim_head: 32
+heads: 8

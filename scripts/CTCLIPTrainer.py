@@ -269,8 +269,17 @@ class CTClipTrainer(nn.Module):
         pkg = torch.load(path)
 
         CTClip = self.accelerator.unwrap_model(self.CTClip)
-        CTClip.load_state_dict(pkg)
-
+        try:
+            CTClip.load_state_dict(pkg)
+        except Exception as e:
+            print(f"try removing the module prefix from the model state dict")
+            new_state_dict = {}
+            for k, v in pkg.items():
+                if k.startswith('module.'):
+                    k = k[7:]
+                new_state_dict[k] = v
+            CTClip.load_state_dict(new_state_dict)
+            print(f"successfully loaded the model state dict after removing the module prefix")
 
     def load(self, path):
         path = Path(path)
