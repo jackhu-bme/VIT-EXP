@@ -124,6 +124,7 @@ def main(config, args):
         )
     #dim_image = 131072,
 
+    resume_path = args.resume if args.resume else None
 
     clip = CTCLIP(
         image_encoder = image_encoder,
@@ -138,8 +139,11 @@ def main(config, args):
 
     )
 
-    resume_path = args.resume if args.resume else None
+    if resume_path is not None:
+        print(f"Resuming state dict from checkpoint: {resume_path}")
+        clip.load(resume_path)
 
+    # also resume the trainer
     trainer = CTClipTrainer(
         clip,
         reports_file_train= config["reports_file_train"],
