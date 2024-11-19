@@ -12,7 +12,7 @@ text_encoder.resize_token_embeddings(len(tokenizer))
 
 
 import yaml
-config = yaml.load(open("../config/train_from_scratch/ct_clip_vit_hpc_v3_1.yaml", "r"), Loader=yaml.FullLoader)
+config = yaml.load(open("../configs/train_from_scratch/ct_clip_vit_hpc_v3_1.yaml", "r"), Loader=yaml.FullLoader)
 
 image_encoder = CTViT3D(
             # dim = 512,
