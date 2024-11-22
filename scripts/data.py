@@ -44,7 +44,7 @@ class CTReportDataset(Dataset):
     """
     def __init__(self, data_folder, csv_file, metadata_train=None, min_slices=20, resize_dim=500, force_num_frames=True):
         self.data_folder = data_folder
-        self.cache_data_list_folder = os.path.join(data_folder, './cache_data_list')
+        self.cache_data_list_folder = os.path.join(data_folder, './tmp_cache_data_list')
         os.makedirs(self.cache_data_list_folder, exist_ok=True)
         self.min_slices = min_slices
         self.accession_to_text = self.load_accession_text(csv_file)
