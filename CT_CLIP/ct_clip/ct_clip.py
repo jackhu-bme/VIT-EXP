@@ -593,17 +593,18 @@ class CTCLIP(nn.Module):
     def load(self, path, check=True):
         path = Path(path)
         assert path.exists()
-        try:
-            pt = torch.load(str(path))
-            self.load_state_dict(pt)
-        except Exception as e:
-            if not check:
-                raise e
-            else:
-                print(f'failed to load model dirctly from {path}, due to error: {e}, try remove the module name from state dict')
-                pt_new = {k[7:]:v for k,v in pt.items()}
-                self.load_state_dict(pt_new)
-                print(f'successfully loaded model from {path}')
+        # try:
+        pt = torch.load(str(path))
+        #     self.load_state_dict(pt)
+        # except Exception as e:
+        #     if not check:
+        #         raise e
+        #     else:
+        # print(f'failed to load model dirctly from {path}, due to error: {e}, try remove the module name from state dict')
+        pt_new = {k[7:]:v for k,v in pt.items()}
+        self.load_state_dict(pt_new)
+        del pt, pt_new
+        print(f'successfully loaded model from {path}')
 
 
     def tokenize(self, prompt):
