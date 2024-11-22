@@ -303,9 +303,11 @@ class CTClipTrainer(nn.Module):
         device = self.device
 
         steps = int(self.steps.item())
-        continue_training = input("Continue training? (y/n)")
-        if continue_training == "n":
-            raise Exception("Training stopped by user")
+
+        # tmp gpu memroy check for debug only
+        # continue_training = input("Continue training? (y/n)")
+        # if continue_training == "n":
+        #     raise Exception("Training stopped by user")
 
         # print(f"start training step {steps}")
 
