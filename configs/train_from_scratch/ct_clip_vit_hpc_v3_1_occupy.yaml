@@ -1,0 +1,31 @@
+random_seed: 42
+
+reports_file_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/reports/train_reports.csv
+reports_file_valid: /mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv
+metadata_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv
+data_train: /mnt/input/CT-RATE/organized_dataset/train_images_preprocessed
+data_valid: /mnt/input/CT-RATE/organized_dataset/val_images_preprocessed
+labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv
+batch_size: 2
+results_folder: ./output_train_scratch
+num_train_steps: 200002
+num_workers: 16
+gradient_accumulation_steps: 2
+
+project_name: ct-clip-vit_v3
+exp_name: train_from_scratch_vit_hpc_1_dim_384_occupy
+
+arch_name: CTViT3D # this is vit_vanilla_3D
+
+use_flash_attention: True
+
+
+# arch
+dim: 384
+image_size: 480
+patch_size: 20
+temporal_size: 240
+temporal_patch_size: 10
+transformer_blocks: 8
+dim_head: 32
+heads: 8
