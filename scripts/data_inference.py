@@ -11,11 +11,15 @@ from functools import partial
 import torch.nn.functional as F
 import tqdm
 
+from multiprocessing import Pool
+
 
 class CTReportDatasetinfer(Dataset):
     def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True, labels = "labels.csv"):
         self.data_folder = data_folder
         self.min_slices = min_slices
+        self.cache_data_list_folder = os.path.join(data_folder, './cache_data_list')
+        os.makedirs(self.cache_data_list_folder, exist_ok=True)
         self.labels = labels
         self.accession_to_text = self.load_accession_text(csv_file)
         self.paths=[]
@@ -34,42 +38,96 @@ class CTReportDatasetinfer(Dataset):
         return accession_to_text
 
 
-    def prepare_samples(self):
+    # def prepare_samples(self):
+    #     samples = []
+    #     patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
+
+    #     # Read labels once outside the loop
+    #     test_df = pd.read_csv(self.labels)
+    #     test_label_cols = list(test_df.columns[1:])
+    #     test_df['one_hot_labels'] = list(test_df[test_label_cols].values)
+
+    #     for patient_folder in tqdm.tqdm(patient_folders):
+    #         accession_folders = glob.glob(os.path.join(patient_folder, '*'))
+
+    #         for accession_folder in accession_folders:
+    #             nii_files = glob.glob(os.path.join(accession_folder, '*.npz'))
+
+    #             for nii_file in nii_files:
+    #                 accession_number = nii_file.split("/")[-1]
+
+    #                 accession_number = accession_number.replace(".npz", ".nii.gz")
+    #                 if accession_number not in self.accession_to_text:
+    #                     continue
+
+    #                 impression_text = self.accession_to_text[accession_number]
+    #                 text_final = ""
+    #                 for text in list(impression_text):
+    #                     text = str(text)
+    #                     if text == "Not given.":
+    #                         text = ""
+
+    #                     text_final = text_final + text
+
+    #                 onehotlabels = test_df[test_df["VolumeName"] == accession_number]["one_hot_labels"].values
+    #                 if len(onehotlabels) > 0:
+    #                     samples.append((nii_file, text_final, onehotlabels[0]))
+    #                     self.paths.append(nii_file)
+    #     return samples
+
+    def process_patient_folder(self, patient_folder, accession_to_text, paths):
         samples = []
-        patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
+        accession_folders = glob.glob(os.path.join(patient_folder, '*'))
+        for accession_folder in accession_folders:
+            nii_files = glob.glob(os.path.join(accession_folder, '*.npz'))
+            # print(f"nii files: {nii_files}, accession folder:{accession_folder}")
+            for nii_file in nii_files:
+                accession_number = nii_file.split("/")[-1].replace(".npz", ".nii.gz")
+                if accession_number not in accession_to_text:
+                    continue
 
-        # Read labels once outside the loop
-        test_df = pd.read_csv(self.labels)
-        test_label_cols = list(test_df.columns[1:])
-        test_df['one_hot_labels'] = list(test_df[test_label_cols].values)
+                impression_text = accession_to_text[accession_number]
+                if impression_text == "Not given.":
+                    impression_text = ""
 
-        for patient_folder in tqdm.tqdm(patient_folders):
-            accession_folders = glob.glob(os.path.join(patient_folder, '*'))
-
-            for accession_folder in accession_folders:
-                nii_files = glob.glob(os.path.join(accession_folder, '*.npz'))
-
-                for nii_file in nii_files:
-                    accession_number = nii_file.split("/")[-1]
-
-                    accession_number = accession_number.replace(".npz", ".nii.gz")
-                    if accession_number not in self.accession_to_text:
-                        continue
-
-                    impression_text = self.accession_to_text[accession_number]
-                    text_final = ""
-                    for text in list(impression_text):
-                        text = str(text)
-                        if text == "Not given.":
-                            text = ""
-
-                        text_final = text_final + text
-
-                    onehotlabels = test_df[test_df["VolumeName"] == accession_number]["one_hot_labels"].values
-                    if len(onehotlabels) > 0:
-                        samples.append((nii_file, text_final, onehotlabels[0]))
-                        self.paths.append(nii_file)
+                input_text_concat = "".join(str(text) for text in impression_text) if impression_text else ""
+                samples.append((nii_file, input_text_concat))
+                # print(f"appending sample:{nii_file}")
+                paths.append(nii_file)
         return samples
+
+    def prepare_samples(self):
+        if os.path.exists(os.path.join(self.cache_data_list_folder, 'image_samples.txt')) and os.path.exists(os.path.join(self.cache_data_list_folder, 'report_samples.txt')):
+            with open(os.path.join(self.cache_data_list_folder, 'image_samples.txt'), 'r') as f:
+                image_samples_name = f.readlines()
+            image_samples = [sample.strip() for sample in image_samples_name]
+            with open(os.path.join(self.cache_data_list_folder, 'report_samples.txt'), 'r') as f:
+                report_samples_name = f.readlines()
+            report_samples = [sample.strip() for sample in report_samples_name]
+            samples = list(zip(image_samples, report_samples))
+            print(f"finished preparing samples with cache txt, the number of samples: {len(samples)}")
+            return samples
+        else:
+            patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
+            print(f"start prepraring samples")
+            with Pool() as pool:
+                # Use a lambda or partial to pass additional arguments
+                results = pool.starmap(self.process_patient_folder, [(folder, self.accession_to_text, self.paths) for folder in patient_folders])
+
+            # Combine all patient folder results
+            samples = [item for sublist in results for item in sublist]
+            print(f"finished preparing samples, the number of samples: {len(samples)}")
+            # Save the samples to cache
+            image_samples = [sample[0] for sample in samples]
+            report_samples = [sample[1] for sample in samples]
+            with open(os.path.join(self.cache_data_list_folder, 'image_samples.txt'), 'w') as f:
+                for sample in image_samples:
+                    f.write(f"{sample}\n")
+            with open(os.path.join(self.cache_data_list_folder, 'report_samples.txt'), 'w') as f:
+                for sample in report_samples:
+                    f.write(f"{sample}\n")
+            return samples
+
 
     def __len__(self):
         return len(self.samples)

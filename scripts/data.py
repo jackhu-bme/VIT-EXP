@@ -135,6 +135,7 @@ class CTReportDataset(Dataset):
                 report_samples_name = f.readlines()
             report_samples = [sample.strip() for sample in report_samples_name]
             samples = list(zip(image_samples, report_samples))
+            print(f"finished preparing samples with cache txt, the number of samples: {len(samples)}")
             return samples
         else:
             patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
