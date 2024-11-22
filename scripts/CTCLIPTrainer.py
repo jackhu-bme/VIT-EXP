@@ -303,6 +303,9 @@ class CTClipTrainer(nn.Module):
         device = self.device
 
         steps = int(self.steps.item())
+        continue_training = input("Continue training? (y/n)")
+        if continue_training == "n":
+            raise Exception("Training stopped by user")
 
         # print(f"start training step {steps}")
 
