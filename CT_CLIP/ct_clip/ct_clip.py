@@ -594,7 +594,7 @@ class CTCLIP(nn.Module):
         path = Path(path)
         assert path.exists()
         # try:
-        pt = torch.load(str(path))
+        pt = torch.load(str(path), map_location='cpu')
         #     self.load_state_dict(pt)
         # except Exception as e:
         #     if not check:
