@@ -120,6 +120,7 @@ class CTReportDatasetinfer(Dataset):
             # Save the samples to cache
             image_samples = [sample[0] for sample in samples]
             report_samples = [sample[1] for sample in samples]
+            os.makedirs(self.cache_data_list_folder, exist_ok=True)
             with open(os.path.join(self.cache_data_list_folder, 'image_samples.txt'), 'w') as f:
                 for sample in image_samples:
                     f.write(f"{sample}\n")
