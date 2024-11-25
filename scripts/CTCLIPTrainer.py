@@ -14,8 +14,8 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader, random_split
 from torch.utils.data.distributed import DistributedSampler
 
-from data import CTReportDataset
-from data_inference import CTReportDatasetinfer
+from data import CTReportDataset, CTReportSegDataset
+from data_inference import CTReportDatasetinfer # CTReportSegDatasetinfer
 
 import numpy as np
 import pandas as pd
@@ -34,7 +34,11 @@ import torch.optim.lr_scheduler as lr_scheduler
 from ct_clip import CTCLIP
 import os
 
-import wandb
+# import itertools
+
+import random
+
+# import wandb
 
 # helpers
 def apply_softmax(array):
@@ -53,27 +57,6 @@ def apply_softmax(array):
 
 
 
-def tensor_to_nifti(tensor, path, affine=np.eye(4)):
-    """
-    Save tensor as a NIfTI file.
-
-    Args:
-        tensor (torch.Tensor): The input tensor with shape (D, H, W) or (C, D, H, W).
-        path (str): The path to save the NIfTI file.
-        affine (np.ndarray, optional): The affine matrix for the NIfTI file. Defaults to np.eye(4).
-    """
-
-    tensor = tensor.cpu()
-
-    if tensor.dim() == 4:
-        # Assume single channel data if there are multiple channels
-        if tensor.size(0) != 1:
-            print("Warning: Saving only the first channel of the input tensor")
-        tensor = tensor.squeeze(0)
-    tensor=tensor.swapaxes(0,2)
-    numpy_data = tensor.detach().numpy().astype(np.float32)
-    nifti_img = nib.Nifti1Image(numpy_data, affine)
-    nib.save(nifti_img, path)
 
 def exists(val):
     return val is not None
@@ -85,6 +68,59 @@ def cycle(dl):
     while True:
         for data in dl:
             yield data
+
+# 自定义Sampler实现循环和固定比例采样
+
+
+class CycleSampler:
+    def __init__(self, lengths, ratios):
+        """
+        lengths: 每个数据集的长度列表
+        ratios: 采样比例列表
+        """
+        self.lengths = lengths
+        self.ratios = ratios
+        self.ratio_sum = sum(ratios)
+        self.total_length = sum(lengths)
+        self.indices = []
+
+        # 根据比例构造初始索引
+        start = 0
+        start_list = []
+        datasets = []
+        for i in range(len(lengths)):
+            start_list.append(start)
+            datasets.append(list(range(start, start + lengths[i])))
+            start += lengths[i]
+            
+        
+        self.datasets = datasets
+
+        self.start_list = start_list
+        
+        self.chances = [ratio / self.ratio_sum for ratio in self.ratios]
+
+    def __iter__(self):
+        while True:
+            random_num = random.random()
+            # choose the dataset according to the chances
+            dataset_index = 0
+            for i, chance in enumerate(self.chances):
+                if random_num < chance:
+                    dataset_index = i
+                    break
+                random_num -= chance
+            # choose the sample from the dataset
+            start = self.start_list[dataset_index]
+            length = self.lengths[dataset_index]
+            index = random.randint(start, start + length - 1)
+            yield index
+
+    def __len__(self):
+        return len(self.indices)
+
+
+
 
 def yes_or_no(question):
     answer = input(f'{question} (y/n) ')
@@ -152,6 +188,12 @@ class CTClipTrainer(nn.Module):
         batch_size,
         data_train = "train",
         data_valid = "valid",
+        use_seg = False,
+        seg_data_train = None,
+        seg_data_valid = None,
+        seg_mask_train = None,
+        seg_mask_valid = None,
+        balance_report_seg = 1.0,
         reports_file_train = "data_reports.xslx",
         reports_file_valid = "data_reports.xslx",
         labels = "labels.csv",
@@ -189,17 +231,32 @@ class CTClipTrainer(nn.Module):
 
         self.max_grad_norm = max_grad_norm
         self.lr=lr
-        # Load the pre-trained weights
-        self.ds = CTReportDataset(data_folder=data_train, csv_file=reports_file_train, metadata_train=metadata_train)
 
-        self.valid_ds = CTReportDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels = labels)
+        self.use_seg = use_seg
 
+        if not use_seg:
+            self.ds = CTReportDataset(data_folder=data_train, csv_file=reports_file_train, metadata_train=metadata_train)
+            self.valid_ds = CTReportDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels = labels)
+        else:
+            self.ds = CTReportSegDataset(data_folder=data_train, csv_file=reports_file_train, metadata_train=metadata_train, 
+                                         seg_data=seg_data_train, seg_mask=seg_mask_train)
+            self.valid_ds = CTReportDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels = labels)
+            # todo: add the seg support in valid_ds
+        
+        self.balance_report_seg_ratio = balance_report_seg
+
+        ratios = [int(self.balance_report_seg_ratio), 1]
+        
+        num_ds_1, num_ds_2 = self.ds.n_image_txt_pairs, self.ds.n_image_seg_pairs
+
+        # 创建CycleSampler
+        train_sampler = CycleSampler([num_ds_1, num_ds_2], ratios)
 
         self.dl = DataLoader(
             self.ds,
             num_workers=num_workers,
             batch_size=self.batch_size,
-            shuffle = True,
+            sampler=train_sampler,
         )
 
         self.valid_dl = DataLoader(
@@ -304,20 +361,18 @@ class CTClipTrainer(nn.Module):
 
         steps = int(self.steps.item())
 
-        # tmp gpu memroy check for debug only
-        # continue_training = input("Continue training? (y/n)")
-        # if continue_training == "n":
-        #     raise Exception("Training stopped by user")
-
-        # print(f"start training step {steps}")
-
         self.CTClip.train()
 
         # logs
         logs = {}
-
         # update CTClip model
-        video, text = next(self.dl_iter)
+        # video, text = next(self.dl_iter)
+        batch = next(self.dl_iter)
+        video = batch['image']
+        text = batch['text']
+        seg_mask = batch['seg_mask']
+        text_valid_mask = batch['is_text']
+        seg_valid_mask = batch['is_seg']
         # print(video.shape)
         device=self.device
         video=video.to(device)
@@ -329,7 +384,9 @@ class CTClipTrainer(nn.Module):
         #video = video
         with self.accelerator.accumulate(self.CTClip):
             with self.accelerator.autocast():
-                loss, loss_dict = self.CTClip(text_tokens, video, return_loss=True, return_loss_dict=True, device=device)
+                loss, loss_dict = self.CTClip(text_tokens, video, return_loss=True, return_loss_dict=True, 
+                                              device=device, use_seg=self.use_seg, seg_mask=seg_mask, 
+                                              seg_valid_mask=seg_valid_mask, text_valid_mask=text_valid_mask)
 
         self.accelerator.backward(loss)
         to_acc_dict = loss_dict.copy()

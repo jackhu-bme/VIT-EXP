@@ -110,6 +110,12 @@ def main(config, args):
             dim_head = config.get("dim_head", 32),
             heads = config.get("heads", 8),
             use_flash_attention = config.get("use_flash_attention", True),
+            use_seg = config.get("use_seg", True),
+            seg_head_n_layers = config.get("seg_head_n_layers", 2),
+            seg_head_layer_type = config.get("seg_head_layer_type", "mlp"),
+            seg_head_in_dim = config.get("seg_head_in_dim", 256),
+            seg_head_mid_dim = config.get("seg_head_mid_dim", 128),
+            seg_head_out_dim = config.get("seg_head_out_dim", 22), # 22 classes for segmentation in TotalSegmentor
         )
     else:
         image_encoder = CTViT(
@@ -137,7 +143,6 @@ def main(config, args):
         use_mlm=False,
         downsample_image_embeds = False,
         use_all_token_embeds = False
-
     )
 
     if resume_path is not None:
@@ -152,6 +157,12 @@ def main(config, args):
         metadata_train= config["metadata_train"],
         data_train= config["data_train"],
         data_valid = config["data_valid"],
+        use_seg = config.get("use_seg", False),
+        seg_data_train = config.get("seg_data_train", None),
+        seg_data_valid = config.get("seg_data_valid", None),
+        seg_mask_train = config.get("seg_mask_train", None),
+        seg_mask_valid = config.get("seg_mask_valid", None),
+        balance_report_seg = config.get("balance_report_seg", 1.0),
         labels = config["labels"],
         batch_size = config["batch_size"],
         results_folder = ckpt_folder,

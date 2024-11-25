@@ -584,6 +584,8 @@ class CTCLIP(nn.Module):
 
         self.tokenizer= BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
 
+        self.seg_criterion = nn.BCEWithLogitsLoss()
+
     def state_dict(self, *args, **kwargs):
         return super().state_dict(*args, **kwargs)
 
@@ -631,6 +633,11 @@ class CTCLIP(nn.Module):
             return_loss_dict = False,
             return_encodings = False,
             return_latents = False,
+            use_seg=False, 
+            seg_mask=None,
+            seg_valid_mask=None,
+            text_valid_mask=None,
+            seg_weight=1.0,
             freeze_image_encoder = False,   # image encoder is not trained if this is set to True, proposed by LiT paper
             freeze_text_encoder = False,    # text encoder is not trained if this is set to True
             text_to_image = True,           # in the case the extra projection is turned on, would return different similarity values depending on modality directionality
@@ -642,6 +649,8 @@ class CTCLIP(nn.Module):
         # derive text mask
 
         text_mask =text.attention_mask
+
+        self.seg_weight = seg_weight
 
         # ssl
         loss_dict = {}
@@ -655,9 +664,9 @@ class CTCLIP(nn.Module):
             #print(text.attention_mask.shape)
             #print("------------")
             text_ssl_loss = self.mlm(text.input_ids, attention_mask = text.attention_mask) if self.use_mlm else 0
-            loss_dict['text_ssl_loss'] = text_ssl_loss.item() if self.use_mlm else 0
+            # loss_dict['text_ssl_loss'] = text_ssl_loss.item() if self.use_mlm else 0
             image_ssl_loss = self.visual_ssl(image) if self.use_visual_ssl else 0
-            loss_dict['image_ssl_loss'] = image_ssl_loss.item() if self.use_visual_ssl else 0
+            # loss_dict['image_ssl_loss'] = image_ssl_loss.item() if self.use_visual_ssl else 0
 
         # concat augmented texts and images and do some asserts
 
@@ -727,11 +736,34 @@ class CTCLIP(nn.Module):
             freeze = freeze_image_encoder
         )"""
 
-        print(f"image shape: {image.shape}")
+        # print(f"image shape: {image.shape}")
+        B, C, D, W, H = image.shape
 
         enc_image= self.visual_transformer(image, return_encoded_tokens=True)
 
-        print(f"encoded image shape: {enc_image.shape}")
+        # print(f"encoded image shape: {enc_image.shape}")
+
+        if use_seg:
+            # use the seg valid mask to choose the image to be segmented
+            print(f"seg_valid_mask: {seg_valid_mask}, enc image shape: {enc_image.shape}")
+            enc_seg_image = enc_image[seg_valid_mask.squeeze(1).bool()]
+            print(f"enc seg image shape: {enc_seg_image.shape}")
+            seg_mask = seg_mask[seg_valid_mask.squeeze(1).bool()]
+            if enc_seg_image.shape[0] == 0:
+                seg_loss = 0.
+                loss_dict['seg_loss'] = 0.
+            else:
+                b, d, w, h, c = enc_seg_image.shape
+                p_h, p_w, p_d = H//h, W//w, D//d
+                tokens_to_seg = enc_seg_image.reshape(-1, c) # b, l, c -> b*l, c
+                # use the linear head for 
+                seg_logits = self.visual_transformer.seg_head(tokens_to_seg)
+                # reshape the logits to the original shape, with each pixel
+                seg_preds = seg_logits.reshape(b, d, w, h, p_d, p_w, p_h, -1)
+                seg_preds = seg_preds.permute(0, 7, 1, 4, 2, 5, 3, 6).reshape(b, -1, D, W, H)
+                seg_loss = self.seg_criterion(seg_preds, seg_mask.float().to(device))
+                loss_dict['seg_loss'] = seg_loss.item()
+
 
         #print("This is visual encoding")
         global h_r, w_r, z_r
@@ -780,154 +812,172 @@ class CTCLIP(nn.Module):
         #text_embeds = text_embeds.view(text_embeds.shape[0], -1)
         text_embeds = text_embeds[:,0,:]
 
+        print(f"text embeds shape: {text_embeds.shape}")
+        print(f"image embeds shape: {image_embeds.shape}")
+        print(f"text valid mask: {text_valid_mask}")
+
+        # select those with valid reports only for contrastive learning
+        text_embeds = text_embeds[text_valid_mask.squeeze(1).bool(), :]
+        image_embeds = image_embeds[text_valid_mask.squeeze(1).bool(), :]
+
+        print(f"after, text embeds shape: {text_embeds.shape}")
+
+        if text_embeds.shape[0] == 0:
+            loss = seg_loss * self.seg_weight
+
+            loss_dict['loss_total'] = loss.item()
+
+            if not return_loss_dict:
+                return loss
+            else:
+                return loss, loss_dict
+    
+        else:
         #text_embeds = torch.mean(text_embeds, dim=1)
-        text_latents = self.to_text_latent(text_embeds)
+            text_latents = self.to_text_latent(text_embeds)
 
-        image_latents = self.to_visual_latent(image_embeds)
-
-
-
-        text_latents, image_latents = map(l2norm, (text_latents, image_latents))
+            image_latents = self.to_visual_latent(image_embeds)
 
 
 
+            text_latents, image_latents = map(l2norm, (text_latents, image_latents))
 
+            # calculate another set of latents for image to text (vs text to image)
+            # proposed by CLOOB
 
-        # calculate another set of latents for image to text (vs text to image)
-        # proposed by CLOOB
-
-        text_latents_extra, image_latents_extra = text_latents, image_latents
-        if self.extra_latent_projection:
-            text_latents_extra = self.to_text_latent_extra(text_embeds)
-            image_latents_extra = self.to_visual_latent_extra(image_embeds)
-            text_latents_extra, image_latents_extra = map(l2norm, (text_latents_extra, image_latents_extra))
-
-        # whether to early return latents
-
-        if return_latents:
+            text_latents_extra, image_latents_extra = text_latents, image_latents
             if self.extra_latent_projection:
-                return text_latents, image_latents, text_latents_extra, image_latents_extra
+                text_latents_extra = self.to_text_latent_extra(text_embeds)
+                image_latents_extra = self.to_visual_latent_extra(image_embeds)
+                text_latents_extra, image_latents_extra = map(l2norm, (text_latents_extra, image_latents_extra))
 
-            return text_latents, image_latents, enc_image_send
+            # whether to early return latents
 
-        # get temperature
+            if return_latents:
+                if self.extra_latent_projection:
+                    return text_latents, image_latents, text_latents_extra, image_latents_extra
 
-        temp = self.temperature.exp()
+                return text_latents, image_latents, enc_image_send
 
-        # early return, if needed
+            # get temperature
+
+            temp = self.temperature.exp()
+
+            # early return, if needed
 
 
-        if not return_loss and self.use_all_token_embeds:
-            einsum_args = (text_latents_extra, image_latents_extra) if self.extra_latent_projection and not text_to_image else (text_latents, image_latents)
-            return einsum('b d, b i d -> b t i', *einsum_args) * temp
+            if not return_loss and self.use_all_token_embeds:
+                einsum_args = (text_latents_extra, image_latents_extra) if self.extra_latent_projection and not text_to_image else (text_latents, image_latents)
+                return einsum('b d, b i d -> b t i', *einsum_args) * temp
 
-        if not return_loss and not self.use_all_token_embeds:
-            einsum_args = (text_latents_extra, image_latents_extra) if self.extra_latent_projection and not text_to_image else (text_latents, image_latents)
-            return einsum('b d, b d -> b', *einsum_args) * temp
+            if not return_loss and not self.use_all_token_embeds:
+                einsum_args = (text_latents_extra, image_latents_extra) if self.extra_latent_projection and not text_to_image else (text_latents, image_latents)
+                return einsum('b d, b d -> b', *einsum_args) * temp
 
-        # split out multiview dimension for text and images
+            # split out multiview dimension for text and images
 
-        text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_texts)
-        image_latents = rearrange(image_latents, '(m b) ... -> m b ...', m = num_batch_images)
-
-        if self.extra_latent_projection:
-            text_latents_extra = rearrange(text_latents_extra, '(m b) ... -> m b ...', m = num_batch_texts)
-            image_latents_extra = rearrange(image_latents_extra, '(m b) ... -> m b ...', m = num_batch_images)
-
-        # contrastive loss
-
-        """
-        m - num batches of text (for multiview)
-        n - num batches of images (for multiview)
-        x - batches of text
-        y - batches of images
-        t - sequence dimension along text tokens
-        i - sequence dimension along image tokens
-        """
-
-        if self.use_all_token_embeds:
-            # fine-grained CLIP logic
-            sim_text_to_image = einsum('m x t d, n y i d -> m n x y t i', text_latents, image_latents) * temp
-
-            sim_image_to_text = sim_text_to_image
-            if self.extra_latent_projection:
-                sim_image_to_text = einsum('m x t d, n y i d -> m n x y t i', text_latents_extra, image_latents_extra) * temp
-
-            text_to_image = reduce(sim_text_to_image, '... t i -> ... t', 'max')
-            text_to_image_mask = rearrange(text_mask, '(m b) t -> m 1 b 1 t', m = num_batch_texts).bool()
-            text_to_image = masked_mean(text_to_image, text_to_image_mask, dim = -1)
-
-            image_to_text_mask = rearrange(text_mask, '(m b) t -> m 1 b 1 t 1', m = num_batch_texts).bool()
-            masked_sim = sim_image_to_text.masked_fill(~image_to_text_mask, max_neg_value(sim_image_to_text.dtype))
-            image_to_text = reduce(reduce(masked_sim, '... t i -> ... i', 'max'), '... i -> ...', 'mean')
-        else:
-            text_to_image = einsum('m t d, n i d -> m n t i', text_latents, image_latents) * temp
-            image_to_text = rearrange(text_to_image, '... t i -> ... i t')
+            text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_texts)
+            image_latents = rearrange(image_latents, '(m b) ... -> m b ...', m = num_batch_images)
 
             if self.extra_latent_projection:
-                image_to_text = einsum('m t d, n i d -> m n i t', text_latents_extra, image_latents_extra) * temp
+                text_latents_extra = rearrange(text_latents_extra, '(m b) ... -> m b ...', m = num_batch_texts)
+                image_latents_extra = rearrange(image_latents_extra, '(m b) ... -> m b ...', m = num_batch_images)
 
-        # calculate loss
+            # contrastive loss
 
-        text_to_image = rearrange(text_to_image, 'm n ... -> (m n) ...')
-        image_to_text = rearrange(image_to_text, 'm n ... -> (m n) ...')
+            """
+            m - num batches of text (for multiview)
+            n - num batches of images (for multiview)
+            x - batches of text
+            y - batches of images
+            t - sequence dimension along text tokens
+            i - sequence dimension along image tokens
+            """
+
+            if self.use_all_token_embeds:
+                # fine-grained CLIP logic
+                sim_text_to_image = einsum('m x t d, n y i d -> m n x y t i', text_latents, image_latents) * temp
+
+                sim_image_to_text = sim_text_to_image
+                if self.extra_latent_projection:
+                    sim_image_to_text = einsum('m x t d, n y i d -> m n x y t i', text_latents_extra, image_latents_extra) * temp
+
+                text_to_image = reduce(sim_text_to_image, '... t i -> ... t', 'max')
+                text_to_image_mask = rearrange(text_mask, '(m b) t -> m 1 b 1 t', m = num_batch_texts).bool()
+                text_to_image = masked_mean(text_to_image, text_to_image_mask, dim = -1)
+
+                image_to_text_mask = rearrange(text_mask, '(m b) t -> m 1 b 1 t 1', m = num_batch_texts).bool()
+                masked_sim = sim_image_to_text.masked_fill(~image_to_text_mask, max_neg_value(sim_image_to_text.dtype))
+                image_to_text = reduce(reduce(masked_sim, '... t i -> ... i', 'max'), '... i -> ...', 'mean')
+            else:
+                text_to_image = einsum('m t d, n i d -> m n t i', text_latents, image_latents) * temp
+                image_to_text = rearrange(text_to_image, '... t i -> ... i t')
+
+                if self.extra_latent_projection:
+                    image_to_text = einsum('m t d, n i d -> m n i t', text_latents_extra, image_latents_extra) * temp
+
+            # calculate loss
+
+            text_to_image = rearrange(text_to_image, 'm n ... -> (m n) ...')
+            image_to_text = rearrange(image_to_text, 'm n ... -> (m n) ...')
 
 
-        # exponentiate
-        text_to_image_exp, image_to_text_exp = map(torch.exp, (text_to_image, image_to_text))
+            # exponentiate
+            text_to_image_exp, image_to_text_exp = map(torch.exp, (text_to_image, image_to_text))
 
-        # numerators
-        text_to_image_pos, image_to_text_pos = map(matrix_diag, (text_to_image_exp, image_to_text_exp))
+            # numerators
+            text_to_image_pos, image_to_text_pos = map(matrix_diag, (text_to_image_exp, image_to_text_exp))
 
-        # denominator
+            # denominator
 
-        if self.decoupled_contrastive_learning:
-            pos_mask = torch.eye(b, device = device, dtype = torch.bool)
-            text_to_image_exp, image_to_text_exp = map(lambda t: t.masked_fill(pos_mask, 0.), (text_to_image_exp, image_to_text_exp))
+            if self.decoupled_contrastive_learning:
+                pos_mask = torch.eye(b, device = device, dtype = torch.bool)
+                text_to_image_exp, image_to_text_exp = map(lambda t: t.masked_fill(pos_mask, 0.), (text_to_image_exp, image_to_text_exp))
 
-        text_to_image_denom, image_to_text_denom = map(lambda t: t.sum(dim = -1), (text_to_image_exp, image_to_text_exp))
+            text_to_image_denom, image_to_text_denom = map(lambda t: t.sum(dim = -1), (text_to_image_exp, image_to_text_exp))
 
-        # loss
+            # loss
 
-        text_to_image_loss = (-log(text_to_image_pos) + log(text_to_image_denom)).mean(dim = -1)
-        image_to_text_loss = (-log(image_to_text_pos) + log(image_to_text_denom)).mean(dim = -1)
+            text_to_image_loss = (-log(text_to_image_pos) + log(text_to_image_denom)).mean(dim = -1)
+            image_to_text_loss = (-log(image_to_text_pos) + log(image_to_text_denom)).mean(dim = -1)
 
-        # loss_dict['text_to_image_loss'] = text_to_image_loss.detach().mean().item()
-        # loss_dict['image_to_text_loss'] = image_to_text_loss.detach().mean().item()
+            # loss_dict['text_to_image_loss'] = text_to_image_loss.item()
+            # loss_dict['image_to_text_loss'] = image_to_text_loss.item()
 
-        # calculate CL loss
+            # calculate CL loss
 
-        cl_losses = (text_to_image_loss + image_to_text_loss) / 2
+            cl_losses = (text_to_image_loss + image_to_text_loss) / 2
 
-        # loss_dict['cl_loss_total'] = cl_losses.detach().mean().item()
+            # loss_dict['cl_loss_total'] = cl_losses.item()
 
-        # get main CL loss vs multiview CL losses
+            # get main CL loss vs multiview CL losses
 
-        cl_loss, multiview_cl_loss = cl_losses[0], cl_losses[1:]
+            cl_loss, multiview_cl_loss = cl_losses[0], cl_losses[1:]
 
-        # loss_dict['cl_loss'] = cl_loss.mean().item()
-        # loss_dict['multiview_cl_loss'] = multiview_cl_loss.mean().item() if len(multiview_cl_loss) > 0 else 0
+            loss_dict['cl_loss'] = cl_loss.item()
+            # loss_dict['multiview_cl_loss'] = multiview_cl_loss.mean().item() if len(multiview_cl_loss) > 0 else 0
 
-        # if no augmented text or images passed in, multiview loss weight is 0
+            # if no augmented text or images passed in, multiview loss weight is 0
 
-        multiview_loss_weight = self.multiview_loss_weight if is_multiview else 0
+            multiview_loss_weight = self.multiview_loss_weight if is_multiview else 0
 
-        # calculate weights
+            # calculate weights
 
-        cl_loss_weight = 1 - (self.text_ssl_loss_weight + self.image_ssl_loss_weight + multiview_loss_weight)
+            cl_loss_weight = 1 - (self.text_ssl_loss_weight + self.image_ssl_loss_weight + multiview_loss_weight)
+        
+            loss = (cl_loss * cl_loss_weight) \
+                + (text_ssl_loss * self.text_ssl_loss_weight) \
+                + (image_ssl_loss * self.image_ssl_loss_weight) \
+                    + (seg_loss * self.seg_weight)
 
-        loss = (cl_loss * cl_loss_weight) \
-               + (text_ssl_loss * self.text_ssl_loss_weight) \
-               + (image_ssl_loss * self.image_ssl_loss_weight)
+            loss_dict['loss_total'] = loss.item()
 
-        loss_dict['loss_total'] = loss.item()
+            # add multiview CL loss with weight
 
-        # add multiview CL loss with weight
+            if is_multiview:
+                loss = loss + multiview_cl_loss.mean() * multiview_loss_weight
 
-        if is_multiview:
-            loss = loss + multiview_cl_loss.mean() * multiview_loss_weight
-
-        if not return_loss_dict:
-            return loss
-        else:
-            return loss, loss_dict
+            if not return_loss_dict:
+                return loss
+            else:
+                return loss, loss_dict
