@@ -11,6 +11,8 @@ from typing import Tuple
 
 from einops import rearrange, repeat
 
+import math
+
 
 # helpers
 
@@ -448,3 +450,37 @@ class Transformer(nn.Module):
             x = ff(x) + x
 
         return self.norm_out(x)
+
+
+if __name__ == "__main__":
+    # test the difference between attention and flash_attention
+    def dot_in_attention(q, k, v):
+        scale = 1 / math.sqrt(q.size(-1))
+        sim = einsum('b h i d, b h j d -> b h i j', q, k) * scale  #* 8# * self.scale
+
+        # i, j = sim.shape[-2:]
+
+        attn = sim.softmax(dim = -1)
+        # attn = self.attn_dropout(attn)
+
+        out = einsum('b h i j, b h j d -> b h i d', attn, v)
+        return out
+
+    def dot_in_flash_attention(q, k, v):
+        out = sdpa(q, k, v, attn_mask=None, dropout_p=0, is_causal = False)
+        return out
+
+    device = torch.device('cuda')
+    q = torch.randn(1, 8, 128, 64).to(device)  # b, h, n, d
+    k = torch.randn(1, 8, 128, 64).to(device)
+    v = torch.randn(1, 8, 128, 64).to(device)
+
+    att_1 = dot_in_attention(q, k, v)
+    att_2 = dot_in_flash_attention(q, k, v)
+    print(att_1.shape, att_2.shape)
+    # cal the mse
+    mse = torch.nn.MSELoss()
+    print(mse(att_1, att_2))
+    
+
+
