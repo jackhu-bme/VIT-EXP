@@ -53,7 +53,7 @@ clip = CTCLIP(
     use_all_token_embeds = False
 )
 
-clip_model_path_for_infer = "/mnt/input/CT-CLIP-VIT/train_from_scratch_vit_hpc_1_dim_384/2024-11-22_01-06-13/checkpoints/CTClip.200000.pt"
+clip_model_path_for_infer = "/mnt/input/CT-CLIP-VIT/train_from_scratch_vit_hpc_1_dim_384_div0/2024-11-22_05-51-07/checkpoints/CTClip.40000.pt"
 clip.load(clip_model_path_for_infer, check=True)
 
 
