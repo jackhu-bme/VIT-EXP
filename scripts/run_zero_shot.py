@@ -63,7 +63,7 @@ inference = CTClipInference(
     reports_file= "/mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv",
     labels = "/mnt/input/CT-RATE/organized_dataset/csv_dir/labels/valid_predicted_labels.csv",
     batch_size = 1,
-    results_folder="../results_inference_zeroshot_ctvit_full_data/",
+    results_folder="../results_inference_zeroshot_ctvit_div0_data/",
     num_train_steps = 1,
 )
 
