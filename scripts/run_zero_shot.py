@@ -53,7 +53,7 @@ clip = CTCLIP(
     use_all_token_embeds = False
 )
 
-clip_model_path_for_infer = "../output_train_scratch/train_from_scratch_vit_hpc_1_dim_384/2024-11-16_06-57-22/checkpoints/CTClip.100000.pt"
+clip_model_path_for_infer = "/mnt/input/CT-CLIP-VIT/train_from_scratch_vit_hpc_1_dim_384/2024-11-22_01-06-13/checkpoints/CTClip.200000.pt"
 clip.load(clip_model_path_for_infer, check=True)
 
 
@@ -63,7 +63,7 @@ inference = CTClipInference(
     reports_file= "/mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv",
     labels = "/mnt/input/CT-RATE/organized_dataset/csv_dir/labels/valid_predicted_labels.csv",
     batch_size = 1,
-    results_folder="../results_inference_zeroshot_ctvit/",
+    results_folder="../results_inference_zeroshot_ctvit_full_data/",
     num_train_steps = 1,
 )
 
