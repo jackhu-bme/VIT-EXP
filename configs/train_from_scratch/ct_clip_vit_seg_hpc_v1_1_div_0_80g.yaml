@@ -15,7 +15,7 @@ labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labe
 batch_size: 4
 results_folder: ./output_train_scratch
 num_train_steps: 80001
-num_workers: 16
+num_workers: 8
 gradient_accumulation_steps: 2
 
 project_name: ct-clip-vit-seg
