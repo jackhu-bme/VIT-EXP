@@ -749,7 +749,7 @@ class CTCLIP(nn.Module):
             enc_seg_image = enc_image[seg_valid_mask.squeeze(1).bool()]
             print(f"enc seg image shape: {enc_seg_image.shape}")
             seg_mask = seg_mask[seg_valid_mask.squeeze(1).bool()]
-            if enc_seg_image.shape[0] <= 1: # when seg 1 and report 3, causes memory issues, tmp fix todo: refractor the code
+            if enc_seg_image.shape[0] == 0: # when seg 1 and report 3, causes memory issues, tmp fix todo: refractor the code
                 seg_loss = 0.
                 loss_dict['seg_loss'] = 0.
             else:
