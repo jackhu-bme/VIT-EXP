@@ -12,14 +12,14 @@ seg_data_valid: /mnt/input/TotalSegmentator/preprocessed_data
 seg_mask_train: /mnt/input/TotalSegmentator/preprocessed_mask
 seg_mask_valid: /mnt/input/TotalSegmentator/preprocessed_mask
 labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv
-batch_size: 4
+batch_size: 2
 results_folder: ./output_train_scratch
-num_train_steps: 40001
+num_train_steps: 80001
 num_workers: 16
-gradient_accumulation_steps: 2
+gradient_accumulation_steps: 4
 
 project_name: ct-clip-vit-seg
-exp_name: train_from_scratch_vit_hpc_1_dim_384_div0
+exp_name: train_from_scratch_with_seg_vit_hpc_1_dim_384_div0
 
 arch_name: CTViT3D # this is vit_vanilla_3D
 
