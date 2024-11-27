@@ -12,7 +12,7 @@ seg_mask_train: ../data/seg_data_dir/total_mask/train
 seg_mask_valid: ../data/seg_data_dir/total_mask/valid
 balance_report_seg: 1.0
 labels: ../data/csv_dir/labels/train_predicted_labels.csv
-batch_size: 4
+batch_size: 2
 results_folder: ./output_train_scratch
 num_train_steps: 100
 num_workers: 0

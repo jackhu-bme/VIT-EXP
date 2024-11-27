@@ -753,6 +753,9 @@ class CTCLIP(nn.Module):
                 seg_loss = 0.
                 loss_dict['seg_loss'] = 0.
             else:
+                # due to memory issues, use one for seg only now
+                seg_mask = seg_mask.float().to(device)[0:1]
+                enc_seg_image = enc_seg_image[0:1]
                 b, d, w, h, c = enc_seg_image.shape
                 p_h, p_w, p_d = H//h, W//w, D//d
                 tokens_to_seg = enc_seg_image.reshape(-1, c) # b, l, c -> b*l, c
@@ -761,7 +764,8 @@ class CTCLIP(nn.Module):
                 # reshape the logits to the original shape, with each pixel
                 seg_preds = seg_logits.reshape(b, d, w, h, p_d, p_w, p_h, -1)
                 seg_preds = seg_preds.permute(0, 7, 1, 4, 2, 5, 3, 6).reshape(b, -1, D, W, H)
-                seg_loss = self.seg_criterion(seg_preds, seg_mask.float().to(device))
+                # seg_mask = seg_mask.float().to(device)
+                seg_loss = self.seg_criterion(seg_preds, seg_mask)
                 loss_dict['seg_loss'] = seg_loss.item()
 
 
@@ -822,7 +826,7 @@ class CTCLIP(nn.Module):
 
         print(f"after, text embeds shape: {text_embeds.shape}")
 
-        if text_embeds.shape[0] == 0:
+        if text_embeds.shape[0] <= 1: # when 1, no contrastive learning
             loss = seg_loss * self.seg_weight
 
             loss_dict['loss_total'] = loss.item()
