@@ -19,7 +19,7 @@ num_workers: 8
 gradient_accumulation_steps: 4
 
 project_name: ct-clip-vit-seg
-exp_name: train_from_scratch_with_seg_vit_hpc_1_dim_384_div0
+exp_name: train_from_scratch_with_seg_vit_hpc_1_dim_384_div0_right_split
 
 arch_name: CTViT3D # this is vit_vanilla_3D
 
