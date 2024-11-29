@@ -6,11 +6,11 @@ metadata_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_meta
 use_seg: True
 data_train: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/train
 data_valid: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/val
-seg_data_train: /home/xufluo/blobmnt/TotalSegmentator/seg_final_dataset/train_data
+seg_data_train: /mnt/input/TotalSegmentator/seg_final_dataset/train_data
 # tmp no valid in code, todo: change to correct version in future versions
-seg_data_valid: /home/xufluo/blobmnt/TotalSegmentator/seg_final_dataset/valid_data
-seg_mask_train: /home/xufluo/blobmnt/TotalSegmentator/seg_final_dataset/train_mask
-seg_mask_valid: /home/xufluo/blobmnt/TotalSegmentator/seg_final_dataset/valid_mask
+seg_data_valid: /mnt/input/TotalSegmentator/seg_final_dataset/valid_data
+seg_mask_train: /mnt/input/TotalSegmentator/seg_final_dataset/train_mask
+seg_mask_valid: /mnt/input/TotalSegmentator/seg_final_dataset/valid_mask
 labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv
 batch_size: 2
 results_folder: ./output_train_scratch
