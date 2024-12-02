@@ -511,20 +511,13 @@ class CTClipInferenceFast(nn.Module):
                         text_tokens = patho_txtt["text_tokens"]
                         text_embed = patho_txtt["text_embed"]
 
-                        print(f"step 1 time: {time.time()-start_time} for i = {i}")
-
                         output = model.forward_infer(text_tokens, valid_data, buffer_text_embed=text_embed, buffer_image_embed=image_embed)
-
-                        print(f"step 2 time: {time.time()-start_time} for i = {i}")
 
                         output = apply_softmax(output)
 
-                        print(f"step 3 time: {time.time()-start_time} for i = {i}")
-
+                        print(f"output: {output}")
                         append_out=output.detach().cpu().numpy()
                         predictedlabels.append(append_out[0])
-
-                        print(f"step 4 time: {time.time()-start_time} for i = {i}")
 
                     predictedall.append(predictedlabels)
                     realall.append(onehotlabels.detach().cpu().numpy()[0])
