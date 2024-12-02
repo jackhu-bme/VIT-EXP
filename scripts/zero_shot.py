@@ -492,8 +492,7 @@ class CTClipInferenceFast(nn.Module):
                     valid_data = valid_data.cuda()
 
                     # enc_image= self.visual_transformer(image, return_encoded_tokens=True)
-                    image_embed = model.visual_transformer(valid_data, return_encoded_tokens=False)
-
+                    image_embed = model.visual_transformer(valid_data, return_encoded_tokens=True)
                     plotdir = self.result_folder_txt
                     Path(plotdir).mkdir(parents=True, exist_ok=True)
 
