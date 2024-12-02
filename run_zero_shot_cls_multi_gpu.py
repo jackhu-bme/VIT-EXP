@@ -8,7 +8,7 @@ model_dir = "/mnt/input/CT-CLIP-VIT/train_from_scratch_vit_hpc_1_dim_384/2024-11
 
 model_list = os.listdir(model_dir)
 
-gaps = 10
+gaps = 20
 
 # sort according to thee ckpt number
 
@@ -18,7 +18,7 @@ model_list = model_list[::gaps]
 
 n_models = len(model_list)
 
-total_splits = 3
+total_splits = 2
 
 current_split = 0
 
