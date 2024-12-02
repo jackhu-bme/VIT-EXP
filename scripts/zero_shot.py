@@ -484,8 +484,8 @@ class CTClipInferenceFast(nn.Module):
                 accession_names=[]
                 
                 for i in tqdm.tqdm(range(len(self.ds))):
-                    if i > 10:
-                        break
+                    # if i > 10:
+                    #     break
                     start_time = time.time()
                     valid_data, text, onehotlabels, acc_name = next(self.dl_iter)
 
@@ -499,8 +499,8 @@ class CTClipInferenceFast(nn.Module):
                     predictedlabels=[]
                     onehotlabels_append=[]
 
-                    step_1_time = time.time()-start_time
-                    print(f"step 1 time: {step_1_time}")
+                    # step_1_time = time.time()-start_time
+                    # print(f"step 1 time: {step_1_time}")
 
                     for i, patho_txtt in enumerate(self.patho_txtt_list):
                         # patho_txtt = self.patho_txtt_list[i]
@@ -515,8 +515,8 @@ class CTClipInferenceFast(nn.Module):
 
                         output = model.forward_infer(text_tokens, valid_data, buffer_text_embed=text_embed, buffer_image_embed=image_embed)
 
-                        step_2_time = time.time() - step_1_time - start_time
-                        print(f"step 2 time: {step_2_time}")
+                        # step_2_time = time.time() - step_1_time - start_time
+                        # print(f"step 2 time: {step_2_time}")
 
                         output = apply_softmax(output)
 
@@ -526,9 +526,7 @@ class CTClipInferenceFast(nn.Module):
                         # print("a out 0: ", append_out[0])
                         predictedlabels.append(output[0])
 
-                        
-
-                        step_3_time = time.time() - step_2_time - start_time
+                        # step_3_time = time.time() - step_2_time - start_time
                         # print(f"step 3 time: {step_3_time}")
                         
                     
