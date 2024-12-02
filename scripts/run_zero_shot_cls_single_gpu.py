@@ -29,6 +29,12 @@ def main(args):
                 dim_head = config.get("dim_head", 32),
                 heads = config.get("heads", 8),
                 use_flash_attention = config.get("use_flash_attention", True),
+                use_seg = config.get("use_seg", True),
+                seg_head_n_layers = config.get("seg_head_n_layers", 2),
+                seg_head_layer_type = config.get("seg_head_layer_type", "mlp"),
+                seg_head_in_dim = config.get("seg_head_in_dim", 256),
+                seg_head_mid_dim = config.get("seg_head_mid_dim", 128),
+                seg_head_out_dim = config.get("seg_head_out_dim", 22), # 22 classes for segmentation in TotalSegmentor
             )
 
     clip = CTCLIP(
