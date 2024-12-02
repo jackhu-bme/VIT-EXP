@@ -41,7 +41,6 @@ image_encoder = CTViT3D(
 # )
 
 clip = CTCLIP(
-    
     image_encoder = image_encoder,
     text_encoder = text_encoder,
     dim_text = 768,

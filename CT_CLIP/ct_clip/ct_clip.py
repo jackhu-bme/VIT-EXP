@@ -624,6 +624,59 @@ class CTCLIP(nn.Module):
         text_embeddings = self.text_transformer.embeddings(input_ids = input_ids, token_type_ids = token_type_ids)
         return text_embeddings
 
+
+    def forward_infer(self, text, image, buffer_text_embed = None, buffer_image_embed = None):
+        if buffer_text_embed is None:
+            # derive text mask
+            text_mask =text.attention_mask
+            # get encoded text
+            text_args = (text.input_ids,text.attention_mask)
+            if not self.text_encode_without_mask:
+                text_args = (*text_args, text_mask)
+            text_embeddings = self.text_transformer(text.input_ids, attention_mask = text.attention_mask )
+        else:
+            text_embeddings = buffer_text_embed
+
+        enc_text = text_embeddings[0]
+
+        if buffer_image_embed is None:
+            enc_image= self.visual_transformer(image, return_encoded_tokens=True)
+        else:
+            enc_image = buffer_image_embed
+        # print(f"encoded image shape: {enc_image.shape}")
+        #print("This is visual encoding")
+        global h_r, w_r, z_r
+        h_r, w_r, z_r = enc_image.shape[1], enc_image.shape[2], enc_image.shape[3]
+
+        #enc_image, max_indices = torch.max(enc_image, dim=1)
+
+        enc_image = torch.mean(enc_image, dim=1)
+        enc_image = enc_image.view(enc_image.shape[0], -1)
+
+        # early return of encodings, if needed (for DALL-E2)
+        text_embeds = enc_text[:, :] if enc_text.ndim == 3 else enc_text
+        image_embeds = enc_image[:, :] if enc_image.ndim == 3 else enc_image
+
+        # project to latents
+        #text_embeds = text_embeds.view(text_embeds.shape[0], -1)
+        text_embeds = text_embeds[:,0,:]
+
+
+        text_latents = self.to_text_latent(text_embeds)
+
+        image_latents = self.to_visual_latent(image_embeds)
+
+        text_latents, image_latents = map(l2norm, (text_latents, image_latents))
+
+        temp = self.temperature.exp()
+
+        einsum_args = text_latents, image_latents
+        return einsum('b d, b d -> b', *einsum_args) * temp
+
+
+
+
+
     def forward(
             self,
             text,

@@ -322,3 +322,226 @@ class CTClipInference(nn.Module):
             log_fn(logs)
 
         self.print('Inference complete')
+
+
+
+class CTClipInferenceFast(nn.Module):
+    """
+    A faster version for inference on single gpu
+    
+    The reasons for being faster are:
+    1) for text embeddings, we embed the 18 pathologies for only once during the whole inference process as it is pre-trained
+    2) for image embeddings, we embed the images for only once for each image
+    3) when inference, change the dataloader to multi-threaded dataloader with a bigger batch size for faster inference
+
+    finished versions:
+    1): done
+    2): done
+    3): not done
+    
+    """
+    def __init__(
+        self,
+        CTClip: CTCLIP,
+        *,
+        num_train_steps,
+        batch_size,
+        data_folder: "external_valid",
+        reports_file: "data_reports.xslx",
+        lr = 1e-4,
+        wd = 0.,
+        max_grad_norm = 0.5,
+        save_results_every = 100,
+        save_model_every = 2000,
+        results_folder = './results',
+        labels = "labels.csv",
+        accelerate_kwargs: dict = dict()
+    ):
+        super().__init__()
+        ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
+        self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs], **accelerate_kwargs)
+        self.CTClip = CTClip
+        self.tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
+        self.results_folder = results_folder
+        self.register_buffer('steps', torch.Tensor([0]))
+
+        self.num_train_steps = num_train_steps
+        self.batch_size = batch_size
+
+        all_parameters = set(CTClip.parameters())
+
+        self.optim = get_optimizer(all_parameters, lr=lr, wd=wd)
+
+        self.max_grad_norm = max_grad_norm
+        self.lr=lr
+        # Load the pre-trained weights
+        self.ds = CTReportDatasetinfer(data_folder=data_folder, csv_file=reports_file,labels=labels)
+
+        # Split dataset into train and validation sets
+
+
+        self.dl = DataLoader(
+            self.ds,
+            num_workers=6,
+            batch_size=1,
+            shuffle = True,
+        )
+        # prepare with accelerator
+        self.dl_iter=cycle(self.dl)
+        self.device = self.accelerator.device
+        self.CTClip.to(self.device)
+        self.lr_scheduler = CosineAnnealingWarmUpRestarts(self.optim,
+                                                  T_0=4000000,    # Maximum number of iterations
+                                                  T_warmup=10000, # Number of warmup steps
+                                                  eta_max=lr)   # Maximum learning rate
+
+
+        (
+ 			self.dl_iter,
+            self.CTClip,
+            self.optim,
+            self.lr_scheduler
+        ) = self.accelerator.prepare(
+            self.dl_iter,
+            self.CTClip,
+            self.optim,
+            self.lr_scheduler
+        )
+
+        self.save_model_every = save_model_every
+        self.save_results_every = save_results_every
+        self.result_folder_txt = self.results_folder
+        self.results_folder = Path(results_folder)
+
+        self.results_folder.mkdir(parents=True, exist_ok=True)
+
+        self.prepare_infer()
+
+    def prepare_infer(self):
+        patho_txtt_list = []
+        pathologies = ['Medical material','Arterial wall calcification', 'Cardiomegaly', 
+                       'Pericardial effusion','Coronary artery wall calcification', 
+                       'Hiatal hernia','Lymphadenopathy', 'Emphysema', 'Atelectasis', 
+                       'Lung nodule','Lung opacity', 'Pulmonary fibrotic sequela', 'Pleural effusion', 
+                       'Mosaic attenuation pattern','Peribronchial thickening', 'Consolidation', 
+                       'Bronchiectasis','Interlobular septal thickening']
+        for pathology in pathologies:
+            text = [f"{pathology} is present.", f"{pathology} is not present."]
+            text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(self.device)
+            # self.text_transformer(text.input_ids, attention_mask = text.attention_mask )
+            text_embed = self.CTClip.text_encoder(text_tokens.input_ids, text_tokens.attention_mask)
+            patho_txtt_list.append({"pathology": pathology, "text_tokens": text_tokens, "text_embed": text_embed})
+        self.patho_txtt_list = patho_txtt_list
+
+        self.patho_list = pathologies
+
+
+
+    def save(self, path):
+        if not self.accelerator.is_local_main_process:
+            return
+
+        pkg = dict(
+            model=self.accelerator.get_state_dict(self.CTClip),
+            optim=self.optim.state_dict(),
+        )
+        torch.save(pkg, path)
+
+    def load(self, path):
+        path = Path(path)
+        assert path.exists()
+        pkg = torch.load(path)
+
+        CTClip = self.accelerator.unwrap_model(self.CTClip)
+        CTClip.load_state_dict(pkg['model'])
+
+        self.optim.load_state_dict(pkg['optim'])
+
+    def print(self, msg):
+        self.accelerator.print(msg)
+
+
+    @property
+    def is_main(self):
+        return self.accelerator.is_main_process
+
+    def train_step(self):
+        
+
+        steps = int(self.steps.item())
+        # logs
+        logs = {}
+        if True:
+            with torch.no_grad():
+
+                # models_to_evaluate = ((self.CTClip, str(steps)),)
+
+                # for model, filename in models_to_evaluate:
+                model = self.CTClip
+                model.eval()
+                predictedall=[]
+                realall=[]
+                accession_names=[]
+                
+                for i in tqdm.tqdm(range(len(self.ds))):
+                    valid_data, text, onehotlabels, acc_name = next(self.dl_iter)
+
+                    # enc_image= self.visual_transformer(image, return_encoded_tokens=True)
+                    image_embed = model.visual_transformer(valid_data.cuda(), return_encoded_tokens=False)
+
+                    plotdir = self.result_folder_txt
+                    Path(plotdir).mkdir(parents=True, exist_ok=True)
+
+                    predictedlabels=[]
+                    onehotlabels_append=[]
+
+                    for i, patho_txtt in self.patho_txtt_list:
+                        patho_txtt = self.patho_txtt_list[i]
+                        # pathology = patho_txtt["pathology"]
+                        text_tokens = patho_txtt["text_tokens"]
+                        text_embed = patho_txtt["text_embed"]
+
+                        output = model.forward_infer(text_tokens, valid_data.cuda(), buffer_text_embed=text_embed, buffer_image_embed=image_embed)
+
+                        output = apply_softmax(output)
+
+                        append_out=output.detach().cpu().numpy()
+                        predictedlabels.append(append_out[0])
+
+                    predictedall.append(predictedlabels)
+                    realall.append(onehotlabels.detach().cpu().numpy()[0])
+                    accession_names.append(acc_name[0])
+                    print(f"finished {i} out of {len(self.ds)}")
+
+                realall=np.array(realall)
+                predictedall=np.array(predictedall)
+
+                print(f"saving results to {plotdir}")
+
+                np.savez(f"{plotdir}labels_weights.npz", data=realall)
+                np.savez(f"{plotdir}predicted_weights.npz", data=predictedall)
+                with open(f"{plotdir}accessions.txt", "w") as file:
+                    for item in accession_names:
+                        file.write(item + "\n")
+
+                dfs = evaluate_internal(predictedall,realall, self.patho_list, plotdir)
+
+                writer = pd.ExcelWriter(f'{plotdir}aurocs.xlsx', engine='xlsxwriter')
+
+                dfs.to_excel(writer, sheet_name='Sheet1', index=False)
+
+                writer.close()
+        self.steps += 1
+        return logs
+
+
+
+
+    def infer(self, log_fn=noop):
+        device = next(self.CTClip.parameters()).device
+        device=torch.device('cuda')
+        while self.steps < self.num_train_steps:
+            logs = self.train_step()
+            log_fn(logs)
+
+        self.print('Inference complete')
