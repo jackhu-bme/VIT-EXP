@@ -520,7 +520,7 @@ class CTClipInferenceFast(nn.Module):
                         # print("a out 0: ", append_out[0])
                         predictedlabels.append(output[0])
                         
-                        step_2_time = time.time() - step_1_time
+                        step_2_time = time.time() - step_1_time - start_time
                         print(f"step 2 time: {step_2_time}")
 
 
