@@ -513,20 +513,21 @@ class CTClipInferenceFast(nn.Module):
 
                         output = model.forward_infer(text_tokens, valid_data, buffer_text_embed=text_embed, buffer_image_embed=image_embed)
 
-                        output = apply_softmax(output)
-
                         step_2_time = time.time() - step_1_time - start_time
                         print(f"step 2 time: {step_2_time}")
+
+                        output = apply_softmax(output)
+
+                        step_3_time = time.time() - step_2_time - start_time
+                        print(f"step 3 time: {step_3_time}")
+                        
 
                         # print(f"output: {output}")
                         # append_out=output.detach().cpu().numpy()
                         # print("a out 0: ", append_out[0])
                         predictedlabels.append(output[0])
                         
-                        step_3_time = time.time() - step_2_time - start_time
-                        print(f"step 3 time: {step_3_time}")
-
-
+                    
                     predictedall.append(predictedlabels)
                     print(f"one hot labels in the loop: {onehotlabels}")
                     realalltmp.append(onehotlabels[0])
@@ -537,9 +538,7 @@ class CTClipInferenceFast(nn.Module):
                 realall = []
                 for labels in realalltmp:
                     labels = labels.detach().cpu().numpy()
-                    print(f"labels shape: {labels.shape}")
                     realall.append(labels)
-                print(f"realall: {realall}")
                 realall=np.array(realall)
                 # final load the labels from gpu to cpu
                 for labels in predictedall:
