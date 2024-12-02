@@ -489,14 +489,14 @@ class CTClipInferenceFast(nn.Module):
 
                     valid_data = valid_data.cuda()
 
-                    step_1_time = time.time()-start_time
-                    print(f"step 1 time: {step_1_time}")
+                    # step_1_time = time.time()-start_time
+                    # print(f"step 1 time: {step_1_time}")
 
                     # enc_image= self.visual_transformer(image, return_encoded_tokens=True)
                     image_embed = model.visual_transformer(valid_data, return_encoded_tokens=False)
 
-                    step_2_time = time.time()-start_time
-                    print(f"step 2 time: {step_2_time}")
+                    # step_2_time = time.time()-start_time
+                    # print(f"step 2 time: {step_2_time}")
 
                     plotdir = self.result_folder_txt
                     Path(plotdir).mkdir(parents=True, exist_ok=True)
@@ -512,7 +512,7 @@ class CTClipInferenceFast(nn.Module):
 
                         output = model.forward_infer(text_tokens, valid_data, buffer_text_embed=text_embed, buffer_image_embed=image_embed)
 
-                        print(f"step 3 time: {time.time()-start_time} for i = {i}")
+                        # print(f"step 3 time: {time.time()-start_time} for i = {i}")
 
                         output = apply_softmax(output)
 
