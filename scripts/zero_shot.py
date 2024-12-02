@@ -484,19 +484,15 @@ class CTClipInferenceFast(nn.Module):
                 accession_names=[]
                 
                 for i in tqdm.tqdm(range(len(self.ds))):
+                    if i > 10:
+                        break
                     start_time = time.time()
                     valid_data, text, onehotlabels, acc_name = next(self.dl_iter)
 
                     valid_data = valid_data.cuda()
 
-                    # step_1_time = time.time()-start_time
-                    # print(f"step 1 time: {step_1_time}")
-
                     # enc_image= self.visual_transformer(image, return_encoded_tokens=True)
                     image_embed = model.visual_transformer(valid_data, return_encoded_tokens=False)
-
-                    # step_2_time = time.time()-start_time
-                    # print(f"step 2 time: {step_2_time}")
 
                     plotdir = self.result_folder_txt
                     Path(plotdir).mkdir(parents=True, exist_ok=True)
@@ -507,17 +503,26 @@ class CTClipInferenceFast(nn.Module):
                     for i, patho_txtt in enumerate(self.patho_txtt_list):
                         # patho_txtt = self.patho_txtt_list[i]
                         # pathology = patho_txtt["pathology"]
+
+                        start_time = time.time()
                         text_tokens = patho_txtt["text_tokens"]
                         text_embed = patho_txtt["text_embed"]
+
+                        step_1_time = time.time()-start_time
+                        print(f"step 1 time: {step_1_time}")
 
                         output = model.forward_infer(text_tokens, valid_data, buffer_text_embed=text_embed, buffer_image_embed=image_embed)
 
                         output = apply_softmax(output)
 
-                        print(f"output: {output}")
-                        append_out=output.detach().cpu().numpy()
-                        print("a out 0: ", append_out[0])
-                        predictedlabels.append(append_out[0])
+                        # print(f"output: {output}")
+                        # append_out=output.detach().cpu().numpy()
+                        # print("a out 0: ", append_out[0])
+                        predictedlabels.append(output[0])
+                        
+                        step_2_time = time.time() - step_1_time
+                        print(f"step 2 time: {step_2_time}")
+
 
                     predictedall.append(predictedlabels)
                     realall.append(onehotlabels.detach().cpu().numpy()[0])
@@ -526,6 +531,11 @@ class CTClipInferenceFast(nn.Module):
                     # exit()
 
                 realall=np.array(realall)
+                # final load the labels from gpu to cpu
+                for labels in predictedall:
+                    for i in range(len(labels)):
+                        labels[i] = labels[i].detach().cpu().numpy()
+                print(f"predictedall: {predictedall}")
                 predictedall=np.array(predictedall)
 
                 print(f"saving results to {plotdir}")
