@@ -16,7 +16,6 @@ from ct_clip.visual_ssl import SimSiam, SimCLR
 
 from transformers import BertTokenizer, BertModel
 
-import time
 
 # helper functions
 
@@ -628,7 +627,6 @@ class CTCLIP(nn.Module):
 
 
     def forward_infer(self, text, image, buffer_text_embed = None, buffer_image_embed = None):
-        start_time = time.time()
         if buffer_text_embed is None:
             # derive text mask
             text_mask =text.attention_mask
@@ -638,7 +636,6 @@ class CTCLIP(nn.Module):
                 text_args = (*text_args, text_mask)
             text_embeddings = self.text_transformer(text.input_ids, attention_mask = text.attention_mask )
         else:
-            print("buffer text embed")
             text_embeddings = buffer_text_embed
 
         enc_text = text_embeddings[0]
@@ -646,7 +643,6 @@ class CTCLIP(nn.Module):
         if buffer_image_embed is None:
             enc_image= self.visual_transformer(image, return_encoded_tokens=True)
         else:
-            print("buffer image embed")
             enc_image = buffer_image_embed
         # print(f"encoded image shape: {enc_image.shape}")
         #print("This is visual encoding")
@@ -661,7 +657,6 @@ class CTCLIP(nn.Module):
         # early return of encodings, if needed (for DALL-E2)
         text_embeds = enc_text[:, :] if enc_text.ndim == 3 else enc_text
         image_embeds = enc_image[:, :] if enc_image.ndim == 3 else enc_image
-        print(f"Time taken for step 1: {time.time()-start_time}")
 
         # project to latents
         #text_embeds = text_embeds.view(text_embeds.shape[0], -1)
@@ -671,17 +666,13 @@ class CTCLIP(nn.Module):
         text_latents = self.to_text_latent(text_embeds)
 
         image_latents = self.to_visual_latent(image_embeds)
-        print(f"Time taken for step 2: {time.time()-start_time}")
 
         text_latents, image_latents = map(l2norm, (text_latents, image_latents))
 
         temp = self.temperature.exp()
 
         einsum_args = text_latents, image_latents
-        print(f"Time taken for step 3: {time.time()-start_time}")
-        res = einsum('b d, b d -> b', *einsum_args) * temp
-        print(f"Time taken for step 4: {time.time()-start_time}")
-        return res
+        return einsum('b d, b d -> b', *einsum_args) * temp
 
 
 
