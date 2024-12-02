@@ -28,6 +28,8 @@ import torch.optim.lr_scheduler as lr_scheduler
 from ct_clip import CTCLIP
 
 
+import time
+
 # helpers
 
 def tensor_to_nifti(tensor, path, affine=np.eye(4)):
@@ -482,10 +484,19 @@ class CTClipInferenceFast(nn.Module):
                 accession_names=[]
                 
                 for i in tqdm.tqdm(range(len(self.ds))):
+                    start_time = time.time()
                     valid_data, text, onehotlabels, acc_name = next(self.dl_iter)
 
+                    valid_data = valid_data.cuda()
+
+                    step_1_time = time.time()-start_time
+                    print(f"step 1 time: {step_1_time}")
+
                     # enc_image= self.visual_transformer(image, return_encoded_tokens=True)
-                    image_embed = model.visual_transformer(valid_data.cuda(), return_encoded_tokens=False)
+                    image_embed = model.visual_transformer(valid_data, return_encoded_tokens=False)
+
+                    step_2_time = time.time()-start_time
+                    print(f"step 2 time: {step_2_time}")
 
                     plotdir = self.result_folder_txt
                     Path(plotdir).mkdir(parents=True, exist_ok=True)
@@ -499,7 +510,9 @@ class CTClipInferenceFast(nn.Module):
                         text_tokens = patho_txtt["text_tokens"]
                         text_embed = patho_txtt["text_embed"]
 
-                        output = model.forward_infer(text_tokens, valid_data.cuda(), buffer_text_embed=text_embed, buffer_image_embed=image_embed)
+                        output = model.forward_infer(text_tokens, valid_data, buffer_text_embed=text_embed, buffer_image_embed=image_embed)
+
+                        print(f"step 3 time: {time.time()-start_time} for i = {i}")
 
                         output = apply_softmax(output)
 
@@ -509,7 +522,8 @@ class CTClipInferenceFast(nn.Module):
                     predictedall.append(predictedlabels)
                     realall.append(onehotlabels.detach().cpu().numpy()[0])
                     accession_names.append(acc_name[0])
-                    print(f"finished {i} out of {len(self.ds)}")
+
+                    exit()
 
                 realall=np.array(realall)
                 predictedall=np.array(predictedall)
