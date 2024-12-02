@@ -429,7 +429,7 @@ class CTClipInferenceFast(nn.Module):
             text = [f"{pathology} is present.", f"{pathology} is not present."]
             text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(self.device)
             # self.text_transformer(text.input_ids, attention_mask = text.attention_mask )
-            text_embed = self.CTClip.text_encoder(text_tokens.input_ids, text_tokens.attention_mask)
+            text_embed = self.CTClip.text_transformer(text_tokens.input_ids, text_tokens.attention_mask)
             patho_txtt_list.append({"pathology": pathology, "text_tokens": text_tokens, "text_embed": text_embed})
         self.patho_txtt_list = patho_txtt_list
 
