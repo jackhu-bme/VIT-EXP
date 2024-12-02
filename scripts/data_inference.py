@@ -115,7 +115,9 @@ class CTReportDatasetinfer(Dataset):
         return samples
 
     def prepare_samples(self):
-        if os.path.exists(os.path.join(self.cache_data_list_folder, 'image_samples.txt')) and os.path.exists(os.path.join(self.cache_data_list_folder, 'report_samples.txt')):
+        if os.path.exists(os.path.join(self.cache_data_list_folder, 'image_samples.txt')) and \
+            os.path.exists(os.path.join(self.cache_data_list_folder, 'report_samples.txt')) and \
+            os.path.exists(os.path.join(self.cache_data_list_folder, 'label_samples.pkl')):
             with open(os.path.join(self.cache_data_list_folder, 'image_samples.txt'), 'r') as f:
                 image_samples_name = f.readlines()
             image_samples = [sample.strip() for sample in image_samples_name]
