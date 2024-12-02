@@ -525,11 +525,14 @@ class CTClipInferenceFast(nn.Module):
 
 
                     predictedall.append(predictedlabels)
-                    realall.append(onehotlabels.detach().cpu().numpy()[0])
+                    print(f"one hot labels in the loop: {onehotlabels}")
+                    realall.append(onehotlabels[0])
                     accession_names.append(acc_name[0])
 
                     # exit()
-
+                
+                # for labels in realall:
+                #     labels = labels.detach().cpu().numpy()
                 realall=np.array(realall)
                 # final load the labels from gpu to cpu
                 for labels in predictedall:
