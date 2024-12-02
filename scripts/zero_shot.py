@@ -536,6 +536,7 @@ class CTClipInferenceFast(nn.Module):
                 
                 # for labels in realall:
                 #     labels = labels.detach().cpu().numpy()
+                print(f"realall: {realall}")
                 realall=np.array(realall)
                 # final load the labels from gpu to cpu
                 for labels in predictedall:
