@@ -661,7 +661,9 @@ class CTCLIP(nn.Module):
         # early return of encodings, if needed (for DALL-E2)
         text_embeds = enc_text[:, :] if enc_text.ndim == 3 else enc_text
         image_embeds = enc_image[:, :] if enc_image.ndim == 3 else enc_image
-        # print(f"Time taken for step 1: {time.time()-start_time}")
+        
+        step_1_time = time.time()-start_time
+        print(f"Time taken for step 1: {step_1_time}")
 
         # project to latents
         #text_embeds = text_embeds.view(text_embeds.shape[0], -1)
@@ -671,16 +673,24 @@ class CTCLIP(nn.Module):
         text_latents = self.to_text_latent(text_embeds)
 
         image_latents = self.to_visual_latent(image_embeds)
-        # print(f"Time taken for step 2: {time.time()-start_time}")
+
+        step_2_time = time.time()-start_time-step_1_time
+        print(f"Time taken for step 2: {step_2_time}")
 
         text_latents, image_latents = map(l2norm, (text_latents, image_latents))
 
         temp = self.temperature.exp()
 
         einsum_args = text_latents, image_latents
-        # print(f"Time taken for step 3: {time.time()-start_time}")
+
+        step_3_time = time.time()-start_time-step_1_time-step_2_time
+        print(f"Time taken for step 3: {step_3_time}")
+
         res = einsum('b d, b d -> b', *einsum_args) * temp
-        # print(f"Time taken for step 4: {time.time()-start_time}")
+        
+        step_4_time = time.time()-start_time-step_1_time-step_2_time-step_3_time
+        print(f"Time taken for step 4: {step_4_time}")
+
         return res
 
 
