@@ -499,6 +499,9 @@ class CTClipInferenceFast(nn.Module):
                     predictedlabels=[]
                     onehotlabels_append=[]
 
+                    step_1_time = time.time()-start_time
+                    print(f"step 1 time: {step_1_time}")
+
                     for i, patho_txtt in enumerate(self.patho_txtt_list):
                         # patho_txtt = self.patho_txtt_list[i]
                         # pathology = patho_txtt["pathology"]
@@ -507,26 +510,26 @@ class CTClipInferenceFast(nn.Module):
                         text_tokens = patho_txtt["text_tokens"]
                         text_embed = patho_txtt["text_embed"]
 
-                        step_1_time = time.time()-start_time
-                        # print(f"step 1 time: {step_1_time}")
+                        
 
-                        print(f"before, buffer_image_embed: {image_embed}")
 
                         output = model.forward_infer(text_tokens, valid_data, buffer_text_embed=text_embed, buffer_image_embed=image_embed)
 
                         step_2_time = time.time() - step_1_time - start_time
-                        # print(f"step 2 time: {step_2_time}")
+                        print(f"step 2 time: {step_2_time}")
 
                         output = apply_softmax(output)
 
-                        step_3_time = time.time() - step_2_time - start_time
-                        # print(f"step 3 time: {step_3_time}")
-                        
-
+                    
                         # print(f"output: {output}")
                         # append_out=output.detach().cpu().numpy()
                         # print("a out 0: ", append_out[0])
                         predictedlabels.append(output[0])
+
+                        
+
+                        step_3_time = time.time() - step_2_time - start_time
+                        # print(f"step 3 time: {step_3_time}")
                         
                     
                     predictedall.append(predictedlabels)
