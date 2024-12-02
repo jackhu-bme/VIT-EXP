@@ -382,7 +382,7 @@ class CTClipInferenceFast(nn.Module):
 
         self.dl = DataLoader(
             self.ds,
-            num_workers=6,
+            num_workers=16,
             batch_size=1,
             shuffle = True,
         )
@@ -523,7 +523,7 @@ class CTClipInferenceFast(nn.Module):
                     realall.append(onehotlabels.detach().cpu().numpy()[0])
                     accession_names.append(acc_name[0])
 
-                    exit()
+                    # exit()
 
                 realall=np.array(realall)
                 predictedall=np.array(predictedall)
