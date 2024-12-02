@@ -2,13 +2,13 @@ import os
 
 # this is for multi gpu inference, but actually we split the ckpts and run them on single gpu individually
 
-CONFIG="configs/train_from_scratch/ct_clip_vit_hpc_v3_1_div_0_80g.yaml"
+CONFIG="configs/train_from_scratch/ct_clip_vit_seg_hpc_v2_1_div_0_80g.yaml"
 
-model_dir = "/mnt/input/CT-CLIP-VIT/train_from_scratch_vit_hpc_1_dim_384_div0/2024-11-22_05-51-07/checkpoints"
+model_dir = "/mnt/input/CT-CLIP-VIT-seg/train_from_scratch_with_seg_vit_hpc_1_dim_384_div0_right_split/2024-11-29_12-00-14/checkpoints"
 
 model_list = os.listdir(model_dir)
 
-gaps = 4
+gaps = 8
 
 # sort according to thee ckpt number
 
@@ -33,7 +33,7 @@ end_index = (current_split + 1) * n_models // total_splits
 
 run_models = model_list[start_index:end_index]
 
-current_gpu = 2
+current_gpu = 3
 
 os.environ["CUDA_VISIBLE_DEVICES"] = str(current_gpu)
 
