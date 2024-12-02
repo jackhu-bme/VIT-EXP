@@ -493,8 +493,8 @@ class CTClipInferenceFast(nn.Module):
                     predictedlabels=[]
                     onehotlabels_append=[]
 
-                    for i, patho_txtt in self.patho_txtt_list:
-                        patho_txtt = self.patho_txtt_list[i]
+                    for i, patho_txtt in enumerate(self.patho_txtt_list):
+                        # patho_txtt = self.patho_txtt_list[i]
                         # pathology = patho_txtt["pathology"]
                         text_tokens = patho_txtt["text_tokens"]
                         text_embed = patho_txtt["text_embed"]

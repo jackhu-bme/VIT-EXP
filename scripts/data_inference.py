@@ -102,7 +102,7 @@ class CTReportDatasetinfer(Dataset):
 
                 onehotlabels = test_df[test_df["VolumeName"] == accession_number]["one_hot_labels"].values
 
-                print(f"onehotlabels: {onehotlabels}")
+                # print(f"onehotlabels: {onehotlabels}")
 
                 if len(onehotlabels) > 0:
                     samples.append((nii_file, text_final, onehotlabels[0]))
