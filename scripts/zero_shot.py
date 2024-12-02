@@ -511,6 +511,8 @@ class CTClipInferenceFast(nn.Module):
                         step_1_time = time.time()-start_time
                         # print(f"step 1 time: {step_1_time}")
 
+                        print(f"before, buffer_image_embed: {image_embed}")
+
                         output = model.forward_infer(text_tokens, valid_data, buffer_text_embed=text_embed, buffer_image_embed=image_embed)
 
                         step_2_time = time.time() - step_1_time - start_time

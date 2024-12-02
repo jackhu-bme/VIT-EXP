@@ -628,6 +628,8 @@ class CTCLIP(nn.Module):
 
 
     def forward_infer(self, text, image, buffer_text_embed = None, buffer_image_embed = None):
+        print(f"in function, buffer_image_embed: {buffer_image_embed}")
+
         start_time = time.time()
         if buffer_text_embed is None:
             # derive text mask
@@ -653,7 +655,7 @@ class CTCLIP(nn.Module):
 
         step_1_time = time.time()-start_time
         print(f"Time taken for step 1: {step_1_time}")
-        
+
         global h_r, w_r, z_r
         h_r, w_r, z_r = enc_image.shape[1], enc_image.shape[2], enc_image.shape[3]
 
