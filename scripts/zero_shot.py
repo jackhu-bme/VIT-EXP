@@ -515,13 +515,16 @@ class CTClipInferenceFast(nn.Module):
 
                         output = apply_softmax(output)
 
+                        step_2_time = time.time() - step_1_time - start_time
+                        print(f"step 2 time: {step_2_time}")
+
                         # print(f"output: {output}")
                         # append_out=output.detach().cpu().numpy()
                         # print("a out 0: ", append_out[0])
                         predictedlabels.append(output[0])
                         
-                        step_2_time = time.time() - step_1_time - start_time
-                        print(f"step 2 time: {step_2_time}")
+                        step_3_time = time.time() - step_3_time - start_time
+                        print(f"step 3 time: {step_3_time}")
 
 
                     predictedall.append(predictedlabels)
