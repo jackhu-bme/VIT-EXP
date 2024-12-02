@@ -638,7 +638,7 @@ class CTCLIP(nn.Module):
                 text_args = (*text_args, text_mask)
             text_embeddings = self.text_transformer(text.input_ids, attention_mask = text.attention_mask )
         else:
-            print("buffer text embed")
+            # print("buffer text embed")
             text_embeddings = buffer_text_embed
 
         enc_text = text_embeddings[0]
@@ -646,7 +646,7 @@ class CTCLIP(nn.Module):
         if buffer_image_embed is None:
             enc_image= self.visual_transformer(image, return_encoded_tokens=True)
         else:
-            print("buffer image embed")
+            # print("buffer image embed")
             enc_image = buffer_image_embed
         # print(f"encoded image shape: {enc_image.shape}")
         #print("This is visual encoding")

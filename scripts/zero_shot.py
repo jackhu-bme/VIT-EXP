@@ -531,7 +531,7 @@ class CTClipInferenceFast(nn.Module):
                         
                     
                     predictedall.append(predictedlabels)
-                    print(f"one hot labels in the loop: {onehotlabels}")
+                    # print(f"one hot labels in the loop: {onehotlabels}")
                     realalltmp.append(onehotlabels[0])
                     accession_names.append(acc_name[0])
 
