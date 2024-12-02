@@ -507,7 +507,6 @@ class CTClipInferenceFast(nn.Module):
                     for i, patho_txtt in enumerate(self.patho_txtt_list):
                         # patho_txtt = self.patho_txtt_list[i]
                         # pathology = patho_txtt["pathology"]
-                        start_time = time.time()
                         text_tokens = patho_txtt["text_tokens"]
                         text_embed = patho_txtt["text_embed"]
 
@@ -517,6 +516,7 @@ class CTClipInferenceFast(nn.Module):
 
                         print(f"output: {output}")
                         append_out=output.detach().cpu().numpy()
+                        print("a out 0: ", append_out[0])
                         predictedlabels.append(append_out[0])
 
                     predictedall.append(predictedlabels)
