@@ -4,7 +4,7 @@ import os
 
 CONFIG="configs/train_from_scratch/ct_clip_vit_hpc_v3_1.yaml"
 
-model_dir = "/mnt/input/CT-CLIP/train_from_scratch_vit_hpc_1_dim_384/2024-11-16_06-57-22/checkpoints/"
+model_dir = "/mnt/input/CT-CLIP-VIT/train_from_scratch_vit_hpc_1_dim_384/2024-11-16_06-57-22/checkpoints/"
 
 model_list = os.listdir(model_dir)
 
