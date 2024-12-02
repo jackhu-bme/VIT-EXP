@@ -480,7 +480,7 @@ class CTClipInferenceFast(nn.Module):
                 model = self.CTClip
                 model.eval()
                 predictedall=[]
-                realall=[]
+                realalltmp=[]
                 accession_names=[]
                 
                 for i in tqdm.tqdm(range(len(self.ds))):
@@ -529,13 +529,16 @@ class CTClipInferenceFast(nn.Module):
 
                     predictedall.append(predictedlabels)
                     print(f"one hot labels in the loop: {onehotlabels}")
-                    realall.append(onehotlabels[0])
+                    realalltmp.append(onehotlabels[0])
                     accession_names.append(acc_name[0])
 
                     # exit()
                 
-                # for labels in realall:
-                #     labels = labels.detach().cpu().numpy()
+                realall = []
+                for labels in realalltmp:
+                    labels = labels.detach().cpu().numpy()
+                    print(f"labels shape: {labels.shape}")
+                    realall.append(labels)
                 print(f"realall: {realall}")
                 realall=np.array(realall)
                 # final load the labels from gpu to cpu
