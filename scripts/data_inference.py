@@ -70,6 +70,9 @@ class CTReportDatasetinfer(Dataset):
                         text_final = text_final + text
 
                     onehotlabels = test_df[test_df["VolumeName"] == accession_number]["one_hot_labels"].values
+
+                    print(f"onehotlabels: {onehotlabels}")
+
                     if len(onehotlabels) > 0:
                         samples.append((nii_file, text_final, onehotlabels[0]))
                         self.paths.append(nii_file)
@@ -141,7 +144,7 @@ class CTReportDatasetinfer(Dataset):
         img_data = np.clip(img_data, hu_min, hu_max)
 
         img_data = (img_data / 1000).astype(np.float32)
-        slices=[]
+        # slices=[]
 
         tensor = torch.tensor(img_data)
         # Get the dimensions of the input tensor
@@ -149,28 +152,31 @@ class CTReportDatasetinfer(Dataset):
         # Extract dimensions
         h, w, d = tensor.shape
 
-        # Calculate cropping/padding values for height, width, and depth
-        dh, dw, dd = target_shape
-        h_start = max((h - dh) // 2, 0)
-        h_end = min(h_start + dh, h)
-        w_start = max((w - dw) // 2, 0)
-        w_end = min(w_start + dw, w)
-        d_start = max((d - dd) // 2, 0)
-        d_end = min(d_start + dd, d)
+        if target_shape == (h, w, d):
+            pass
+        else:
+            # Calculate cropping/padding values for height, width, and depth
+            dh, dw, dd = target_shape
+            h_start = max((h - dh) // 2, 0)
+            h_end = min(h_start + dh, h)
+            w_start = max((w - dw) // 2, 0)
+            w_end = min(w_start + dw, w)
+            d_start = max((d - dd) // 2, 0)
+            d_end = min(d_start + dd, d)
 
-        # Crop or pad the tensor
-        tensor = tensor[h_start:h_end, w_start:w_end, d_start:d_end]
+            # Crop or pad the tensor
+            tensor = tensor[h_start:h_end, w_start:w_end, d_start:d_end]
 
-        pad_h_before = (dh - tensor.size(0)) // 2
-        pad_h_after = dh - tensor.size(0) - pad_h_before
+            pad_h_before = (dh - tensor.size(0)) // 2
+            pad_h_after = dh - tensor.size(0) - pad_h_before
 
-        pad_w_before = (dw - tensor.size(1)) // 2
-        pad_w_after = dw - tensor.size(1) - pad_w_before
+            pad_w_before = (dw - tensor.size(1)) // 2
+            pad_w_after = dw - tensor.size(1) - pad_w_before
 
-        pad_d_before = (dd - tensor.size(2)) // 2
-        pad_d_after = dd - tensor.size(2) - pad_d_before
+            pad_d_before = (dd - tensor.size(2)) // 2
+            pad_d_after = dd - tensor.size(2) - pad_d_before
 
-        tensor = torch.nn.functional.pad(tensor, (pad_d_before, pad_d_after, pad_w_before, pad_w_after, pad_h_before, pad_h_after), value=-1)
+            tensor = torch.nn.functional.pad(tensor, (pad_d_before, pad_d_after, pad_w_before, pad_w_after, pad_h_before, pad_h_after), value=-1)
 
 
         tensor = tensor.permute(2, 0, 1)
