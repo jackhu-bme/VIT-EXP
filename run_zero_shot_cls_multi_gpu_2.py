@@ -8,7 +8,7 @@ model_dir = "/mnt/input/CT-CLIP-VIT/train_from_scratch_vit_hpc_1_dim_384_div0/20
 
 current_gpu = 2
 
-gaps = 4
+gaps = 8
 
 results_dir = "/home/xufluo/blobmnt/CT-CLIP-VIT/results_fast_inference_zeroshot_ctvit_div0_multi_gpu"
 
@@ -41,7 +41,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(current_gpu)
 
 # MODEL="/mnt/input/CT-CLIP-VIT/train_from_scratch_vit_hpc_1_dim_384/2024-11-22_01-06-13/checkpoints/CTClip.200000.pt"
 
-results_dir = "/mnt/input/CT-CLIP-VIT/results_fast_inference_zeroshot_ctvit_div0_seg_multi_gpu"
+results_dir = "/mnt/input/CT-CLIP-VIT/results_fast_inference_zeroshot_ctvit_div0_multi_gpu"
 
 for run_model in run_models:
     MODEL = os.path.join(model_dir, run_model)
