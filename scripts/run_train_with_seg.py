@@ -110,7 +110,7 @@ def main(config, args):
             dim_head = config.get("dim_head", 32),
             heads = config.get("heads", 8),
             use_flash_attention = config.get("use_flash_attention", True),
-            use_seg = config.get("use_seg", True),
+            use_seg = config.get("use_seg", False),
             seg_head_n_layers = config.get("seg_head_n_layers", 2),
             seg_head_layer_type = config.get("seg_head_layer_type", "mlp"),
             seg_head_in_dim = config.get("seg_head_in_dim", 256),
