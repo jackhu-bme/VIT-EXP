@@ -12,7 +12,7 @@ class AllGather(torch.autograd.Function):
         x_gather = accelerator.gather(x)
         ctx.num_processes = accelerator.num_processes
         ctx.process_index = accelerator.process_index
-        return torch.cat(x_gather, dim = 0)
+        return x_gather
 
     @staticmethod
     def backward(ctx, grad_output):
