@@ -933,8 +933,11 @@ class CTCLIP(nn.Module):
 
             # gather
             assert accelerator is not None, "accelerator is not provided"
-            text_latents_gather = AllGather.apply(text_latents, accelerator)
-            image_latents_gather = AllGather.apply(image_latents, accelerator)
+            try:
+                text_latents_gather = AllGather.apply(text_latents, accelerator)
+                image_latents_gather = AllGather.apply(image_latents, accelerator)
+            except Exception as e:
+                print(f"error in all gather: {e}")
 
             print(f"shape of text latents gather: {text_latents_gather.shape}, shape of image latents gather: {image_latents_gather.shape}")
             print(f"device of text latents gather: {text_latents_gather.device}, device of image latents gather: {image_latents_gather.device}")
