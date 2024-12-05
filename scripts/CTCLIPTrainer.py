@@ -511,10 +511,13 @@ class CTClipTrainer(nn.Module):
         # device = torch.device('cuda')
         
         # 创建 tqdm 进度条
-        with tqdm(total=self.num_train_steps, desc='Training', unit='step') as pbar:
-            if self.resume_step is not None:
-                pbar.update(self.resume_step)
-            while self.steps < self.num_train_steps:
-                logs = self.train_step()
-                log_fn(logs)
-                pbar.update(1)  # 更新进度条
+        try:
+            with tqdm(total=self.num_train_steps, desc='Training', unit='step') as pbar:
+                if self.resume_step is not None:
+                    pbar.update(self.resume_step)
+                while self.steps < self.num_train_steps:
+                    logs = self.train_step()
+                    log_fn(logs)
+                    pbar.update(1)  # 更新进度条
+        except Exception as e:
+            print(f"error in training: {e}")
