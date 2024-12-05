@@ -13,6 +13,7 @@ from einops.layers.torch import Rearrange, Reduce
 
 from ct_clip.mlm import MLM
 from ct_clip.visual_ssl import SimSiam, SimCLR
+from ct_clip.distributed import AllGather
 
 from transformers import BertTokenizer, BertModel
 
@@ -718,6 +719,7 @@ class CTCLIP(nn.Module):
             seg_valid_mask=None,
             text_valid_mask=None,
             seg_weight=1.0,
+            accelerator=None,
             freeze_image_encoder = False,   # image encoder is not trained if this is set to True, proposed by LiT paper
             freeze_text_encoder = False,    # text encoder is not trained if this is set to True
             text_to_image = True,           # in the case the extra projection is turned on, would return different similarity values depending on modality directionality
@@ -925,6 +927,19 @@ class CTCLIP(nn.Module):
 
 
             text_latents, image_latents = map(l2norm, (text_latents, image_latents))
+
+            print(f"shape of text latents: {text_latents.shape}, shape of image latents: {image_latents.shape}")
+            print(f"device of text latents: {text_latents.device}, device of image latents: {image_latents.device}")
+
+            # gather
+            assert accelerator is not None, "accelerator is not provided"
+            text_latents_gather = AllGather.apply(text_latents, accelerator)
+            image_latents_gather = AllGather.apply(image_latents, accelerator)
+
+            print(f"shape of text latents gather: {text_latents_gather.shape}, shape of image latents gather: {image_latents_gather.shape}")
+            print(f"device of text latents gather: {text_latents_gather.device}, device of image latents gather: {image_latents_gather.device}")
+
+            exit()
 
             # calculate another set of latents for image to text (vs text to image)
             # proposed by CLOOB

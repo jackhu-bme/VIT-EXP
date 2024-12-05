@@ -245,7 +245,7 @@ class CTClipTrainer(nn.Module):
         
         self.balance_report_seg_ratio = balance_report_seg
 
-        ratios = [int(self.balance_report_seg_ratio), 1]
+        ratios = [self.balance_report_seg_ratio, 1 - self.balance_report_seg_ratio] # the ratio mean how much the report is used in the training vs. seg
         
         num_ds_1, num_ds_2 = self.ds.n_image_txt_pairs, self.ds.n_image_seg_pairs
 
@@ -386,7 +386,7 @@ class CTClipTrainer(nn.Module):
             with self.accelerator.autocast():
                 loss, loss_dict = self.CTClip(text_tokens, video, return_loss=True, return_loss_dict=True, 
                                               device=device, use_seg=self.use_seg, seg_mask=seg_mask, 
-                                              seg_valid_mask=seg_valid_mask, text_valid_mask=text_valid_mask)
+                                              seg_valid_mask=seg_valid_mask, text_valid_mask=text_valid_mask, accelerator=self.accelerator)
 
         self.accelerator.backward(loss)
         to_acc_dict = loss_dict.copy()
