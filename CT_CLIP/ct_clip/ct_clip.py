@@ -972,14 +972,18 @@ class CTCLIP(nn.Module):
 
             # split out multiview dimension for text and images
 
-            text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_texts)
-            image_latents = rearrange(image_latents, '(m b) ... -> m b ...', m = num_batch_images)
+            bs_single_gpu = text_latents.shape[0]
 
             # gather
             assert accelerator is not None, "accelerator is not provided"
 
             text_latents_gather = AllGather.apply(text_latents, accelerator)
             image_latents_gather = AllGather.apply(image_latents, accelerator)
+
+            text_latents_gather = rearrange(text_latents_gather, '(m b) ... -> m b ...', m = num_batch_texts)
+            image_latents_gather = rearrange(image_latents_gather, '(m b) ... -> m b ...', m = num_batch_images)
+            
+            
 
             # if self.extra_latent_projection:
             #     text_latents_extra = rearrange(text_latents_extra, '(m b) ... -> m b ...', m = num_batch_texts)
@@ -1024,6 +1028,8 @@ class CTCLIP(nn.Module):
             text_to_image = rearrange(text_to_image, 'm n ... -> (m n) ...')
             image_to_text = rearrange(image_to_text, 'm n ... -> (m n) ...')
 
+            print(f"shape of text to image: {text_to_image.shape}")
+
 
             # exponentiate
             text_to_image_exp, image_to_text_exp = map(torch.exp, (text_to_image, image_to_text))
@@ -1049,7 +1055,7 @@ class CTCLIP(nn.Module):
 
             # calculate CL loss
 
-            cl_losses = (text_to_image_loss + image_to_text_loss) / 2
+            cl_losses = (text_to_image_loss + image_to_text_loss) / 2 / bs_single_gpu
 
             # loss_dict['cl_loss_total'] = cl_losses.item()
 
