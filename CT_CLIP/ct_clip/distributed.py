@@ -17,7 +17,7 @@ class AllGather(torch.autograd.Function):
     @staticmethod
     def backward(ctx, grad_output):
         grad_input = grad_output.chunk(ctx.num_processes, dim = 0)[ctx.process_index]
-        return grad_input
+        return grad_input, None
 
 
 
