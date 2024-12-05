@@ -452,6 +452,8 @@ class CTCLIP(nn.Module):
             **kwargs
     ):
         super().__init__()
+        assert use_all_token_embeds == False, "no more support for use_all_token_embeds"
+        assert extra_latent_projection == False, "no more support for extra_latent_projection"
         #assert use_all_token_embeds or (visual_has_cls_token or text_has_cls_token), 'CLS token must be included on both vision and text transformers if you are not using fine-grained contrastive learning loss'
         self.dtype=torch.float32
         # store some parameters for access
@@ -885,22 +887,23 @@ class CTCLIP(nn.Module):
 
         # depending on whether to do fine-grained CLIP or not, select either all tokens, or CLS tokens only
 
-        if self.use_all_token_embeds:
-            assert enc_text.ndim == 3, 'encoded text must have 3 dimensions (batch, seq, features)'
-            assert enc_image.ndim == 3, 'encoded image must have 3 dimensions (batch, seq [height x width], features)'
-            text_embeds = enc_text[:, 1:] if self.text_has_cls_token else enc_text
-            image_embeds = enc_image[:, 1:] if self.visual_has_cls_token else enc_image
-        else:
-            text_embeds = enc_text[:, :] if enc_text.ndim == 3 else enc_text
-            image_embeds = enc_image[:, :] if enc_image.ndim == 3 else enc_image
+        # if self.use_all_token_embeds:
+        #     assert enc_text.ndim == 3, 'encoded text must have 3 dimensions (batch, seq, features)'
+        #     assert enc_image.ndim == 3, 'encoded image must have 3 dimensions (batch, seq [height x width], features)'
+        #     text_embeds = enc_text[:, 1:] if self.text_has_cls_token else enc_text
+        #     image_embeds = enc_image[:, 1:] if self.visual_has_cls_token else enc_image
+        # else:
+
+        text_embeds = enc_text[:, :] if enc_text.ndim == 3 else enc_text
+        image_embeds = enc_image[:, :] if enc_image.ndim == 3 else enc_image
 
         # project to latents
         #text_embeds = text_embeds.view(text_embeds.shape[0], -1)
         text_embeds = text_embeds[:,0,:]
 
-        print(f"text embeds shape: {text_embeds.shape}")
-        print(f"image embeds shape: {image_embeds.shape}")
-        print(f"text valid mask: {text_valid_mask}")
+        # print(f"text embeds shape: {text_embeds.shape}")
+        # print(f"image embeds shape: {image_embeds.shape}")
+        # print(f"text valid mask: {text_valid_mask}")
 
         # select those with valid reports only for contrastive learning
         text_embeds = text_embeds[text_valid_mask.squeeze(1).bool(), :]
@@ -928,36 +931,27 @@ class CTCLIP(nn.Module):
 
             text_latents, image_latents = map(l2norm, (text_latents, image_latents))
 
-            print(f"shape of text latents: {text_latents.shape}, shape of image latents: {image_latents.shape}")
-            print(f"device of text latents: {text_latents.device}, device of image latents: {image_latents.device}")
+            # print(f"shape of text latents: {text_latents.shape}, shape of image latents: {image_latents.shape}")
+            # print(f"device of text latents: {text_latents.device}, device of image latents: {image_latents.device}")
 
-            # gather
-            assert accelerator is not None, "accelerator is not provided"
-            try:
-                text_latents_gather = AllGather.apply(text_latents, accelerator)
-                image_latents_gather = AllGather.apply(image_latents, accelerator)
-            except Exception as e:
-                print(f"error in all gather: {e}")
+            
 
-            print(f"shape of text latents gather: {text_latents_gather.shape}, shape of image latents gather: {image_latents_gather.shape}")
-            print(f"device of text latents gather: {text_latents_gather.device}, device of image latents gather: {image_latents_gather.device}")
-
-            exit()
+            # exit()
 
             # calculate another set of latents for image to text (vs text to image)
             # proposed by CLOOB
 
             text_latents_extra, image_latents_extra = text_latents, image_latents
-            if self.extra_latent_projection:
-                text_latents_extra = self.to_text_latent_extra(text_embeds)
-                image_latents_extra = self.to_visual_latent_extra(image_embeds)
-                text_latents_extra, image_latents_extra = map(l2norm, (text_latents_extra, image_latents_extra))
+            # if self.extra_latent_projection:
+            #     text_latents_extra = self.to_text_latent_extra(text_embeds)
+            #     image_latents_extra = self.to_visual_latent_extra(image_embeds)
+            #     text_latents_extra, image_latents_extra = map(l2norm, (text_latents_extra, image_latents_extra))
 
             # whether to early return latents
 
             if return_latents:
-                if self.extra_latent_projection:
-                    return text_latents, image_latents, text_latents_extra, image_latents_extra
+                # if self.extra_latent_projection:
+                #     return text_latents, image_latents, text_latents_extra, image_latents_extra
 
                 return text_latents, image_latents, enc_image_send
 
@@ -968,12 +962,12 @@ class CTCLIP(nn.Module):
             # early return, if needed
 
 
-            if not return_loss and self.use_all_token_embeds:
-                einsum_args = (text_latents_extra, image_latents_extra) if self.extra_latent_projection and not text_to_image else (text_latents, image_latents)
-                return einsum('b d, b i d -> b t i', *einsum_args) * temp
+            # if not return_loss and self.use_all_token_embeds:
+            #     einsum_args = (text_latents_extra, image_latents_extra) if self.extra_latent_projection and not text_to_image else (text_latents, image_latents)
+            #     return einsum('b d, b i d -> b t i', *einsum_args) * temp
 
-            if not return_loss and not self.use_all_token_embeds:
-                einsum_args = (text_latents_extra, image_latents_extra) if self.extra_latent_projection and not text_to_image else (text_latents, image_latents)
+            if not return_loss: # and not self.use_all_token_embeds:
+                einsum_args = (text_latents, image_latents)
                 return einsum('b d, b d -> b', *einsum_args) * temp
 
             # split out multiview dimension for text and images
@@ -981,9 +975,15 @@ class CTCLIP(nn.Module):
             text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_texts)
             image_latents = rearrange(image_latents, '(m b) ... -> m b ...', m = num_batch_images)
 
-            if self.extra_latent_projection:
-                text_latents_extra = rearrange(text_latents_extra, '(m b) ... -> m b ...', m = num_batch_texts)
-                image_latents_extra = rearrange(image_latents_extra, '(m b) ... -> m b ...', m = num_batch_images)
+            # gather
+            assert accelerator is not None, "accelerator is not provided"
+
+            text_latents_gather = AllGather.apply(text_latents, accelerator)
+            image_latents_gather = AllGather.apply(image_latents, accelerator)
+
+            # if self.extra_latent_projection:
+            #     text_latents_extra = rearrange(text_latents_extra, '(m b) ... -> m b ...', m = num_batch_texts)
+            #     image_latents_extra = rearrange(image_latents_extra, '(m b) ... -> m b ...', m = num_batch_images)
 
             # contrastive loss
 
@@ -996,27 +996,28 @@ class CTCLIP(nn.Module):
             i - sequence dimension along image tokens
             """
 
-            if self.use_all_token_embeds:
-                # fine-grained CLIP logic
-                sim_text_to_image = einsum('m x t d, n y i d -> m n x y t i', text_latents, image_latents) * temp
+            # if self.use_all_token_embeds:
+            #     # fine-grained CLIP logic
+            #     sim_text_to_image = einsum('m x t d, n y i d -> m n x y t i', text_latents, image_latents) * temp
 
-                sim_image_to_text = sim_text_to_image
-                if self.extra_latent_projection:
-                    sim_image_to_text = einsum('m x t d, n y i d -> m n x y t i', text_latents_extra, image_latents_extra) * temp
+            #     sim_image_to_text = sim_text_to_image
+            #     if self.extra_latent_projection:
+            #         sim_image_to_text = einsum('m x t d, n y i d -> m n x y t i', text_latents_extra, image_latents_extra) * temp
 
-                text_to_image = reduce(sim_text_to_image, '... t i -> ... t', 'max')
-                text_to_image_mask = rearrange(text_mask, '(m b) t -> m 1 b 1 t', m = num_batch_texts).bool()
-                text_to_image = masked_mean(text_to_image, text_to_image_mask, dim = -1)
+            #     text_to_image = reduce(sim_text_to_image, '... t i -> ... t', 'max')
+            #     text_to_image_mask = rearrange(text_mask, '(m b) t -> m 1 b 1 t', m = num_batch_texts).bool()
+            #     text_to_image = masked_mean(text_to_image, text_to_image_mask, dim = -1)
 
-                image_to_text_mask = rearrange(text_mask, '(m b) t -> m 1 b 1 t 1', m = num_batch_texts).bool()
-                masked_sim = sim_image_to_text.masked_fill(~image_to_text_mask, max_neg_value(sim_image_to_text.dtype))
-                image_to_text = reduce(reduce(masked_sim, '... t i -> ... i', 'max'), '... i -> ...', 'mean')
-            else:
-                text_to_image = einsum('m t d, n i d -> m n t i', text_latents, image_latents) * temp
-                image_to_text = rearrange(text_to_image, '... t i -> ... i t')
+            #     image_to_text_mask = rearrange(text_mask, '(m b) t -> m 1 b 1 t 1', m = num_batch_texts).bool()
+            #     masked_sim = sim_image_to_text.masked_fill(~image_to_text_mask, max_neg_value(sim_image_to_text.dtype))
+            #     image_to_text = reduce(reduce(masked_sim, '... t i -> ... i', 'max'), '... i -> ...', 'mean')
+            # else:
 
-                if self.extra_latent_projection:
-                    image_to_text = einsum('m t d, n i d -> m n i t', text_latents_extra, image_latents_extra) * temp
+            text_to_image = einsum('m t d, n i d -> m n t i', text_latents_gather, image_latents_gather) * temp
+            image_to_text = rearrange(text_to_image, '... t i -> ... i t')
+
+                # if self.extra_latent_projection:
+                #     image_to_text = einsum('m t d, n i d -> m n i t', text_latents_extra, image_latents_extra) * temp
 
             # calculate loss
 
