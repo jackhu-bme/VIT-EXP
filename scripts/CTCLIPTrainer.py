@@ -292,7 +292,7 @@ class CTClipTrainer(nn.Module):
         #     self.valid_ds = CTReportDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels = labels)
             # todo: add the seg support in valid_ds
         
-        self.balance_loss_weight = trainer_config.get("balance_loss_weight", [1.0, ] * len(self.train_ds_list))
+        self.balance_loss_weight = trainer_config.get("balance_loss_weight", [1.0, ] * len(self.train_dl_list))
 
         # prepare with accelerator
         self.dl_iter_list = [cycle(dl) for dl in self.dl_list]
