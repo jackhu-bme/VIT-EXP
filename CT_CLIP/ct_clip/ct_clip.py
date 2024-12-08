@@ -714,7 +714,7 @@ class CTCLIP(nn.Module):
         # use the seg valid mask to choose the image to be segmented
         # due to memory issues, use one for seg only now
         seg_mask = seg_mask.float().to(device)
-        enc_seg_image = enc_seg_image
+        enc_seg_image = enc_image
         b, d, w, h, c = enc_seg_image.shape
         p_h, p_w, p_d = H//h, W//w, D//d
         tokens_to_seg = enc_seg_image.reshape(-1, c) # b, l, c -> b*l, c
@@ -732,7 +732,7 @@ class CTCLIP(nn.Module):
     def forward_batch_image_report(self, batch, device=None, accelerator=None, **kwargs):
         text = batch["text"] # attention here, this is after the tokenization, text tokens actually! follow the ctclip code temporally
         image = batch["image"]
-        print(f"loaded text: {text}")
+        # print(f"loaded text: {text}")
         b, device = text.input_ids.shape[0], device
         # derive text mask
         text_mask = text.attention_mask
