@@ -818,7 +818,7 @@ class CTCLIP(nn.Module):
         text_to_image = rearrange(text_to_image, 'm n ... -> (m n) ...')
         image_to_text = rearrange(image_to_text, 'm n ... -> (m n) ...')
 
-        print(f"shape of text to image: {text_to_image.shape}")
+        # print(f"shape of text to image: {text_to_image.shape}")
 
 
         # exponentiate

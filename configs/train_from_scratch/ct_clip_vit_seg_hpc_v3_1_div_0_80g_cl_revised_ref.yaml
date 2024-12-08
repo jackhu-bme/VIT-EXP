@@ -31,7 +31,7 @@ train_data_list:
     sampler_type: InfinteCycleSampler
   - name: TotalSegmentator
     type: imageseg
-    batch_size: 2 # test if 2 is ok for 80g a100, if not ok, use 1 !
+    batch_size: 1 # test if 2 is ok for 80g a100, if not ok, use 1 !
     num_workers: 8
     seg_data_train: /mnt/input/TotalSegmentator/seg_final_dataset/train_data
     seg_data_valid: /mnt/input/TotalSegmentator/seg_final_dataset/valid_data
@@ -56,7 +56,7 @@ valid_data_list:
 
 DatasetSampler:
   type: Random # Combined means combine the weight of different data types in a training step
-  ratio_list: [4, 1]
+  ratio_list: [2, 1]
 
 
 # arch
