@@ -439,7 +439,7 @@ class CTClipTrainer(nn.Module):
         #video = video
         with self.accelerator.accumulate(self.CTClip):
             with self.accelerator.autocast():
-                loss, loss_dict = self.CTClip.forward_batch(batch, return_loss=True, return_loss_dict=True, 
+                loss, loss_dict = self.CTClip(batch, return_loss=True, return_loss_dict=True, 
                                               device=self.device, accelerator=self.accelerator)
                 # times the weight for this dataset to the loss and loss dict
                 loss = loss * self.balance_loss_weight[dataset_index]

@@ -694,7 +694,7 @@ class CTCLIP(nn.Module):
         res = einsum('b d, b d -> b', *einsum_args) * temp
         return res
 
-    def forward_batch(self, batch, device=None, accelerator=None, **kwargs):
+    def forward(self, batch, device=None, accelerator=None, **kwargs):
         # define the forward (data to loss) logic for different types of data
         # in the ref version, in a single batch, only one type of data is present
         if batch["data_type"][0] == "imagereport":
@@ -855,7 +855,7 @@ class CTCLIP(nn.Module):
 
 
 
-    def forward(
+    def forward_old(
             self,
             text,
             image,
