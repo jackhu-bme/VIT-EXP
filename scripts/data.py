@@ -297,7 +297,7 @@ def create_train_dl(train_ds, train_dl_config):
         sampler = InfiniteCycleSampler(train_ds)
     else:
         sampler = None
-    return DataLoader(train_ds, batch_size=train_dl_config["batch_size"], shuffle=True, num_workers=train_dl_config["num_workers"], sampler=sampler)
+    return DataLoader(train_ds, batch_size=train_dl_config["batch_size"], num_workers=train_dl_config["num_workers"], sampler=sampler)
 
 
 def create_valid_ds(config):
@@ -308,11 +308,7 @@ def create_valid_ds(config):
 
 
 def create_valid_dl(valid_ds, valid_dl_config):
-    if valid_dl_config["sampler_type"] == "InfinteCycleSampler":
-        sampler = InfiniteCycleSampler(valid_ds)
-    else:
-        sampler = None
-    return DataLoader(valid_ds, batch_size=valid_dl_config["batch_size"], shuffle=False, num_workers=valid_dl_config["num_workers"], sampler=sampler)
+    return DataLoader(valid_ds, batch_size=valid_dl_config["batch_size"], shuffle=False, num_workers=valid_dl_config["num_workers"])
 
 
 def create_train_dl_list(train_dl_config):
