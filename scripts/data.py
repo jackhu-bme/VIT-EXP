@@ -313,7 +313,7 @@ def create_valid_dl(valid_ds, valid_dl_config):
 
 def create_train_dl_list(train_dl_config):
     ds_list = [create_train_ds(train_dl_config) for train_dl_config in train_dl_config]
-    print(f"ds list: {ds_list}")
+    # print(f"ds list: {ds_list}")
     dl_list = [create_train_dl(ds, train_dl_config) for ds, train_dl_config in zip(ds_list, train_dl_config)]
     return dl_list
     

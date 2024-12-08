@@ -279,7 +279,7 @@ class CTClipTrainer(nn.Module):
         self.lr=trainer_config["lr"]
 
         self.dl_list = create_train_dl_list(config["train_data_list"])
-        print(f"datasets: {self.dl_list}")
+        # print(f"datasets: {self.dl_list}")
 
         self.valid_dl_list = create_valid_dl_list(config["valid_data_list"])
 
@@ -569,33 +569,17 @@ class CTClipTrainer(nn.Module):
             if self.is_main:
                 model_path = str(self.results_folder / f'CTClip.{steps}.pt')
                 self.accelerator.save(state_dict, model_path)
-
         self.steps += 1
         return logs
 
 
-
-    # def train(self, log_fn=noop):
-    #     device = next(self.CTClip.parameters()).device
-    #     device=torch.device('cuda')
-    #     while self.steps < self.num_train_steps:
-    #         logs = self.train_step()
-    #         log_fn(logs)
-
-    #     self.print('training complete')
-
     def train(self, log_fn=noop):
         # device = next(self.CTClip.parameters()).device
         # device = torch.device('cuda')
-        
-        # 创建 tqdm 进度条
-        try:
-            with tqdm(total=self.num_train_steps, desc='Training', unit='step') as pbar:
-                if self.resume_step is not None:
-                    pbar.update(self.resume_step)
-                while self.steps < self.num_train_steps:
-                    logs = self.train_step()
-                    log_fn(logs)
-                    pbar.update(1)  # 更新进度条
-        except Exception as e:
-            print(f"error in training: {e}")
+        with tqdm(total=self.num_train_steps, desc='Training', unit='step') as pbar:
+            if self.resume_step is not None:
+                pbar.update(self.resume_step)
+            while self.steps < self.num_train_steps:
+                logs = self.train_step()
+                log_fn(logs)
+                pbar.update(1)
