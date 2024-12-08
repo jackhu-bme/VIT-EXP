@@ -2,7 +2,7 @@ accelerate launch scripts/run_train.py --config ct_clip_vit_seg_hpc_v3_1_div_0_8
 # accelerate launch scripts/run_train.py --config ct_clip_ori_hpc_1.yaml
 
 # debug
-python scripts/run_train.py --config ct_clip_vit_seg_hpc_v3_1_div_0_80g_cl_revised.yaml --debug
+python scripts/run_train.py --config ct_clip_vit_seg_hpc_v3_1_div_0_80g_cl_revised_ref.yaml --debug
 
 
 # resume training
