@@ -415,13 +415,13 @@ class CTClipTrainer(nn.Module):
         """
         make essential data preprocess on gpu, such as tokenization, and move the data to gpu
         """
-        if batch["data_type"] == "imagereport":
+        if batch["data_type"][0] == "imagereport":
             text = batch['text']
             video=video.to(self.device)
             text = list(text)
             text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(self.device)
             batch["text"] = text_tokens
-        elif batch["data_type"] == "imageseg":
+        elif batch["data_type"][0] == "imageseg":
             seg_mask = batch["seg_mask"].to(self.device)
             seg_data = batch["image"].to(self.device)
             batch["seg_mask"] = seg_mask
