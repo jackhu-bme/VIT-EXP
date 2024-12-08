@@ -349,11 +349,11 @@ class CTClipTrainer(nn.Module):
         
 
     def create_dataset_sampler(self, config):
-        sampler_type = config["DatasetSampler"]["type"]
+        sampler_type = config["type"]
         if sampler_type == "Random":
-            return RandDatasetSampler(config["DatasetSampler"])
+            return RandDatasetSampler(config)
         elif sampler_type == "Combined":
-            return CombinedDatasetSampler(config["DatasetSampler"])
+            return CombinedDatasetSampler(config)
         else:
             raise ValueError(f"DatasetSampler type {sampler_type} is not supported")
         
