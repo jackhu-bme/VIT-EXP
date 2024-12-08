@@ -281,7 +281,7 @@ class CTClipTrainer(nn.Module):
         self.dl_list = create_train_dl_list(config["train_data_list"])
         self.valid_dl_list = create_valid_dl_list(config["valid_data_list"])
 
-        self.dataset_sampler = self.create_dataset_sampler(config["dataset_sampler"])
+        self.dataset_sampler = self.create_dataset_sampler(config["DatasetSampler"])
 
         # if not use_seg:
         #     self.ds = CTReportDataset(data_folder=data_train, csv_file=reports_file_train, metadata_train=metadata_train)
