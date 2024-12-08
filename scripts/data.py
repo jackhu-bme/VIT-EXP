@@ -293,11 +293,11 @@ def create_train_ds(config):
 
 
 def create_train_dl(train_ds, train_dl_config):
-    if train_dl_config["sampler_type"] == "InfinteCycleSampler":
-        sampler = InfiniteCycleSampler(train_ds)
-    else:
-        sampler = None
-    return DataLoader(train_ds, batch_size=train_dl_config["batch_size"], num_workers=train_dl_config["num_workers"], sampler=sampler)
+    # if train_dl_config["sampler_type"] == "InfinteCycleSampler":
+    #     sampler = InfiniteCycleSampler(train_ds)
+    # else:
+    #     sampler = None
+    return DataLoader(train_ds, batch_size=train_dl_config["batch_size"], num_workers=train_dl_config["num_workers"], shuffle=True)
 
 
 def create_valid_ds(config):

@@ -37,7 +37,7 @@ train_data_list:
     seg_data_valid: /mnt/input/TotalSegmentator/seg_final_dataset/valid_data
     seg_mask_train: /mnt/input/TotalSegmentator/seg_final_dataset/train_mask
     seg_mask_valid: /mnt/input/TotalSegmentator/seg_final_dataset/valid_mask
-    sampler_type: InfinteCycleSampler
+    # sampler_type: InfinteCycleSampler
 
 valid_data_list:
   - name: CT-RATE
@@ -50,7 +50,7 @@ valid_data_list:
     data_train: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/train
     data_valid: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/val
     labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv
-    sampler_type: InfinteCycleSampler
+    # sampler_type: InfinteCycleSampler
 
 
 

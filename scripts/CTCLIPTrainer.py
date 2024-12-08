@@ -316,8 +316,8 @@ class CTClipTrainer(nn.Module):
         #     self.optim,
         # )
 
-        self.dl_iter_list = [self.accelerator.prepare_data_loader(dl) for dl in self.dl_list]
-        self.valid_dl_iter_list = [self.accelerator.prepare_data_loader(valid_dl) for valid_dl in self.valid_dl_list]
+        self.dl_iter_list = [cycle(self.accelerator.prepare_data_loader(dl)) for dl in self.dl_list]
+        self.valid_dl_iter_list = [cycle(self.accelerator.prepare_data_loader(valid_dl)) for valid_dl in self.valid_dl_list]
         self.CTClip = self.accelerator.prepare_model(self.CTClip)
         self.optim = self.accelerator.prepare_optimizer(self.optim)
         # in future, if use scheduler
