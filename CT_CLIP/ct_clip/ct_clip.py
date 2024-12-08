@@ -696,9 +696,9 @@ class CTCLIP(nn.Module):
 
     def forward_batch(self, batch, device=None, accelerator=None, **kwargs):
         # define the forward (data to loss) logic for different types of data
-        if batch["data_type"] == "image_report":
+        if batch["data_type"] == "imagereport":
             return self.forward_batch_image_report(batch, device=device, accelerator=accelerator, **kwargs)
-        elif batch["data_type"] == "image_seg":
+        elif batch["data_type"] == "imageseg":
             return self.forward_batch_image_seg(batch, device=device, accelerator=accelerator, **kwargs)
         else:
             raise ValueError(f"Data type {batch['data_type']} not recognized")
