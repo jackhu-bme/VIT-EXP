@@ -433,6 +433,7 @@ class CTClipTrainer(nn.Module):
 
     def train_step_single_dataset(self, dataset_index=None):
         batch = next(self.dl_iter_list[dataset_index])
+        batch = self.prepare_batch(batch)
         #video = video
         with self.accelerator.accumulate(self.CTClip):
             with self.accelerator.autocast():
