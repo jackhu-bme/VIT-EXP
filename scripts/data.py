@@ -5,7 +5,7 @@ import torch
 import pandas as pd
 import numpy as np
 from PIL import Image
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, Sampler
 import torchvision.transforms as transforms
 from functools import partial
 import torch.nn.functional as F
@@ -256,6 +256,33 @@ class CTSegDataset(Dataset):
                 "data_type": "imageseg"}
 
 
+class InfiniteCycleSampler(Sampler):
+    """
+    A sampler that infinitely loops through the dataset.
+    """
+    def __init__(self, dataset):
+        """
+        Args:
+            dataset (torch.utils.data.Dataset): Dataset to sample from.
+        """
+        self.dataset = dataset
+        self.dataset_length = len(dataset)
+
+    def __iter__(self):
+        """
+        Infinite generator that loops through dataset indices.
+        """
+        while True:
+            # Shuffle dataset indices for randomness (optional)
+            indices = torch.randperm(self.dataset_length).tolist()
+            yield from indices
+
+    def __len__(self):
+        """
+        Returns the dataset length, though it's infinite by design.
+        """
+        return float('inf')
+
 def create_train_ds(config):
     if config["type"] == "imagereport":
         return CTReportDataset(config["data_train"], config["reports_file_train"], config["metadata_train"])
@@ -264,8 +291,13 @@ def create_train_ds(config):
     else:
         raise ValueError(f"Unknown dataset type: {config['type']}")
 
+
 def create_train_dl(train_ds, train_dl_config):
-    return DataLoader(train_ds, batch_size=train_dl_config["batch_size"], shuffle=True, num_workers=train_dl_config["num_workers"])
+    if train_dl_config["sampler_type"] == "InfinteCycleSampler":
+        sampler = InfiniteCycleSampler(train_ds)
+    else:
+        sampler = None
+    return DataLoader(train_ds, batch_size=train_dl_config["batch_size"], shuffle=True, num_workers=train_dl_config["num_workers"], sampler=sampler)
 
 
 def create_valid_ds(config):
@@ -276,7 +308,11 @@ def create_valid_ds(config):
 
 
 def create_valid_dl(valid_ds, valid_dl_config):
-    return DataLoader(valid_ds, batch_size=valid_dl_config["batch_size"], shuffle=False, num_workers=valid_dl_config["num_workers"])
+    if valid_dl_config["sampler_type"] == "InfinteCycleSampler":
+        sampler = InfiniteCycleSampler(valid_ds)
+    else:
+        sampler = None
+    return DataLoader(valid_ds, batch_size=valid_dl_config["batch_size"], shuffle=False, num_workers=valid_dl_config["num_workers"], sampler=sampler)
 
 
 def create_train_dl_list(train_dl_config):

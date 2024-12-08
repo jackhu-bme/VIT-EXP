@@ -280,7 +280,7 @@ class CTClipTrainer(nn.Module):
 
         self.dl_list = create_train_dl_list(config["train_data_list"])
         print(f"datasets: {self.dl_list}")
-        exit()
+
         self.valid_dl_list = create_valid_dl_list(config["valid_data_list"])
 
         self.dataset_sampler = self.create_dataset_sampler(config["DatasetSampler"])
@@ -297,8 +297,8 @@ class CTClipTrainer(nn.Module):
         self.balance_loss_weight = trainer_config.get("balance_loss_weight", [1.0, ] * len(self.dl_list))
 
         # prepare with accelerator
-        self.dl_iter_list = [cycle(dl) for dl in self.dl_list]
-        self.valid_dl_iter_list = [cycle(valid_dl) for valid_dl in self.valid_dl_list]
+        # self.dl_iter_list = [cycle(dl) for dl in self.dl_list]
+        # self.valid_dl_iter_list = [cycle(valid_dl) for valid_dl in self.valid_dl_list]
         # self.dl_iter=cycle(self.dl)
         # self.valid_dl_iter=cycle(self.valid_dl)
         self.device = self.accelerator.device
@@ -316,8 +316,8 @@ class CTClipTrainer(nn.Module):
         #     self.optim,
         # )
 
-        self.dl_iter_list = [self.accelerator.prepare_data_loader(dl_iter) for dl_iter in self.dl_iter_list]
-        self.valid_dl_iter_list = [self.accelerator.prepare_data_loader(valid_dl_iter) for valid_dl_iter in self.valid_dl_iter_list]
+        self.dl_iter_list = [self.accelerator.prepare_data_loader(dl) for dl in self.dl_list]
+        self.valid_dl_iter_list = [self.accelerator.prepare_data_loader(valid_dl) for valid_dl in self.valid_dl_list]
         self.CTClip = self.accelerator.prepare_model(self.CTClip)
         self.optim = self.accelerator.prepare_optimizer(self.optim)
         # in future, if use scheduler
