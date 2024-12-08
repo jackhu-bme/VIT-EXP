@@ -280,7 +280,7 @@ def create_valid_dl(valid_ds, valid_dl_config):
 
 
 def create_train_dl_list(train_dl_config):
-    ds_list = [create_train_dl(train_dl_config) for train_dl_config in train_dl_config]
+    ds_list = [create_train_ds(train_dl_config) for train_dl_config in train_dl_config]
     dl_list = [create_train_dl(ds, train_dl_config) for ds, train_dl_config in zip(ds_list, train_dl_config)]
     return dl_list
     
@@ -288,7 +288,7 @@ def create_train_dl_list(train_dl_config):
 def create_valid_dl_list(valid_dl_config):
     ds_list = [create_valid_ds(valid_ds_config) for valid_ds_config in valid_dl_config]
     dl_list = [create_valid_dl(ds, valid_dl_config) for ds, valid_dl_config in zip(ds_list, valid_dl_config)]
-    pass
+    return dl_list  # Return the created list
 
 
 
