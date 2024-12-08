@@ -279,6 +279,8 @@ class CTClipTrainer(nn.Module):
         self.lr=trainer_config["lr"]
 
         self.dl_list = create_train_dl_list(config["train_data_list"])
+        print(f"datasets: {self.dl_list}")
+        exit()
         self.valid_dl_list = create_valid_dl_list(config["valid_data_list"])
 
         self.dataset_sampler = self.create_dataset_sampler(config["DatasetSampler"])
