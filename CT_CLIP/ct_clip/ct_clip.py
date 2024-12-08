@@ -732,6 +732,7 @@ class CTCLIP(nn.Module):
     def forward_batch_image_report(self, batch, device=None, accelerator=None, **kwargs):
         text = batch["text"] # attention here, this is after the tokenization, text tokens actually! follow the ctclip code temporally
         image = batch["image"]
+        print(f"loaded text: {text}")
         b, device = text.input_ids.shape[0], device
         # derive text mask
         text_mask = text.attention_mask
