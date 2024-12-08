@@ -51,7 +51,7 @@ valid_data_list:
 
 
 
-DatasetSampler:
+dataset_sampler:
   type: Random # Combined means combine the weight of different data types in a training step
   ratio_list: [4, 1]
 
