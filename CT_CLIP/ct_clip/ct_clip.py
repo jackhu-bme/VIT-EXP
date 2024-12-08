@@ -686,24 +686,170 @@ class CTCLIP(nn.Module):
         text_latents = self.to_text_latent(text_embeds)
 
         image_latents = self.to_visual_latent(image_embeds)
-
-        
-
         text_latents, image_latents = map(l2norm, (text_latents, image_latents))
 
         temp = self.temperature.exp()
 
         einsum_args = text_latents, image_latents
-
-        
-
         res = einsum('b d, b d -> b', *einsum_args) * temp
-        
-        
-
         return res
 
+    def forward_batch(self, batch, device=None, accelerator=None, **kwargs):
+        # define the forward (data to loss) logic for different types of data
+        if batch["data_type"] == "image_report":
+            return self.forward_batch_image_report(batch, device=device, accelerator=accelerator, **kwargs)
+        elif batch["data_type"] == "image_seg":
+            return self.forward_batch_image_seg(batch, device=device, accelerator=accelerator, **kwargs)
+        else:
+            raise ValueError(f"Data type {batch['data_type']} not recognized")
+    
+    
+    def forward_batch_image_seg(self, batch, device=None, accelerator=None, **kwargs):
+        image = batch["image"]
+        seg_mask = batch["seg_mask"]
+        loss_dict = {}
+        B, C, D, W, H = image.shape
+        enc_image= self.visual_transformer(image, return_encoded_tokens=True)
+        # use the seg valid mask to choose the image to be segmented
+        # due to memory issues, use one for seg only now
+        seg_mask = seg_mask.float().to(device)
+        enc_seg_image = enc_seg_image
+        b, d, w, h, c = enc_seg_image.shape
+        p_h, p_w, p_d = H//h, W//w, D//d
+        tokens_to_seg = enc_seg_image.reshape(-1, c) # b, l, c -> b*l, c
+        # use the linear head for 
+        seg_logits = self.visual_transformer.seg_head(tokens_to_seg)
+        # reshape the logits to the original shape, with each pixel
+        seg_preds = seg_logits.reshape(b, d, w, h, p_d, p_w, p_h, -1)
+        seg_preds = seg_preds.permute(0, 7, 1, 4, 2, 5, 3, 6).reshape(b, -1, D, W, H)
+        # seg_mask = seg_mask.float().to(device)
+        seg_loss = self.seg_criterion(seg_preds, seg_mask)
+        loss_dict['seg_loss'] = seg_loss.item()   
+        return seg_loss, loss_dict
 
+
+    def forward_batch_image_report(self, batch, device=None, accelerator=None, **kwargs):
+        text = batch["text_tokens"] # attention here, is after the tokenization!
+        image = batch["image"]
+        b, device = text.input_ids.shape[0], device
+        # derive text mask
+        text_mask = text.attention_mask
+        loss_dict = {}
+        num_batch_texts = num_batch_images = 1
+        is_multiview = False
+
+        # get encoded text
+        text_args = (text.input_ids,text.attention_mask)
+
+        if not self.text_encode_without_mask:
+            text_args = (*text_args, text_mask)
+
+        text_embeddings = self.text_transformer(text.input_ids, attention_mask = text.attention_mask)
+        enc_text = text_embeddings[0]
+
+        enc_image= self.visual_transformer(image, return_encoded_tokens=True)
+
+        # print(f"encoded image shape: {enc_image.shape}")
+        #print("This is visual encoding")
+        global h_r, w_r, z_r
+        h_r, w_r, z_r = enc_image.shape[1], enc_image.shape[2], enc_image.shape[3]
+
+        #enc_image, max_indices = torch.max(enc_image, dim=1)
+        enc_image_send = enc_image
+
+        enc_image = torch.mean(enc_image, dim=1)
+        enc_image = enc_image.view(enc_image.shape[0], -1)
+
+        # depending on whether to do fine-grained CLIP or not, select either all tokens, or CLS tokens only
+
+        text_embeds = enc_text[:, :] if enc_text.ndim == 3 else enc_text
+        image_embeds = enc_image[:, :] if enc_image.ndim == 3 else enc_image
+
+        # project to latents
+        #text_embeds = text_embeds.view(text_embeds.shape[0], -1)
+        text_embeds = text_embeds[:,0,:]
+
+        
+        #text_embeds = torch.mean(text_embeds, dim=1)
+        text_latents = self.to_text_latent(text_embeds)
+
+        image_latents = self.to_visual_latent(image_embeds)
+
+
+
+        text_latents, image_latents = map(l2norm, (text_latents, image_latents))
+
+        # get temperature
+
+        temp = self.temperature.exp()
+
+        # split out multiview dimension for text and images
+
+        bs_single_gpu = text_latents.shape[0]
+
+        # gather
+        assert accelerator is not None, "accelerator is not provided"
+
+        text_latents_gather = AllGather.apply(text_latents, accelerator)
+        image_latents_gather = AllGather.apply(image_latents, accelerator)
+
+        text_latents_gather = rearrange(text_latents_gather, '(m b) ... -> m b ...', m = num_batch_texts)
+        image_latents_gather = rearrange(image_latents_gather, '(m b) ... -> m b ...', m = num_batch_images)
+
+
+        # contrastive loss
+
+        """
+        m - num batches of text (for multiview)
+        n - num batches of images (for multiview)
+        x - batches of text
+        y - batches of images
+        t - sequence dimension along text tokens
+        i - sequence dimension along image tokens
+        """
+
+        text_to_image = einsum('m t d, n i d -> m n t i', text_latents_gather, image_latents_gather) * temp
+        image_to_text = rearrange(text_to_image, '... t i -> ... i t')
+
+
+        # calculate loss
+        text_to_image = rearrange(text_to_image, 'm n ... -> (m n) ...')
+        image_to_text = rearrange(image_to_text, 'm n ... -> (m n) ...')
+
+        print(f"shape of text to image: {text_to_image.shape}")
+
+
+        # exponentiate
+        text_to_image_exp, image_to_text_exp = map(torch.exp, (text_to_image, image_to_text))
+
+        # numerators
+        text_to_image_pos, image_to_text_pos = map(matrix_diag, (text_to_image_exp, image_to_text_exp))
+
+        # denominator
+
+        if self.decoupled_contrastive_learning:
+            pos_mask = torch.eye(b, device = device, dtype = torch.bool)
+            text_to_image_exp, image_to_text_exp = map(lambda t: t.masked_fill(pos_mask, 0.), (text_to_image_exp, image_to_text_exp))
+
+        text_to_image_denom, image_to_text_denom = map(lambda t: t.sum(dim = -1), (text_to_image_exp, image_to_text_exp))
+
+        # loss
+
+        text_to_image_loss = (-log(text_to_image_pos) + log(text_to_image_denom)).mean(dim = -1)
+        image_to_text_loss = (-log(image_to_text_pos) + log(image_to_text_denom)).mean(dim = -1)
+
+        # calculate CL loss
+
+        cl_losses = (text_to_image_loss + image_to_text_loss) / 2 / bs_single_gpu
+
+
+        cl_loss = cl_losses[0]
+
+        loss_dict['cl_loss'] = cl_loss.item()
+
+
+        loss_dict['cl_loss'] = cl_loss.item()
+        return cl_loss, loss_dict
 
 
 
@@ -728,6 +874,10 @@ class CTCLIP(nn.Module):
             aug_text = None,                # augmented text (for multiview)
             aug_image = None                # augmented image (for multiview)
     ):
+        """
+        the original forward function, support mixed data types in a batch, but this is for old code support only!
+        now more recommend to use forward_batch function
+        """
         b, device = text.input_ids.shape[0], device
 
         # derive text mask

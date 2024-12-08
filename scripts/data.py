@@ -5,7 +5,7 @@ import torch
 import pandas as pd
 import numpy as np
 from PIL import Image
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 from functools import partial
 import torch.nn.functional as F
@@ -13,6 +13,10 @@ import nibabel as nib
 import tqdm
 
 from multiprocessing import Pool
+
+from data_inference import *
+
+
 
 def resize_array(array, current_spacing, target_spacing):
     """
@@ -191,8 +195,7 @@ class CTReportDataset(Dataset):
         input_text = input_text.replace('(', '')
         input_text = input_text.replace(')', '')
 
-        return {"image": video_tensor, "text": input_text, "seg_mask": None, 
-                "is_seg": torch.tensor([0. ]), "is_text": torch.tensor([1.])}
+        return {"image": video_tensor, "text": input_text, "data_type": "imagereport"}
 
 
 class CTSegDataset(Dataset):
@@ -249,43 +252,81 @@ class CTSegDataset(Dataset):
         mask_tensor = torch.tensor(np.load(mask_file)['arr_0'])
 
         # return video_tensor, mask_tensor
-        return {"image": video_tensor, "text": None, "seg_mask": mask_tensor, 
-                "is_seg": torch.tensor([1. ]), "is_text": torch.tensor([0.])}
+        return {"image": video_tensor, "seg_mask": mask_tensor, 
+                "data_type": "imageseg"}
 
 
-class CTReportSegDataset(Dataset):
-    def __init__(self, data_folder=None, csv_file=None, metadata_train=None,
-                 seg_data=None, seg_mask=None):
-        self.report_dataset = CTReportDataset(data_folder, csv_file, metadata_train)
-        self.seg_dataset = CTSegDataset(seg_data, seg_mask)
-        self.n_image_txt_pairs = len(self.report_dataset)
-        self.n_image_seg_pairs = len(self.seg_dataset)
-        self.dummy_seg = self.find_dummy_seg()
-        self.dummy_text = self.find_dummy_text()
+def create_train_ds(config):
+    if config["type"] == "imagereport":
+        return CTReportDataset(config["data_train"], config["reports_file_train"], config["metadata_train"])
+    elif config["type"] == "imageseg":
+        return CTSegDataset(config["seg_data_train"], config["seg_mask_train"])
+    else:
+        raise ValueError(f"Unknown dataset type: {config['type']}")
 
-    def find_dummy_seg(self):
-        # load the 1st seg data to find the dummy seg
-        dummy_seg = self.seg_dataset[0]["seg_mask"] #* 0
-        return dummy_seg
+def create_train_dl(train_ds, train_dl_config):
+    return DataLoader(train_ds, batch_size=train_dl_config["batch_size"], shuffle=True, num_workers=train_dl_config["num_workers"])
 
-    def find_dummy_text(self):
-        # load the 1st text data to find the dummy text
-        dummy_text = self.report_dataset[0]["text"] #* 0
-        return dummy_text
+
+def create_valid_ds(config):
+    if config["type"] == "imagereport":
+        return CTReportDatasetinfer(config["data_valid"], config["reports_file_valid"], labels = config["labels"])
+    else:
+        raise ValueError(f"Unknown dataset type: {config['type']}")
+
+
+def create_valid_dl(valid_ds, valid_dl_config):
+    return DataLoader(valid_ds, batch_size=valid_dl_config["batch_size"], shuffle=False, num_workers=valid_dl_config["num_workers"])
+
+
+def create_train_dl_list(train_dl_config):
+    ds_list = [create_train_dl(train_dl_config) for train_dl_config in train_dl_config]
+    dl_list = [create_train_dl(ds, train_dl_config) for ds, train_dl_config in zip(ds_list, train_dl_config)]
+    return dl_list
+    
+
+def create_valid_dl_list(valid_dl_config):
+    ds_list = [create_valid_ds(valid_ds_config) for valid_ds_config in valid_dl_config]
+    dl_list = [create_valid_dl(ds, valid_dl_config) for ds, valid_dl_config in zip(ds_list, valid_dl_config)]
+    pass
+
+
+
+# class CombinedDataset(Dataset):
+#     def __init__(self, data_folder=None, csv_file=None, metadata_train=None,
+#                  seg_data=None, seg_mask=None):
+#         self.report_dataset = CTReportDataset(data_folder, csv_file, metadata_train)
+#         self.seg_dataset = CTSegDataset(seg_data, seg_mask)
+#         self.n_image_txt_pairs = len(self.report_dataset)
+#         self.n_image_seg_pairs = len(self.seg_dataset)
+#         self.dummy_seg = self.find_dummy_seg()
+#         self.dummy_text = self.find_dummy_text()
+
+#     def find_dummy_seg(self):
+#         # load the 1st seg data to find the dummy seg
+#         dummy_seg = self.seg_dataset[0]["seg_mask"] #* 0
+#         return dummy_seg
+
+#     def find_dummy_text(self):
+#         # load the 1st text data to find the dummy text
+#         dummy_text = self.report_dataset[0]["text"] #* 0
+#         return dummy_text
 
     
-    def __len__(self):
-        return len(self.report_dataset) + len(self.seg_dataset)
+#     def __len__(self):
+#         num_report = sum([len(report) for report in self.report_dataset])
+#         num_seg = sum([len(seg) for seg in self.seg_dataset])
+#         return num_report + num_seg
 
-    def __getitem__(self, index):
-        # report first, then seg
-        if index < len(self.report_dataset):
-            ori_report_dict = self.report_dataset[index]
-            # add dummy seg
-            ori_report_dict["seg_mask"] = self.dummy_seg
-            return ori_report_dict
-        else:
-            ori_seg_dict = self.seg_dataset[index - len(self.report_dataset)]
-            # add dummy text
-            ori_seg_dict["text"] = self.dummy_text
-            return ori_seg_dict
+#     def __getitem__(self, index):
+#         # report first, then seg
+#         if index < len(self.report_dataset):
+#             ori_report_dict = self.report_dataset[index]
+#             # add dummy seg
+#             ori_report_dict["seg_mask"] = self.dummy_seg
+#             return ori_report_dict
+#         else:
+#             ori_seg_dict = self.seg_dataset[index - len(self.report_dataset)]
+#             # add dummy text
+#             ori_seg_dict["text"] = self.dummy_text
+#             return ori_seg_dict

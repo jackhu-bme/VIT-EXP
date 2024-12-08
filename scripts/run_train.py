@@ -21,6 +21,46 @@ import time
 from accelerate import Accelerator
 
 
+def create_img_encoder(config):
+    if config.get("use_seg", False):
+        seg_config = config.get("seg_head", {})
+    else:
+        seg_config = {}
+    if config.get("arch_name") == "CTViT3D":
+        image_encoder = CTViT3D(
+            # dim = 512,
+            dim = config.get("CTViT3D_dim", 768),
+            # codebook_size = 8192,
+            image_size = config.get("image_size", 480),
+            patch_size = config.get("patch_size", 20),
+            temporal_size= config.get("temporal_size", 240),
+            temporal_patch_size= config.get("temporal_patch_size", 10),
+            transformer_blocks = config.get("transformer_blocks", 8),
+            dim_head = config.get("dim_head", 32),
+            heads = config.get("heads", 8),
+            use_flash_attention = config.get("use_flash_attention", True),
+            use_seg = config.get("use_seg", False),
+            seg_head_n_layers = seg_config.get("n_layers", 2),
+            seg_head_layer_type = seg_config.get("layer_type", "mlp"),
+            seg_head_in_dim = seg_config.get("in_dim", 256),
+            seg_head_mid_dim = seg_config.get("mid_dim", 128),
+            seg_head_out_dim = seg_config.get("out_dim", 22), # 22 classes for segmentation in TotalSegmentor
+        )
+    else:
+        image_encoder = CTViT(
+            dim = 512,
+            codebook_size = 8192,
+            image_size = 480,
+            patch_size = 20,
+            temporal_patch_size = 10,
+            spatial_depth = 4,
+            temporal_depth = 4,
+            dim_head = 32,
+            heads = 8
+        )
+    return image_encoder
+
+
 
 def main(config, args):
 
@@ -36,8 +76,6 @@ def main(config, args):
     os.makedirs(wandb_folder, exist_ok=True)
 
     wandb_mode = "offline" if args.debug else "online"
-
-    # wandb_logger = wandb.init(project=project_name, name=exp_name, config=config, mode=wandb_mode, dir=wandb_folder)
 
     accelerator = Accelerator(log_with="wandb")
 
@@ -63,27 +101,17 @@ def main(config, args):
     os.system("cp " + os.path.join(txt_folder, "git_status.txt") + " " + os.path.join(wandb_folder, "git_status.txt"))
     os.system("cp " + os.path.join(txt_folder, "git_log.txt") + " " + os.path.join(wandb_folder, "git_log.txt"))
 
-    # save the txt folder to wandb
-    # wandb.save(os.path.join(wandb_folder, "git_status.txt"))
-    # wandb.save(os.path.join(wandb_folder, "git_log.txt"))
-
     wandb_logger = accelerator.get_tracker("wandb")
 
-    # wandb.save(os.path.join(wandb_folder, "git_status.txt"))
-    # wandb.save(os.path.join(wandb_folder, "git_log.txt"))
-
     # fix the random seed based on the config args
-    # 设置随机种子
     seed = int(config["random_seed"])
 
     print(f"Setting random seed to {seed}")
 
 
-    torch.manual_seed(seed)  # 设置 PyTorch 的随机种子
-    torch.cuda.manual_seed(seed)  # 设置 CUDA 随机种子（如果使用 GPU）
-    torch.cuda.manual_seed_all(seed)  # 如果使用多 GPU，设置所有 GPU 的随机种子
-
-    # 设置 Python 和 NumPy 的随机种子
+    torch.manual_seed(seed)  
+    torch.cuda.manual_seed(seed)  
+    torch.cuda.manual_seed_all(seed)
     random.seed(seed)
     np.random.seed(seed)
 
@@ -92,37 +120,12 @@ def main(config, args):
 
     text_encoder = BertModel.from_pretrained("microsoft/BiomedVLP-CXR-BERT-specialized")
 
-    print("---------")
-    print(tokenizer.pad_token_id)
-    print(tokenizer.mask_token_id)
-    print("-----------")
+    # print("---------")
+    # print(tokenizer.pad_token_id)
+    # print(tokenizer.mask_token_id)
+    # print("-----------")
 
-    if config.get("arch_name") == "CTViT3D":
-        image_encoder = CTViT3D(
-            # dim = 512,
-            dim = config.get("CTViT3D_dim", 768),
-            # codebook_size = 8192,
-            image_size = config.get("image_size", 480),
-            patch_size = config.get("patch_size", 20),
-            temporal_size= config.get("temporal_size", 240),
-            temporal_patch_size= config.get("temporal_patch_size", 10),
-            transformer_blocks = config.get("transformer_blocks", 8),
-            dim_head = config.get("dim_head", 32),
-            heads = config.get("heads", 8),
-            use_flash_attention = config.get("use_flash_attention", True),
-        )
-    else:
-        image_encoder = CTViT(
-            dim = 512,
-            codebook_size = 8192,
-            image_size = 480,
-            patch_size = 20,
-            temporal_patch_size = 10,
-            spatial_depth = 4,
-            temporal_depth = 4,
-            dim_head = 32,
-            heads = 8
-        )
+    image_encoder = create_img_encoder(config["arch"])
     #dim_image = 131072,
 
     resume_path = args.resume if args.resume else None
@@ -137,7 +140,6 @@ def main(config, args):
         use_mlm=False,
         downsample_image_embeds = False,
         use_all_token_embeds = False
-
     )
 
     if resume_path is not None:
@@ -147,18 +149,26 @@ def main(config, args):
     # also resume the trainer
     trainer = CTClipTrainer(
         clip,
-        reports_file_train= config["reports_file_train"],
-        reports_file_valid= config["reports_file_valid"],
-        metadata_train= config["metadata_train"],
-        data_train= config["data_train"],
-        data_valid = config["data_valid"],
-        labels = config["labels"],
-        batch_size = config["batch_size"],
-        results_folder = ckpt_folder,
-        # results_folder = config["results_folder"],
-        num_train_steps = config["num_train_steps"],
-        num_workers = config["num_workers"],
-        accelerate_kwargs = {"gradient_accumulation_steps": config["gradient_accumulation_steps"]},
+        config=config,
+        tokenizer=tokenizer,
+        # reports_file_train= config["reports_file_train"],
+        # reports_file_valid= config["reports_file_valid"],
+        # metadata_train= config["metadata_train"],
+        # data_train= config["data_train"],
+        # data_valid = config["data_valid"],
+        # use_seg = config.get("use_seg", False),
+        # seg_data_train = config.get("seg_data_train", None),
+        # seg_data_valid = config.get("seg_data_valid", None),
+        # seg_mask_train = config.get("seg_mask_train", None),
+        # seg_mask_valid = config.get("seg_mask_valid", None),
+        # balance_report_seg = config.get("balance_report_seg", 1.0),
+        # labels = config["labels"],
+        # batch_size = config["batch_size"],
+        # results_folder = ckpt_folder,
+        # # results_folder = config["results_folder"],
+        # num_train_steps = config["num_train_steps"],
+        # num_workers = config["num_workers"],
+        # accelerate_kwargs = {"gradient_accumulation_steps": config["gradient_accumulation_steps"]},
         wandb_logger = wandb_logger,
         resume_path = resume_path,
         )

@@ -6,3 +6,4 @@ output_*/
 **/*.pyc
 **.egg-info/
 demo_ckpt
+debug_*/

@@ -11,11 +11,8 @@ from sklearn.metrics import classification_report, confusion_matrix, multilabel_
 
 import torch
 from torch import nn
-from torch.utils.data import Dataset, DataLoader, random_split
-from torch.utils.data.distributed import DistributedSampler
 
-from data import CTReportDataset, CTReportSegDataset
-from data_inference import CTReportDatasetinfer # CTReportSegDatasetinfer
+from data import create_train_dl_list, create_valid_dl_list
 
 import numpy as np
 import pandas as pd
@@ -69,55 +66,53 @@ def cycle(dl):
         for data in dl:
             yield data
 
-# 自定义Sampler实现循环和固定比例采样
 
+# class CycleSampler:
+#     def __init__(self, lengths, ratios):
+#         """
+#         lengths: 每个数据集的长度列表
+#         ratios: 采样比例列表
+#         """
+#         self.lengths = lengths
+#         self.ratios = ratios
+#         self.ratio_sum = sum(ratios)
+#         self.total_length = sum(lengths)
+#         self.indices = []
 
-class CycleSampler:
-    def __init__(self, lengths, ratios):
-        """
-        lengths: 每个数据集的长度列表
-        ratios: 采样比例列表
-        """
-        self.lengths = lengths
-        self.ratios = ratios
-        self.ratio_sum = sum(ratios)
-        self.total_length = sum(lengths)
-        self.indices = []
-
-        # 根据比例构造初始索引
-        start = 0
-        start_list = []
-        datasets = []
-        for i in range(len(lengths)):
-            start_list.append(start)
-            datasets.append(list(range(start, start + lengths[i])))
-            start += lengths[i]
+#         # 根据比例构造初始索引
+#         start = 0
+#         start_list = []
+#         datasets = []
+#         for i in range(len(lengths)):
+#             start_list.append(start)
+#             datasets.append(list(range(start, start + lengths[i])))
+#             start += lengths[i]
             
         
-        self.datasets = datasets
+#         self.datasets = datasets
 
-        self.start_list = start_list
+#         self.start_list = start_list
         
-        self.chances = [ratio / self.ratio_sum for ratio in self.ratios]
+#         self.chances = [ratio / self.ratio_sum for ratio in self.ratios]
 
-    def __iter__(self):
-        while True:
-            random_num = random.random()
-            # choose the dataset according to the chances
-            dataset_index = 0
-            for i, chance in enumerate(self.chances):
-                if random_num < chance:
-                    dataset_index = i
-                    break
-                random_num -= chance
-            # choose the sample from the dataset
-            start = self.start_list[dataset_index]
-            length = self.lengths[dataset_index]
-            index = random.randint(start, start + length - 1)
-            yield index
+#     def __iter__(self):
+#         while True:
+#             random_num = random.random()
+#             # choose the dataset according to the chances
+#             dataset_index = 0
+#             for i, chance in enumerate(self.chances):
+#                 if random_num < chance:
+#                     dataset_index = i
+#                     break
+#                 random_num -= chance
+#             # choose the sample from the dataset
+#             start = self.start_list[dataset_index]
+#             length = self.lengths[dataset_index]
+#             index = random.randint(start, start + length - 1)
+#             yield index
 
-    def __len__(self):
-        return len(self.indices)
+#     def __len__(self):
+#         return len(self.indices)
 
 
 
@@ -179,39 +174,87 @@ class CosineAnnealingWarmUpRestarts(lr_scheduler._LRScheduler):
             self.T_0 *= self.T_mult
             self.eta_max *= self.gamma
 
+def create_accelerate_kwargs(config):
+    gradient_accumulation_steps = config["trainer"].get("gradient_accumulation_steps", 1)
+    accelerate_kwargs = {
+        "gradient_accumulation_steps": gradient_accumulation_steps,
+    }
+    return accelerate_kwargs
+
+class RandDatasetSampler():
+    def __init__(self, config):
+        self.ratio_list = config["ratio_list"]
+        assert sum(self.ratio_list) > 0, "the sum of ratio list should be a positive number"
+        # norm the ratio list
+        self.ratio_list = [ratio / sum(self.ratio_list) for ratio in self.ratio_list]
+        self.n_datasets = len(self.ratio_list)
+    
+    def sample(self, step):
+        # generate a random number according to step
+        random_num = random.random()
+        # choose the dataset according to the chances
+        dataset_index = 0
+        for i, chance in enumerate(self.ratio_list):
+            if random_num < chance:
+                dataset_index = i
+                break
+            random_num -= chance
+        acc_steps_list = [0, ] * self.n_datasets
+        acc_steps_list[dataset_index] = 1
+        return acc_steps_list
+
+class CombinedDatasetSampler():
+    """
+    CombinedDatasetSampler is a sampler that combines multiple dataset samplers, defines the number of steps to accumulate the gradients for each dataset
+    """
+    def __init__(self, config):
+        self.acc_steps_list = config["acc_steps_list"]
+        assert sum(self.acc_steps_list) > 0, "the sum of acc_steps_list should be a positive number"
+        # assert each element in acc_steps_list is a positive int
+        self.acc_steps_list = [int(acc_steps) for acc_steps in self.acc_steps_list]
+        assert all([acc_steps >= 0 for acc_steps in self.acc_steps_list]), "each element in acc_steps_list should be a non-negative int"
+        self.n_datasets = len(self.acc_steps_list)
+    
+    def sample(self, step):
+        # generate a random number according to step
+        return self.acc_steps_list
+
+
 class CTClipTrainer(nn.Module):
     def __init__(
         self,
         CTClip: CTCLIP,
-        *,
-        num_train_steps,
-        batch_size,
-        data_train = "train",
-        data_valid = "valid",
-        use_seg = False,
-        seg_data_train = None,
-        seg_data_valid = None,
-        seg_mask_train = None,
-        seg_mask_valid = None,
-        balance_report_seg = 1.0,
-        reports_file_train = "data_reports.xslx",
-        reports_file_valid = "data_reports.xslx",
-        labels = "labels.csv",
-        tokenizer = None,
-        lr = 1.25e-6,
-        wd = 0.,
-        max_grad_norm = 0.5,
-        save_results_every = 1000,
-        save_model_every = 1000 ,
-        results_folder = '/shares/menze.dqbm.uzh/ihamam/ctclip/',
-        num_workers = 8,
-        accelerate_kwargs: dict = dict(),
+        tokenizer=None,
+        config=None,
+        # num_train_steps,
+        # batch_size,
+        # data_train = "train",
+        # data_valid = "valid",
+        # use_seg = False,
+        # seg_data_train = None,
+        # seg_data_valid = None,
+        # seg_mask_train = None,
+        # seg_mask_valid = None,
+        # balance_report_seg = 1.0,
+        # reports_file_train = "data_reports.xslx",
+        # reports_file_valid = "data_reports.xslx",
+        # labels = "labels.csv",
+        # tokenizer = None,
+        # lr = 1.25e-6,
+        # wd = 0.,
+        # max_grad_norm = 0.5,
+        # save_results_every = 1000,
+        # save_model_every = 1000 ,
+        # results_folder = '/shares/menze.dqbm.uzh/ihamam/ctclip/',
+        # num_workers = 8,
+        # accelerate_kwargs: dict = dict(),
         resume_path = None,
-        metadata_train = "train_metadata.csv",
+        # metadata_train = "train_metadata.csv",
         wandb_logger = None,
     ):
         super().__init__()
         ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
+        accelerate_kwargs = create_accelerate_kwargs(config)
         kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=3600))
         self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], **accelerate_kwargs)
         self.CTClip = CTClip
@@ -222,72 +265,67 @@ class CTClipTrainer(nn.Module):
 
         self.register_buffer('steps', torch.Tensor([0]))
 
-        self.num_train_steps = num_train_steps
-        self.batch_size = batch_size
+        trainer_config = config["trainer"]
+
+        self.num_train_steps = trainer_config["num_train_steps"]
+        # self.batch_size = batch_size # the batch size is defined for different datasets individually, so no need to define it here
 
         all_parameters = set(CTClip.parameters())
 
-        self.optim = get_optimizer(all_parameters, lr=lr, wd=wd)
+        self.optim = get_optimizer(all_parameters, lr=trainer_config["lr"], wd=trainer_config["wd"])
 
-        self.max_grad_norm = max_grad_norm
-        self.lr=lr
+        self.max_grad_norm = trainer_config["max_grad_norm"]
+        
+        self.lr=trainer_config["lr"]
 
-        self.use_seg = use_seg
+        self.dl_list = create_train_dl_list(config["train_data_list"])
+        self.valid_dl_list = create_valid_dl_list(config["valid_data_list"])
 
-        if not use_seg:
-            self.ds = CTReportDataset(data_folder=data_train, csv_file=reports_file_train, metadata_train=metadata_train)
-            self.valid_ds = CTReportDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels = labels)
-        else:
-            self.ds = CTReportSegDataset(data_folder=data_train, csv_file=reports_file_train, metadata_train=metadata_train, 
-                                         seg_data=seg_data_train, seg_mask=seg_mask_train)
-            self.valid_ds = CTReportDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels = labels)
+        self.dataset_sampler = self.create_dataset_sampler(config["dataset_sampler"])
+
+        # if not use_seg:
+        #     self.ds = CTReportDataset(data_folder=data_train, csv_file=reports_file_train, metadata_train=metadata_train)
+        #     self.valid_ds = CTReportDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels = labels)
+        # else:
+        #     self.ds = CTReportSegDataset(data_folder=data_train, csv_file=reports_file_train, metadata_train=metadata_train, 
+        #                                  seg_data=seg_data_train, seg_mask=seg_mask_train)
+        #     self.valid_ds = CTReportDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels = labels)
             # todo: add the seg support in valid_ds
         
-        self.balance_report_seg_ratio = balance_report_seg
-
-        ratios = [self.balance_report_seg_ratio, 1 - self.balance_report_seg_ratio] # the ratio mean how much the report is used in the training vs. seg
-        
-        num_ds_1, num_ds_2 = self.ds.n_image_txt_pairs, self.ds.n_image_seg_pairs
-
-        # 创建CycleSampler
-        train_sampler = CycleSampler([num_ds_1, num_ds_2], ratios)
-
-        self.dl = DataLoader(
-            self.ds,
-            num_workers=num_workers,
-            batch_size=self.batch_size,
-            sampler=train_sampler,
-        )
-
-        self.valid_dl = DataLoader(
-            self.valid_ds,
-            num_workers=num_workers,
-            batch_size=1,
-            shuffle = False,
-        )
+        self.balance_loss_weight = trainer_config.get("balance_loss_weight", [1.0, ] * len(self.train_ds_list))
 
         # prepare with accelerator
-        self.dl_iter=cycle(self.dl)
-        self.valid_dl_iter=cycle(self.valid_dl)
+        self.dl_iter_list = [cycle(dl) for dl in self.dl_list]
+        self.valid_dl_iter_list = [cycle(valid_dl) for valid_dl in self.valid_dl_list]
+        # self.dl_iter=cycle(self.dl)
+        # self.valid_dl_iter=cycle(self.valid_dl)
         self.device = self.accelerator.device
         self.CTClip.to(self.device)
 
-        (
- 			self.dl_iter,
-            self.valid_dl_iter,
-            self.CTClip,
-            self.optim,
-        ) = self.accelerator.prepare(
-            self.dl_iter,
-            self.valid_dl_iter,
-            self.CTClip,
-            self.optim,
-        )
+        # (
+ 		# 	self.dl_iter,
+        #     self.valid_dl_iter,
+        #     self.CTClip,
+        #     self.optim,
+        # ) = self.accelerator.prepare(
+        #     self.dl_iter,
+        #     self.valid_dl_iter,
+        #     self.CTClip,
+        #     self.optim,
+        # )
 
-        self.save_model_every = save_model_every
-        self.save_results_every = save_results_every
+        self.dl_iter_list = [self.accelerator.prepare_data_loader(dl_iter) for dl_iter in self.dl_iter_list]
+        self.valid_dl_iter_list = [self.accelerator.prepare_data_loader(valid_dl_iter) for valid_dl_iter in self.valid_dl_iter_list]
+        self.CTClip = self.accelerator.prepare_model(self.CTClip)
+        self.optim = self.accelerator.prepare_optimizer(self.optim)
+        # in future, if use scheduler
+        # self.scheduler = self.accelerator.prepare_scheduler(self.scheduler)
+           
 
-        self.results_folder = Path(results_folder)
+        self.save_model_every = trainer_config["save_model_every"]
+        self.save_results_every = trainer_config["save_results_every"]
+
+        self.results_folder = Path(config["results_folder"])
 
         if len([*self.results_folder.glob('**/*')]) > 0 and yes_or_no('do you want to clear previous experiment checkpoints and results?'):
             rmtree(str(self.results_folder))
@@ -310,7 +348,22 @@ class CTClipTrainer(nn.Module):
         self.wandb_logger = wandb_logger
         
 
+    def create_dataset_sampler(self, config):
+        sampler_type = config["DatasetSampler"]["type"]
+        if sampler_type == "Random":
+            return RandDatasetSampler(config["DatasetSampler"])
+        elif sampler_type == "Combined":
+            return CombinedDatasetSampler(config["DatasetSampler"])
+        else:
+            raise ValueError(f"DatasetSampler type {sampler_type} is not supported")
+        
+
+
     def save(self, path):
+        # Ensure that the required attributes are not None before attempting to save
+        if self.accelerator is None or self.CTClip is None or self.optim is None:
+            raise ValueError("Accelerator, CTClip model, or optimizer is not initialized.")
+
         if not self.accelerator.is_local_main_process:
             return
 
@@ -356,39 +409,76 @@ class CTClipTrainer(nn.Module):
     def is_main(self):
         return self.accelerator.is_main_process
 
-    def train_step(self):
-        device = self.device
+    def prepare_batch(self, batch):
+        """
+        make essential data preprocess on gpu, such as tokenization, and move the data to gpu
+        """
+        if batch["data_type"] == "imagereport":
+            text = batch['text']
+            video=video.to(self.device)
+            text = list(text)
+            text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(self.device)
+            batch["text"] = text_tokens
+        elif batch["data_type"] == "imageseg":
+            seg_mask = batch["seg_mask"].to(self.device)
+            seg_data = batch["image"].to(self.device)
+            batch["seg_mask"] = seg_mask
+            batch["image"] = seg_data
+        else:
+            raise ValueError(f"unsupported data type: {batch['data_type']}")
+        return batch
 
+
+    def train_step_single_dataset(self, dataset_index=None):
+        batch = next(self.dl_iter_list[dataset_index])
+        #video = video
+        with self.accelerator.accumulate(self.CTClip):
+            with self.accelerator.autocast():
+                loss, loss_dict = self.CTClip.forward_batch(batch, return_loss=True, return_loss_dict=True, 
+                                              device=self.device, accelerator=self.accelerator)
+                # times the weight for this dataset to the loss and loss dict
+                loss = loss * self.balance_loss_weight[dataset_index]
+                bal_loss_dict = {}
+                for key, value in loss_dict.items():
+                    bal_loss_dict[key] = value * self.balance_loss_weight[dataset_index]
+        self.accelerator.backward(loss)
+        return bal_loss_dict
+
+    @staticmethod
+    def loss_update(loss_dict, loss_dict_single):
+        for key, value in loss_dict_single.items():
+            loss_dict[key] = loss_dict.get(key, 0) + value
+        return loss_dict
+
+
+    def train_step_single(self):
+        """
+        in single training step, we deal with multiple datasets, how to train them in a single step and accumulate the loss?
+        this behavior is defined by our DatasetSampler
+        one possible logic of dataset sampler is to sample only a random type by the defined ratio of different datasets
+        another possible logic is to sample from all datasets in a single step, and number of accumulated steps is defined by the DatasetSampler
+        however, they can be unified into one type of sampler, the sampler takes the input of step, output a list [n1, n2, n3, n4, ...] to determine the number of steps to accumulate the gradients for each dataset
+        the batch size used for each dataset is defined by the dataloader, so we don't need to worry about the batch size
+        """
+        acc_steps_list = self.dataset_sampler.sample(self.steps.item())
+        loss_dict = {}
+        for i, acc_step in enumerate(acc_steps_list):
+            for _ in range(acc_step):
+                loss_dict_single = self.train_step_single_dataset(dataset_index=i)
+                loss_dict = self.loss_update(loss_dict, loss_dict_single)
+        return loss_dict
+
+
+    def train_step(self):
         steps = int(self.steps.item())
 
         self.CTClip.train()
-
         # logs
         logs = {}
         # update CTClip model
         # video, text = next(self.dl_iter)
-        batch = next(self.dl_iter)
-        video = batch['image']
-        text = batch['text']
-        seg_mask = batch['seg_mask']
-        text_valid_mask = batch['is_text']
-        seg_valid_mask = batch['is_seg']
-        # print(video.shape)
-        device=self.device
-        video=video.to(device)
-        mask = torch.ones((video.shape[0], video.shape[2])).bool().to(device)
-        #text = text.to(device)
-        text = list(text)
-        text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
-
-        #video = video
-        with self.accelerator.accumulate(self.CTClip):
-            with self.accelerator.autocast():
-                loss, loss_dict = self.CTClip(text_tokens, video, return_loss=True, return_loss_dict=True, 
-                                              device=device, use_seg=self.use_seg, seg_mask=seg_mask, 
-                                              seg_valid_mask=seg_valid_mask, text_valid_mask=text_valid_mask, accelerator=self.accelerator)
-
-        self.accelerator.backward(loss)
+        loss_dict = self.train_step_single()
+        
         to_acc_dict = loss_dict.copy()
         to_acc_dict["step"] = self.steps.item()
         accum_log(logs, to_acc_dict)
@@ -401,7 +491,6 @@ class CTClipTrainer(nn.Module):
         self.print(f"log: {logs}")
 
         self.wandb_logger.log(logs, step=self.steps.int().item())
-        # self.accelerator.log(logs, step=self.steps.int().item())
 
         # if self.is_main and not (steps % self.save_results_every):
         #     with torch.no_grad():
@@ -468,19 +557,6 @@ class CTClipTrainer(nn.Module):
         #             writer.close()
         #             del output
 
-
-        # save model every so often
-
-        # if self.is_main and not (steps % self.save_model_every):
-        #     # print(f"Saving model at step {steps}")
-        #     model_path = str(self.results_folder / f'CTClip.{steps}.pt')
-        #     state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
-
-        #     self.accelerator.save(state_dict, model_path)
-
-        #     # print(f"finished saving model at step {steps}")
-
-        #     self.print(f'{steps}: saving model to {str(self.results_folder)}')
 
         if not (steps % self.save_model_every):
             state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
