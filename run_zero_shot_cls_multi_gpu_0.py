@@ -2,17 +2,17 @@ import os
 
 # this is for multi gpu inference, but actually we split the ckpts and run them on single gpu individually
 
-CONFIG="configs/train_from_scratch/ct_clip_vit_hpc_v3_1.yaml"
+CONFIG="configs/train_from_scratch/ct_clip_vit_hpc_v3_1_div_0_revised_cl.yaml"
 
-model_dir = "/mnt/input/CT-CLIP-VIT/train_from_scratch_vit_hpc_1_dim_384/2024-11-16_06-57-22/checkpoints"
+model_dir = "/mnt/input/CT-CLIP-VIT/train_from_scratch_vit_hpc_1_dim_384_div0_cl_revised/2024-12-05_14-02-26/checkpoints"
 
 current_gpu = 0
 
-gaps = 10
+gaps = 4
 
 
 
-results_dir = "/mnt/input/CT-CLIP-VIT/results_fast_inference_zeroshot_ctvit_full_multi_gpu"
+results_dir = "/mnt/input/CT-CLIP-VIT/results_fast_inference_zeroshot_ctvit_div0_multi_gpu_cl_revised_bs_16"
 
 
 model_list = os.listdir(model_dir)
