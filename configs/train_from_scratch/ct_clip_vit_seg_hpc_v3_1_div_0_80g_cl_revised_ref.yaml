@@ -68,7 +68,7 @@ DatasetSampler:
 # arch
 arch:
   arch_name: CTViT3D # this is vit_vanilla_3D
-  dim: 384
+  dim: 768 # this change is due to errors in the previous training, the previous value was 768, but actually 384 is more unified
   image_size: 480
   patch_size: 20
   temporal_size: 240

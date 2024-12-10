@@ -29,7 +29,7 @@ def create_img_encoder(config):
     if config.get("arch_name") == "CTViT3D":
         image_encoder = CTViT3D(
             # dim = 512,
-            dim = config.get("CTViT3D_dim", 768),
+            dim = config.get("dim", 768),
             # codebook_size = 8192,
             image_size = config.get("image_size", 480),
             patch_size = config.get("patch_size", 20),
