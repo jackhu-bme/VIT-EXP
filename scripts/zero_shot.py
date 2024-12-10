@@ -642,17 +642,17 @@ class CTClipInferenceSeg(nn.Module):
         #                                           eta_max=lr)   # Maximum learning rate
 
 
-        (
- 			self.dl_iter,
-            self.CTClip,
-            self.optim,
-            self.lr_scheduler
-        ) = self.accelerator.prepare(
-            self.dl_iter,
-            self.CTClip,
-            self.optim,
-            self.lr_scheduler
-        )
+        # (
+ 		# 	self.dl_iter,
+        #     self.CTClip,
+        #     self.optim,
+        #     self.lr_scheduler
+        # ) = self.accelerator.prepare(
+        #     self.dl_iter,
+        #     self.CTClip,
+        #     self.optim,
+        #     self.lr_scheduler
+        # )
 
         # self.save_model_every = save_model_every
         # self.save_results_every = save_results_every
