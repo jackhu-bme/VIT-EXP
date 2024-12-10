@@ -755,7 +755,7 @@ class CTCLIP(nn.Module):
                 sagittal_indices = [int(H*ratio) for ratio in ratio_list]
                 # get the slice for each axis
                 _, C_seg, _, _, _ = seg_mask.shape
-                image = torch.repeat(image, C_seg, 1)
+                image = torch.repeat_interleave(image, C_seg, 1)
                 all_results = torch.stack([image, seg_mask, seg_preds], dim=-1) # (B, C, D, W, H, 3) 3 for 3 types of images
                 axial_slices = torch.stack([all_results[0, :, idx, :, :, :] for idx in axial_indices], dim=-1) # (C, W, H, 3, 3) 3 in ratio list
                 coronal_slices = torch.stack([all_results[0, :, :, idx, :, :] for idx in coronal_indices], dim=-1) # (C, D, H, 3, 3) 3 in ratio list
