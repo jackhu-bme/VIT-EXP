@@ -612,9 +612,9 @@ class CTClipInferenceSeg(nn.Module):
         # self.num_train_steps = num_train_steps
         # self.batch_size = batch_size
 
-        # all_parameters = set(CTClip.parameters())
+        all_parameters = set(CTClip.parameters())
 
-        # self.optim = get_optimizer(all_parameters, lr=lr, wd=wd)
+        self.optim = get_optimizer(all_parameters, lr=0., wd=0.)
 
         # self.max_grad_norm = max_grad_norm
         # self.lr=lr
@@ -636,23 +636,23 @@ class CTClipInferenceSeg(nn.Module):
         self.dl_iter=cycle(self.dl)
         # self.device = self.accelerator.device
         # self.CTClip.to(self.device)
-        # self.lr_scheduler = CosineAnnealingWarmUpRestarts(self.optim,
-        #                                           T_0=4000000,    # Maximum number of iterations
-        #                                           T_warmup=10000, # Number of warmup steps
-        #                                           eta_max=lr)   # Maximum learning rate
+        self.lr_scheduler = CosineAnnealingWarmUpRestarts(self.optim,
+                                                  T_0=4000000,    # Maximum number of iterations
+                                                  T_warmup=10000, # Number of warmup steps
+                                                  eta_max=0.)   # Maximum learning rate
 
 
-        # (
- 		# 	self.dl_iter,
-        #     self.CTClip,
-        #     self.optim,
-        #     self.lr_scheduler
-        # ) = self.accelerator.prepare(
-        #     self.dl_iter,
-        #     self.CTClip,
-        #     self.optim,
-        #     self.lr_scheduler
-        # )
+        (
+ 			self.dl_iter,
+            self.CTClip,
+            self.optim,
+            self.lr_scheduler
+        ) = self.accelerator.prepare(
+            self.dl_iter,
+            self.CTClip,
+            self.optim,
+            self.lr_scheduler
+        )
 
         # self.save_model_every = save_model_every
         # self.save_results_every = save_results_every
@@ -728,7 +728,7 @@ class CTClipInferenceSeg(nn.Module):
 
                 batch["image"] = batch["image"].cuda()
                 batch["seg_mask"] = batch["seg_mask"].cuda()
-                seg_loss, loss_dict, metrics_dict, vis_dict = model.forward_batch_image_seg(batch) 
+                seg_loss, loss_dict, metrics_dict, vis_dict = model.forward_batch_image_seg(batch, return_metrics=True, return_vis=True)
                 plotdir = self.result_folder_txt
                 Path(plotdir).mkdir(parents=True, exist_ok=True)
                 dice_scores.append(metrics_dict["dice_score"])
