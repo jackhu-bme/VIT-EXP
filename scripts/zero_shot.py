@@ -730,7 +730,7 @@ class CTClipInferenceSeg(nn.Module):
 
                 batch["image"] = batch["image"].cuda()
                 batch["seg_mask"] = batch["seg_mask"].cuda()
-                print(f"image name: {batch['img_name']}")
+                # print(f"image name: {batch['img_name']}")
                 seg_loss, loss_dict, metrics_dict, vis_dict = self.CTClip(batch, return_metrics=True, return_vis=True)
                 print(f"for batch {i}, dice score is {metrics_dict['dice_score']}")
                 plotdir = self.result_folder_txt
