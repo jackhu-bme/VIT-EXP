@@ -260,7 +260,7 @@ class CTSegDataset(Dataset):
 
         # return video_tensor, mask_tensor
         return {"image": video_tensor, "seg_mask": mask_tensor, 
-                "data_type": "imageseg", "img_name": img_name}
+                "data_type": "imageseg"}
 
 
 class InfiniteCycleSampler(Sampler):
