@@ -746,7 +746,7 @@ class CTClipInferenceSeg(nn.Module):
                 self.visualize(axial_vis_slices, axial_path)
                 self.visualize(coronal_vis_slices, coronal_path)
                 self.visualize(sagittal_vis_slices, sagittal_path)
-            total_dice_scores = np.concatenate(dice_scores, axis=0)
+            total_dice_scores = np.stack(dice_scores, axis=0)
             # compute mean for each class
             mean_dice_scores = np.mean(total_dice_scores, axis=0)
             print(f"mean dice scores: {mean_dice_scores}")
