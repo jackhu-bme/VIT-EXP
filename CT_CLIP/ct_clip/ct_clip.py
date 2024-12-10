@@ -737,7 +737,7 @@ class CTCLIP(nn.Module):
                 union = torch.sum(seg_preds, dim=(2,3,4)) + torch.sum(seg_mask, dim=(2,3,4))
                 dice_scores = 2*intersection / union
                 dice_scores = dice_scores.mean(dim=0)
-                metrics_dict["dice_score"] = dice_scores
+                metrics_dict["dice_score"] = dice_scores.cpu().numpy()
             return_list.append(metrics_dict)
         if return_vis:
             # visualize the segmentation results, for each image in the batch
