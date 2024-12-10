@@ -1,10 +1,7 @@
 random_seed: 42
 results_folder: ./output_train_scratch
 project_name: ct-clip-vit-seg-ref
-exp_name: ctclip_vit_seg_v3_hpc_1_div0_cl_revised
-
-
-
+exp_name: ctclip_vit_seg_v3_hpc_1_div0_cl_revised_ref
 
 trainer:
   lr: 1.25e-6
@@ -28,7 +25,7 @@ train_data_list:
     data_train: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/train
     data_valid: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/val
     labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv
-    sampler_type: InfinteCycleSampler
+    # sampler_type: InfinteCycleSampler
   - name: TotalSegmentator
     type: imageseg
     batch_size: 1 # test if 2 is ok for 80g a100, if not ok, use 1 !

@@ -1,25 +1,48 @@
 random_seed: 42
-
-reports_file_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/reports/train_reports.csv
-reports_file_valid: /mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv
-metadata_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv
-use_seg: True
-data_train: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/train
-data_valid: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/val
-seg_data_train: /mnt/input/TotalSegmentator/seg_final_dataset/train_data
-# tmp no valid in code, todo: change to correct version in future versions
-seg_data_valid: /mnt/input/TotalSegmentator/seg_final_dataset/valid_data
-seg_mask_train: /mnt/input/TotalSegmentator/seg_final_dataset/train_mask
-seg_mask_valid: /mnt/input/TotalSegmentator/seg_final_dataset/valid_mask
-labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv
-batch_size: 4
 results_folder: ./output_train_scratch
-num_train_steps: 80001
-num_workers: 8
-gradient_accumulation_steps: 1
-
 project_name: ct-clip-vit-revised-cl
 exp_name: train_from_scratch_vit_hpc_1_dim_384_div0_cl_revised
+
+trainer:
+  lr: 1.25e-6
+  wd: 0.
+  num_train_steps: 80001
+  max_grad_norm: 0.5
+  gradient_accumulation_steps: 1 # todo: in future, if pass [1, 2], means 1 for ct-rate, 2 for total-segmentator, not supported yet
+  save_results_every: 1000
+  save_model_every: 1000
+  balance_loss_weight: [1.0, ]
+
+train_data_list:
+  - name: CT-RATE
+    type: imagereport
+    batch_size: 4
+    num_workers: 8
+    reports_file_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/reports/train_reports.csv
+    reports_file_valid: /mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv
+    metadata_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv
+    data_train: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/train
+    data_valid: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/val
+    labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv
+    # sampler_type: InfinteCycleSampler
+
+valid_data_list:
+  - name: CT-RATE
+    type: imagereport
+    batch_size: 4
+    num_workers: 8
+    reports_file_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/reports/train_reports.csv
+    reports_file_valid: /mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv
+    metadata_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv
+    data_train: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/train
+    data_valid: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/val
+    labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv
+    # sampler_type: InfinteCycleSampler
+
+DatasetSampler:
+  type: Random # Combined means combine the weight of different data types in a training step
+  ratio_list: [1, ]
+
 
 arch_name: CTViT3D # this is vit_vanilla_3D
 
@@ -27,20 +50,22 @@ use_flash_attention: True
 
 
 # arch
-dim: 384
-image_size: 480
-patch_size: 20
-temporal_size: 240
-temporal_patch_size: 10
-transformer_blocks: 8
-dim_head: 32
-heads: 8
-
-# seg head
-seg_head_n_layers: 2
-seg_head_layer_type: mlp
-seg_head_in_dim: 768
-seg_head_mid_dim: 128
-seg_head_out_dim: 22 # 22 labels to be segmented, but the dim is 22 * patch volume (20, 20, 10)
-
-balance_report_seg: 1
+arch:
+  arch_name: CTViT3D # this is vit_vanilla_3D
+  dim: 384
+  image_size: 480
+  patch_size: 20
+  temporal_size: 240
+  temporal_patch_size: 10
+  transformer_blocks: 8
+  dim_head: 32
+  heads: 8
+  use_flash_attention: True
+  # seg head
+  use_seg: True
+  seg_head:
+    n_layers: 2
+    layer_type: mlp
+    in_dim: 768
+    mid_dim: 128
+    out_dim: 22 # 22 labels to be segmented, but the dim is 22 * patch volume (20, 20, 10)

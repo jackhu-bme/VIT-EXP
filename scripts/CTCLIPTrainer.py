@@ -245,7 +245,7 @@ class CTClipTrainer(nn.Module):
         # max_grad_norm = 0.5,
         # save_results_every = 1000,
         # save_model_every = 1000 ,
-        # results_folder = '/shares/menze.dqbm.uzh/ihamam/ctclip/',
+        results_folder = '/shares/menze.dqbm.uzh/ihamam/ctclip/',
         # num_workers = 8,
         # accelerate_kwargs: dict = dict(),
         resume_path = None,
@@ -327,7 +327,7 @@ class CTClipTrainer(nn.Module):
         self.save_model_every = trainer_config["save_model_every"]
         self.save_results_every = trainer_config["save_results_every"]
 
-        self.results_folder = Path(config["results_folder"])
+        self.results_folder = Path(results_folder)
 
         if len([*self.results_folder.glob('**/*')]) > 0 and yes_or_no('do you want to clear previous experiment checkpoints and results?'):
             rmtree(str(self.results_folder))

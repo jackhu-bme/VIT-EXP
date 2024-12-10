@@ -164,7 +164,7 @@ def main(config, args):
         # balance_report_seg = config.get("balance_report_seg", 1.0),
         # labels = config["labels"],
         # batch_size = config["batch_size"],
-        # results_folder = ckpt_folder,
+        results_folder = ckpt_folder,
         # # results_folder = config["results_folder"],
         # num_train_steps = config["num_train_steps"],
         # num_workers = config["num_workers"],

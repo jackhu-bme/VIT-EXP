@@ -17,25 +17,45 @@ text_encoder.resize_token_embeddings(len(tokenizer))
 
 def main(args):
     config = yaml.load(open(args.config, "r"), Loader=yaml.FullLoader)
-    image_encoder = CTViT3D(
-                # dim = 512,
-                dim = config.get("CTViT3D_dim", 768),
-                # codebook_size = 8192,
-                image_size = config.get("image_size", 480),
-                patch_size = config.get("patch_size", 20),
-                temporal_size= config.get("temporal_size", 240),
-                temporal_patch_size= config.get("temporal_patch_size", 10),
-                transformer_blocks = config.get("transformer_blocks", 8),
-                dim_head = config.get("dim_head", 32),
-                heads = config.get("heads", 8),
-                use_flash_attention = config.get("use_flash_attention", True),
-                use_seg = config.get("use_seg", False),
-                seg_head_n_layers = config.get("seg_head_n_layers", 2),
-                seg_head_layer_type = config.get("seg_head_layer_type", "mlp"),
-                seg_head_in_dim = config.get("seg_head_in_dim", 256),
-                seg_head_mid_dim = config.get("seg_head_mid_dim", 128),
-                seg_head_out_dim = config.get("seg_head_out_dim", 22), # 22 classes for segmentation in TotalSegmentor
-            )
+    arch_config = config["arch"]
+    arch_name = arch_config.get("arch_name", "CTViT3D")
+    seg_config = arch_config.get("seg_head", None)
+    seg_kwargs = {}
+    if seg_config is None:
+        seg_kwargs["use_seg"] = False
+        # use_seg = False
+        raise NotImplementedError # todo: deal with this later
+    else:
+        # use_seg = True
+        seg_kwargs["use_seg"] = True
+        seg_kwargs["seg_head_n_layers"] = seg_config.get("n_layers", 2)
+        seg_kwargs["seg_head_layer_type"] = seg_config.get("layer_type", "mlp")
+        seg_kwargs["seg_head_in_dim"] = seg_config.get("in_dim", 256)
+        seg_kwargs["seg_head_mid_dim"] = seg_config.get("mid_dim", 128)
+        seg_kwargs["seg_head_out_dim"] = seg_config.get("out_dim", 22) # 22 classes for segmentation in TotalSegmentor
+    if arch_name == "CTViT3D":
+        image_encoder = CTViT3D(
+                    # dim = 512,
+                    dim = arch_config.get("dim", 768),
+                    # codebook_size = 8192,
+                    image_size = arch_config.get("image_size", 480),
+                    patch_size = arch_config.get("patch_size", 20),
+                    temporal_size= arch_config.get("temporal_size", 240),
+                    temporal_patch_size = arch_config.get("temporal_patch_size", 10),
+                    transformer_blocks = arch_config.get("transformer_blocks", 8),
+                    dim_head = arch_config.get("dim_head", 32),
+                    heads = arch_config.get("heads", 8),
+                    use_flash_attention = arch_config.get("use_flash_attention", True),
+                    **seg_kwargs,
+                    # use_seg = use_seg,
+                    # seg_head_n_layers = seg_config.get("n_layers", 2),
+                    # seg_head_layer_type = seg_config.get("layer_type", "mlp"),
+                    # seg_head_in_dim = seg_config.get("in_dim", 256),
+                    # seg_head_mid_dim = seg_config.get("mid_dim", 128),
+                    # seg_head_out_dim = seg_config.get("out_dim", 22), # 22 classes for segmentation in TotalSegmentor
+                )
+    else:
+        return NotImplementedError
 
     clip = CTCLIP(
         image_encoder = image_encoder,
