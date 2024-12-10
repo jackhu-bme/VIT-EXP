@@ -11,7 +11,7 @@ current_gpu = 1
 
 gaps = 2
 
-results_dir = "/mnt/input/CT-CLIP-VIT/results_fast_inference_zeroshot_ctvit_multi_div_0_cl_revised_add_seg"
+results_dir = "/mnt/input/CT-CLIP-VIT-seg/results_fast_inference_zeroshot_ctvit_multi_div_0_cl_revised_add_seg"
 
 model_list = os.listdir(model_dir)
 
@@ -49,4 +49,4 @@ for run_model in run_models:
     RESULTS=os.path.join(results_dir, run_model.replace(".pt", "")) 
     os.makedirs(RESULTS, exist_ok=True)
     os.system(f"python scripts/run_zero_shot_cls_single_gpu.py --config {CONFIG} --model {MODEL} --results {RESULTS}")
-    exit()
+    # exit()
