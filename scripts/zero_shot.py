@@ -752,7 +752,8 @@ class CTClipInferenceSeg(nn.Module):
             # save as npy and write to txt
             np.save(os.path.join(plotdir, "dice_scores.npy"), mean_dice_scores)
             with open(os.path.join(plotdir, "dice_scores.txt"), "w") as file:
-                for item in mean_dice_scores:
+                for i in len(mean_dice_scores):
+                    item = mean_dice_scores[i]
                     file.write(f"{item}\n")
                
         return logs
