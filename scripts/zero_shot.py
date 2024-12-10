@@ -724,28 +724,32 @@ class CTClipInferenceSeg(nn.Module):
             for i in tqdm.tqdm(range(len(self.ds))):
                 # if i > 10:
                 #     break # for debug only
-                batch = next(self.dl_iter)
+                try:
+                    batch = next(self.dl_iter)
 
-                batch["image"] = batch["image"].cuda()
-                batch["seg_mask"] = batch["seg_mask"].cuda()
-                seg_loss, loss_dict, metrics_dict, vis_dict = self.CTClip(batch, return_metrics=True, return_vis=True)
-                print(f"for batch {i}, dice score is {metrics_dict['dice_score']}")
-                plotdir = self.result_folder_txt
-                Path(plotdir).mkdir(parents=True, exist_ok=True)
-                dice_scores.append(metrics_dict["dice_score"])
-                axial_vis_slices = vis_dict["axial_slices"]
-                coronal_vis_slices = vis_dict["coronal_slices"]
-                sagittal_vis_slices = vis_dict["sagittal_slices"]
-                # plot the vis maps
-                axial_name = f"axial_image_{i}.png"
-                coronal_name = f"coronal_image_{i}.png"
-                sagittal_name = f"sagittal_image_{i}.png"
-                axial_path = os.path.join(self.result_folder_vis, axial_name)
-                coronal_path = os.path.join(self.result_folder_vis, coronal_name)
-                sagittal_path = os.path.join(self.result_folder_vis, sagittal_name)
-                self.visualize(axial_vis_slices, axial_path)
-                self.visualize(coronal_vis_slices, coronal_path)
-                self.visualize(sagittal_vis_slices, sagittal_path)
+                    batch["image"] = batch["image"].cuda()
+                    batch["seg_mask"] = batch["seg_mask"].cuda()
+                    seg_loss, loss_dict, metrics_dict, vis_dict = self.CTClip(batch, return_metrics=True, return_vis=True)
+                    print(f"for batch {i}, dice score is {metrics_dict['dice_score']}")
+                    plotdir = self.result_folder_txt
+                    Path(plotdir).mkdir(parents=True, exist_ok=True)
+                    dice_scores.append(metrics_dict["dice_score"])
+                    axial_vis_slices = vis_dict["axial_slices"]
+                    coronal_vis_slices = vis_dict["coronal_slices"]
+                    sagittal_vis_slices = vis_dict["sagittal_slices"]
+                    # plot the vis maps
+                    axial_name = f"axial_image_{i}.png"
+                    coronal_name = f"coronal_image_{i}.png"
+                    sagittal_name = f"sagittal_image_{i}.png"
+                    axial_path = os.path.join(self.result_folder_vis, axial_name)
+                    coronal_path = os.path.join(self.result_folder_vis, coronal_name)
+                    sagittal_path = os.path.join(self.result_folder_vis, sagittal_name)
+                    self.visualize(axial_vis_slices, axial_path)
+                    self.visualize(coronal_vis_slices, coronal_path)
+                    self.visualize(sagittal_vis_slices, sagittal_path)
+                except Exception as e:
+                    print(f"error in batch {i}: {e}")
+                    continue
             total_dice_scores = np.stack(dice_scores, axis=0)
             # compute mean for each class
             mean_dice_scores = np.mean(total_dice_scores, axis=0)
