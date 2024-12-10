@@ -752,8 +752,9 @@ class CTClipInferenceSeg(nn.Module):
             print(f"mean dice scores: {mean_dice_scores}")
             # save as npy and write to txt
             np.save(os.path.join(plotdir, "dice_scores.npy"), mean_dice_scores)
-            # with open(os.path.join(plotdir, "dice_scores.txt"), "w") as file:
-            #     file.write(mean_dice_scores)
+            with open(os.path.join(plotdir, "dice_scores.txt"), "w") as file:
+                for i in range(mean_dice_scores.shape[0]):
+                    file.write(f"Class {i}: {mean_dice_scores[i]}\n")
                
         return logs
 
