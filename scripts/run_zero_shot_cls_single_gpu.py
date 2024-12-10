@@ -33,6 +33,8 @@ def main(args):
         seg_kwargs["seg_head_in_dim"] = seg_config.get("in_dim", 256)
         seg_kwargs["seg_head_mid_dim"] = seg_config.get("mid_dim", 128)
         seg_kwargs["seg_head_out_dim"] = seg_config.get("out_dim", 22) # 22 classes for segmentation in TotalSegmentor
+    print(f"arch config: {arch_config}")
+    exit()
     if arch_name == "CTViT3D":
         image_encoder = CTViT3D(
                     # dim = 512,
