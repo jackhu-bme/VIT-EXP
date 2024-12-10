@@ -700,12 +700,13 @@ class CTCLIP(nn.Module):
         if batch["data_type"][0] == "imagereport":
             return self.forward_batch_image_report(batch, device=device, accelerator=accelerator, **kwargs)
         elif batch["data_type"][0] == "imageseg":
-            return self.forward_batch_image_seg(batch, device=device, accelerator=accelerator, return_metrics=return_metrics, return_vis=return_vis, **kwargs)
+            return self.forward_batch_image_seg(batch, device=device, accelerator=accelerator, **kwargs)
         else:
             raise ValueError(f"Data type {batch['data_type']} not recognized")
     
     
-    def forward_batch_image_seg(self, batch, device=None, accelerator=None, return_metrics=False, return_vis=False, **kwargs):
+    # def forward_batch_image_seg(self, batch, device=None, accelerator=None, return_metrics=False, return_vis=False, **kwargs):
+    def forward_batch_image_seg(self, batch, device=None, accelerator=None, **kwargs):
         image = batch["image"]
         seg_mask = batch["seg_mask"]
         loss_dict = {}
@@ -727,7 +728,8 @@ class CTCLIP(nn.Module):
         seg_loss = self.seg_criterion(seg_preds, seg_mask) # B, C, D, W, H
         loss_dict['seg_loss'] = seg_loss.item()
         return_list = [seg_loss, loss_dict]
-        if return_metrics:
+        # if return_metrics:
+        if True:
             metrics_dict = {}
             # calculate the dice score for each channel
             with torch.no_grad():
@@ -739,7 +741,8 @@ class CTCLIP(nn.Module):
                 dice_scores = dice_scores.mean(dim=0)
                 metrics_dict["dice_score"] = dice_scores
             return_list.append(metrics_dict)
-        if return_vis:
+        # if return_vis:
+        if True:
             # visualize the segmentation results, for each image in the batch
             vis_dict = {}
             # vis the original image, mask, and preds, seperate for each channel
