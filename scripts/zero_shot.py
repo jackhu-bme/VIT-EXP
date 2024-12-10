@@ -701,13 +701,14 @@ class CTClipInferenceSeg(nn.Module):
         # create a meshgrid of the slices, the meshgrid is of shape (C, 3*3), the output image shape is (C*H, 3*3*W)
         # use the torchvision.utils.make_grid to make the slices into a grid
         
-        vis_slices = vis_slices.permute((0, 3, 4, 1, 2))
+        # vis_slices = vis_slices.permute((0, 3, 4, 1, 2))
 
-        vis_shape = vis_slices.shape
+        # vis_shape = vis_slices.shape
 
-        grid_slices = torchvision.utils.make_grid(vis_slices, nrow=vis_shape[0], padding=0)
-        # save
-        torchvision.utils.save_image(grid_slices, vis_name)
+        # grid_slices = torchvision.utils.make_grid(vis_slices, nrow=vis_shape[0], padding=0)
+        # # save
+        # torchvision.utils.save_image(grid_slices, vis_name)
+        pass # no vis due to time limits
 
 
         
@@ -728,6 +729,7 @@ class CTClipInferenceSeg(nn.Module):
                 batch["image"] = batch["image"].cuda()
                 batch["seg_mask"] = batch["seg_mask"].cuda()
                 seg_loss, loss_dict, metrics_dict, vis_dict = self.CTClip(batch, return_metrics=True, return_vis=True)
+                print(f"for batch {i}, dice score is {metrics_dict['dice_score']}")
                 plotdir = self.result_folder_txt
                 Path(plotdir).mkdir(parents=True, exist_ok=True)
                 dice_scores.append(metrics_dict["dice_score"])
