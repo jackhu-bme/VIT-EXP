@@ -749,9 +749,11 @@ class CTClipInferenceSeg(nn.Module):
             total_dice_scores = np.concatenate(dice_scores, axis=0)
             # compute mean for each class
             mean_dice_scores = np.mean(total_dice_scores, axis=0)
-            # save to the csv
-            df = pd.DataFrame(mean_dice_scores)
-            df.to_csv(os.path.join(self.result_folder_vis, "mean_dice_scores.csv"))
+            # save as npy and write to txt
+            np.save(os.path.join(plotdir, "dice_scores.npy"), mean_dice_scores)
+            with open(os.path.join(plotdir, "dice_scores.txt"), "w") as file:
+                for item in mean_dice_scores:
+                    file.write(f"{item}\n")
                
         return logs
 
