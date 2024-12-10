@@ -622,6 +622,7 @@ class CTClipInferenceSeg(nn.Module):
         # self.ds = CTReportDatasetinfer(data_folder=data_folder, csv_file=reports_file,labels=labels)
         seg_data_valid_folder = data_config["seg_data_valid"]
         seg_mask_valid_folder = data_config["seg_mask_valid"]
+        print(f"seg_data_valid_folder: {seg_data_valid_folder}, seg_mask_valid_folder: {seg_mask_valid_folder}")
         self.ds = CTSegDataset(data_folder=seg_data_valid_folder, mask_folder=seg_mask_valid_folder)
 
 
@@ -729,6 +730,7 @@ class CTClipInferenceSeg(nn.Module):
 
                 batch["image"] = batch["image"].cuda()
                 batch["seg_mask"] = batch["seg_mask"].cuda()
+                print(f"image name: {batch['img_name']}")
                 seg_loss, loss_dict, metrics_dict, vis_dict = self.CTClip(batch, return_metrics=True, return_vis=True)
                 print(f"for batch {i}, dice score is {metrics_dict['dice_score']}")
                 plotdir = self.result_folder_txt

@@ -251,12 +251,13 @@ class CTSegDataset(Dataset):
     def __getitem__(self, index):
         data_file, mask_file = self.samples[index]
         # the seg data is already preprocessed, no need to resize, pad, just load
+        img_name = data_file.split("/")[-1]
         video_tensor = torch.tensor(np.load(data_file)['arr_0']).unsqueeze(0) # missing channel dim in the saved data
         mask_tensor = torch.tensor(np.load(mask_file)['arr_0'])
 
         # return video_tensor, mask_tensor
         return {"image": video_tensor, "seg_mask": mask_tensor, 
-                "data_type": "imageseg"}
+                "data_type": "imageseg", "img_name": img_name}
 
 
 class InfiniteCycleSampler(Sampler):
