@@ -46,4 +46,4 @@ for run_model in run_models:
     RESULTS=os.path.join(results_dir, run_model.replace(".pt", "")) 
     os.makedirs(RESULTS, exist_ok=True)
     os.system(f"python scripts/run_zero_shot_seg_single_gpu.py --config {CONFIG} --model {MODEL} --results {RESULTS}")
-    exit()
+    # exit()

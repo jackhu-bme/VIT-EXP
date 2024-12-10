@@ -722,8 +722,8 @@ class CTClipInferenceSeg(nn.Module):
             dice_scores = []    # save for each channel, corresponding to each seg label
             
             for i in tqdm.tqdm(range(len(self.ds))):
-                if i > 10:
-                    break # for debug only
+                # if i > 10:
+                #     break # for debug only
                 batch = next(self.dl_iter)
 
                 batch["image"] = batch["image"].cuda()
