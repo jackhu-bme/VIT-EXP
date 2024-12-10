@@ -629,7 +629,7 @@ class CTClipInferenceSeg(nn.Module):
         # Split dataset into train and validation sets
         self.dl = DataLoader(
             self.ds,
-            num_workers=16,
+            num_workers=0,
             batch_size=1,
             shuffle = False,
         )
