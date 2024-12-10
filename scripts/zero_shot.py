@@ -717,8 +717,7 @@ class CTClipInferenceSeg(nn.Module):
         logs = {}
         with torch.no_grad():
             # for model, filename in models_to_evaluate:
-            model = self.CTClip
-            model.eval()
+            self.CTClip.eval()
             dice_scores = []    # save for each channel, corresponding to each seg label
             
             for i in tqdm.tqdm(range(len(self.ds))):
@@ -728,7 +727,7 @@ class CTClipInferenceSeg(nn.Module):
 
                 batch["image"] = batch["image"].cuda()
                 batch["seg_mask"] = batch["seg_mask"].cuda()
-                seg_loss, loss_dict, metrics_dict, vis_dict = model(batch, return_metrics=True, return_vis=True)
+                seg_loss, loss_dict, metrics_dict, vis_dict = self.CTClip.forward_batch_image_seg(batch, return_metrics=True, return_vis=True)
                 plotdir = self.result_folder_txt
                 Path(plotdir).mkdir(parents=True, exist_ok=True)
                 dice_scores.append(metrics_dict["dice_score"])
