@@ -705,7 +705,7 @@ class CTCLIP(nn.Module):
             raise ValueError(f"Data type {batch['data_type']} not recognized")
     
     
-    def forward_batch_image_seg(self, batch, device=None, accelerator=None, **kwargs):
+    def forward_batch_image_seg(self, batch, device=None, accelerator=None, return_metrics=False, return_vis=False, **kwargs):
         image = batch["image"]
         seg_mask = batch["seg_mask"]
         loss_dict = {}
@@ -724,9 +724,45 @@ class CTCLIP(nn.Module):
         seg_preds = seg_logits.reshape(b, d, w, h, p_d, p_w, p_h, -1)
         seg_preds = seg_preds.permute(0, 7, 1, 4, 2, 5, 3, 6).reshape(b, -1, D, W, H)
         # seg_mask = seg_mask.float().to(device)
-        seg_loss = self.seg_criterion(seg_preds, seg_mask)
-        loss_dict['seg_loss'] = seg_loss.item()   
-        return seg_loss, loss_dict
+        seg_loss = self.seg_criterion(seg_preds, seg_mask) # B, C, D, W, H
+        loss_dict['seg_loss'] = seg_loss.item()
+        return_list = [seg_loss, loss_dict]
+        if return_metrics:
+            metrics_dict = {}
+            # calculate the dice score for each channel
+            with torch.no_grad():
+                seg_preds = torch.sigmoid(seg_preds)
+                seg_preds = (seg_preds > 0.5).float()
+                intersection = torch.sum(seg_preds * seg_mask, dim=(2,3,4))
+                union = torch.sum(seg_preds, dim=(2,3,4)) + torch.sum(seg_mask, dim=(2,3,4))
+                dice_scores = 2*intersection / union
+                dice_scores = dice_scores.mean(dim=0)
+                metrics_dict["dice_score"] = dice_scores
+            return_list.append(metrics_dict)
+        if return_vis:
+            # visualize the segmentation results, for each image in the batch
+            vis_dict = {}
+            # vis the original image, mask, and preds, seperate for each channel
+            # choose slices from each view, [0.2, 0.4, 0.6, 0.8] ratios of each axis
+            # get a vis map for each image, which could be output to png directly
+            with torch.no_grad():
+                seg_preds = torch.sigmoid(seg_preds)
+                # seg_preds = (seg_preds > 0.5).float()
+                # sample on each axis
+                ratio_list = [0.25, 0.5, 0.75]
+                axial_indices = [int(D*ratio) for ratio in ratio_list]
+                coronal_indices = [int(W*ratio) for ratio in ratio_list]
+                sagittal_indices = [int(H*ratio) for ratio in ratio_list]
+                # get the slice for each axis
+                all_results = torch.stack([image, seg_mask, seg_preds], dim=-1) # (B, C, D, W, H, 3) 3 for 3 types of images
+                axial_slices = torch.stack([all_results[0, :, idx, :, :, :] for idx in axial_indices], dim=-1) # (C, W, H, 3, 3) 3 in ratio list
+                coronal_slices = torch.stack([all_results[0, :, :, idx, :, :] for idx in coronal_indices], dim=-1) # (C, D, H, 3, 3) 3 in ratio list
+                sagittal_slices = torch.stack([all_results[0, :, :, :, idx, :] for idx in sagittal_indices], dim=-1) # (C, D, W, 3, 3) 3 in ratio list
+                vis_dict["axial_slices"] = axial_slices.cpu()  # .numpy()
+                vis_dict["coronal_slices"] = coronal_slices.cpu()  # .numpy()
+                vis_dict["sagittal_slices"] = sagittal_slices.cpu()  # .numpy()
+            return_list.append(vis_dict)
+        return return_list
 
 
     def forward_batch_image_report(self, batch, device=None, accelerator=None, **kwargs):

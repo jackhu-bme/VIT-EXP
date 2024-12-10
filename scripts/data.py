@@ -199,6 +199,9 @@ class CTReportDataset(Dataset):
 
 
 class CTSegDataset(Dataset):
+    """
+    the ct seg dataset, used for both training and validation, as the image and seg mask data are returned
+    """
     def __init__(self, data_folder, mask_folder):
         self.data_folder = data_folder
         self.mask_folder = mask_folder
