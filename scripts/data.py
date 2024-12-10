@@ -256,7 +256,7 @@ class CTSegDataset(Dataset):
             video_tensor = torch.tensor(np.load(data_file)['arr_0']).unsqueeze(0) # missing channel dim in the saved data
             mask_tensor = torch.tensor(np.load(mask_file)['arr_0'])
         except Exception as e:
-            print(f"error loading seg data: {e} for data file: {data_file}
+            print(f"error loading seg data: {e} for data file: {data_file}")
             print(f"mask file: {mask_file}")
 
         # return video_tensor, mask_tensor
