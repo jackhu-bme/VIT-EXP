@@ -694,15 +694,7 @@ class CTCLIP(nn.Module):
         res = einsum('b d, b d -> b', *einsum_args) * temp
         return res
 
-    def forward(self, batch, device=None, accelerator=None):
-        # define the forward (data to loss) logic for different types of data
-        # in the ref version, in a single batch, only one type of data is present
-        if batch["data_type"][0] == "imagereport":
-            return self.forward_batch_image_report(batch, device=device, accelerator=accelerator)
-        elif batch["data_type"][0] == "imageseg":
-            return self.forward_batch_image_seg(batch, device=device, accelerator=accelerator)
-        else:
-            raise ValueError(f"Data type {batch['data_type']} not recognized")
+   
     
     
     def forward_batch_image_seg(self, batch, device=None, accelerator=None, return_metrics=False, return_vis=False):
@@ -889,7 +881,15 @@ class CTCLIP(nn.Module):
         loss_dict['cl_loss'] = cl_loss.item()
         return cl_loss, loss_dict
 
-
+    def forward(self, batch, device=None, accelerator=None):
+        # define the forward (data to loss) logic for different types of data
+        # in the ref version, in a single batch, only one type of data is present
+        if batch["data_type"][0] == "imagereport":
+            return self.forward_batch_image_report(batch, device=device, accelerator=accelerator)
+        elif batch["data_type"][0] == "imageseg":
+            return self.forward_batch_image_seg(batch, device=device, accelerator=accelerator)
+        else:
+            raise ValueError(f"Data type {batch['data_type']} not recognized")
 
     def forward_old(
             self,
