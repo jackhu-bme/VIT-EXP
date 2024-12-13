@@ -128,12 +128,11 @@ def run_demo(demo_fn, world_size):
 if __name__ == "__main__":
     n_gpus = torch.cuda.device_count()
     assert n_gpus >= 2, f"Requires at least 2 GPUs to run, but got {n_gpus}"
-    world_size = n_gpus
+    world_size = 1
     run_demo(demo_basic, world_size)
 
 # usage:
-# python -m torch.distributed.launch --nproc_per_node=2 --nnodes=$WORLD_SIZE --node_rank=$RANK \
-# 	--master_port=12355 --use_env demo_tests/ddp_clip_loss_torch.py
+# python -m torch.distributed.launch --nproc_per_node=4 --nnodes=1 --master_port=12355 --use_env demo_tests/ddp_clip_loss_torch.py
 
 
 
