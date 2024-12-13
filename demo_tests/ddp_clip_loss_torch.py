@@ -74,64 +74,70 @@ def cleanup():
     dist.destroy_process_group()
 
 def demo_basic(rank, world_size):
-    print(f"Running basic DDP example on rank {rank}.")
-    setup(rank, world_size)
+    try:
+        print(f"Running basic DDP example on rank {rank}.")
+        setup(rank, world_size)
 
-    # create model and move it to GPU with id rank
-    model = linear_model.to(rank)
+        # create model and move it to GPU with id rank
+        model = linear_model.to(rank)
 
-    ddp_model = DDP(model, device_ids=[rank])
+        ddp_model = DDP(model, device_ids=[rank])
 
-    print(f"before, linear model params:")
+        print(f"before, linear model params:")
 
-    for name, param in ddp_model.named_parameters():
-        print(f"Parameter name: {name}, Value: {param}\n")
+        for name, param in ddp_model.named_parameters():
+            print(f"Parameter name: {name}, Value: {param}\n")
 
-    # loss_fn = nn.MSELoss()
+        # loss_fn = nn.MSELoss()
 
-    loss_fn = ClipLoss(local_loss=False, gather_with_grad=True, cache_labels=False, rank=rank, world_size=world_size, use_horovod=False, smoothing=0.)
+        loss_fn = ClipLoss(local_loss=False, gather_with_grad=True, cache_labels=False, rank=rank, world_size=world_size, use_horovod=False, smoothing=0.)
 
-    optimizer = optim.SGD(ddp_model.parameters(), lr=0.1)
+        optimizer = optim.SGD(ddp_model.parameters(), lr=0.1)
 
-    optimizer.zero_grad()
+        optimizer.zero_grad()
 
-    x, y = next(iter(custom_dataloader)) # get the first batch
+        x, y = next(iter(custom_dataloader)) # get the first batch
 
-    # currently directly use the global x, y
+        # currently directly use the global x, y
 
-    x = x.to(rank)
-    print(f"input tensor on rank {rank} is {x}")
-    outputs = ddp_model(x)
-    print(f"output tensor on rank {rank} is {outputs}")
-    labels = y.to(rank)
-    print(f"label tensor on rank {rank} is {labels}")
-    loss = loss_fn(outputs, labels)
-    print(f"loss tensor on rank {rank} is {loss}")
-    loss.backward()
-    optimizer.step()
-    
-    print(f"after , linear model params:")
+        x = x.to(rank)
+        print(f"input tensor on rank {rank} is {x}")
+        outputs = ddp_model(x)
+        print(f"output tensor on rank {rank} is {outputs}")
+        labels = y.to(rank)
+        print(f"label tensor on rank {rank} is {labels}")
+        loss = loss_fn(outputs, labels)
+        print(f"loss tensor on rank {rank} is {loss}")
+        loss.backward()
+        optimizer.step()
+        
+        print(f"after , linear model params:")
 
-    for name, param in ddp_model.named_parameters():
-        print(f"Parameter name: {name}, Value: {param}\n")
+        for name, param in ddp_model.named_parameters():
+            print(f"Parameter name: {name}, Value: {param}\n")
 
-    cleanup()
-    print(f"Finished running basic DDP example on rank {rank}.")
+        cleanup()
+        print(f"Finished running basic DDP example on rank {rank}.")
+    except Exception as e:
+        print(f"Error in basic DDP example on rank {rank}: {e}")
+        raise e
 
-def run_demo(demo_fn, n_gpus):
+def run_demo(demo_fn, world_size):
     mp.spawn(demo_fn,
-             args=(1,),
-             nprocs=n_gpus,
+             args=(world_size,),
+             nprocs=world_size,
              join=True)
 
 
 if __name__ == "__main__":
     n_gpus = torch.cuda.device_count()
     assert n_gpus >= 2, f"Requires at least 2 GPUs to run, but got {n_gpus}"
-    run_demo(demo_basic, n_gpus)
+    world_size = n_gpus
+    run_demo(demo_basic, world_size)
 
 # usage:
-# python -m torch.distributed.launch --nproc_per_node=4 --nnodes=1 --master_port=12355 --use_env demo_tests/ddp_clip_loss_torch.py
+# python -m torch.distributed.launch --nproc_per_node=4 --nnodes=1 \
+# 	--master_port=12355 --use_env demo_tests/ddp_clip_loss_torch.py
 
 
 
