@@ -249,6 +249,7 @@ class CTClipTrainer(nn.Module):
         # num_workers = 8,
         # accelerate_kwargs: dict = dict(),
         resume_path = None,
+        auto_resume = False,
         # metadata_train = "train_metadata.csv",
         wandb_logger = None,
     ):
@@ -321,7 +322,15 @@ class CTClipTrainer(nn.Module):
         self.CTClip = self.accelerator.prepare_model(self.CTClip)
         self.optim = self.accelerator.prepare_optimizer(self.optim)
         # in future, if use scheduler
-        # self.scheduler = self.accelerator.prepare_scheduler(self.scheduler)
+        # fake a scheduler
+        self.scheduler = lr_scheduler.StepLR(self.optim, step_size=1000, gamma=1.0)
+        # self.scheduler = CosineAnnealingWarmUpRestarts(self.optim,
+        #                                                 T_0=4000000,    # Maximum number of iterations
+        #                                                 T_warmup=1000, # Number of warmup steps
+        #                                                 eta_max=self.lr)
+        self.scheduler = self.accelerator.prepare_scheduler(self.scheduler)
+        # register for checkpointing
+        self.accelerator.register_for_checkpointing(self.scheduler)
            
 
         self.save_model_every = trainer_config["save_model_every"]
@@ -334,16 +343,44 @@ class CTClipTrainer(nn.Module):
 
         self.results_folder.mkdir(parents=True, exist_ok=True)
 
+        self.auto_resume = auto_resume
+
         if resume_path is not None:
             # self.load_model(resume_path)
             self.print(f"resuming the sheduler and the model from {resume_path}")
             # set the step according to the model's name
             self.print(f"before loading, steps: {self.steps}")
-            self.resume_step = int(os.path.basename(resume_path).split(".")[-2])
+            # self.resume_step = int(os.path.basename(resume_path).split(".")[-2]) # this is for old ctclip version checkpoints
+            self.resume_step = int(resume_path.split("_")[1].split(".")[0])
             self.steps += self.resume_step
             self.print(f"resuming from step {self.steps} according to the model's name: {resume_path}")
+            self.load(resume_path)
             # restore the state of the dataloader
             self.dl = accelerate.skip_first_batches(self.dl, self.steps)
+        elif auto_resume:
+            # try to find the lastest checkpoint that is saved properly and could be loaded
+            ckpt_list = sorted([*self.results_folder.glob('checkpoint_*')])
+            # sort the ckpt_list according to the step
+            ckpt_list = sorted(ckpt_list, key=lambda x: int(x.name.split("_")[1].split(".")[0]))
+            chosen_ckpt = None
+            for ckpt in ckpt_list:
+                try:
+                    self.print(f"try to load from checkpoint: {ckpt}")
+                    self.load(ckpt)
+                    self.print(f"successfully loaded from checkpoint: {ckpt}")
+                    chosen_ckpt = ckpt
+                    break
+                except Exception as e:
+                    self.print(f"failed to load from checkpoint: {ckpt}, error: {e}")
+                    continue
+            if chosen_ckpt is not None:
+                self.print(f"resuming from step {self.steps} according to the model's name: {chosen_ckpt}")
+                self.resume_step = int(ckpt.name.split("_")[1].split(".")[0])
+                self.steps += self.resume_step
+                self.dl = accelerate.skip_first_batches(self.dl, self.steps)
+            else:
+                print(f"no valid checkpoint found for auto resume, start from scratch")
+                # raise ValueError("no valid checkpoint found for auto resume")
         else:
             self.resume_step = None
         
@@ -396,12 +433,13 @@ class CTClipTrainer(nn.Module):
     def load(self, path):
         path = Path(path)
         assert path.exists()
-        pkg = torch.load(path)
+        self.accelerator.load_state(path)
+        # pkg = torch.load(path)
 
-        CTClip = self.accelerator.unwrap_model(self.CTClip)
-        CTClip.load_state_dict(pkg['model'])
+        # CTClip = self.accelerator.unwrap_model(self.CTClip)
+        # CTClip.load_state_dict(pkg['model'])
 
-        self.optim.load_state_dict(pkg['optim'])
+        # self.optim.load_state_dict(pkg['optim'])
 
     def print(self, msg):
         self.accelerator.print(msg)
@@ -570,8 +608,9 @@ class CTClipTrainer(nn.Module):
             # with FSDP.state_dict_type(self.CTCLIP, StateDictType.FULL_STATE_DICT, save_policy):
             #     state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
             if self.is_main:
-                model_path = str(self.results_folder / f'CTClip.{steps}.pt')
-                self.accelerator.save(state_dict, model_path)
+                self.accelerator.save_state()
+                # model_path = str(self.results_folder / f'CTClip.{steps}.pt')
+                # self.accelerator.save(state_dict, model_path)
         self.steps += 1
         return logs
 

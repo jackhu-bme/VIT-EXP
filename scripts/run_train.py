@@ -66,9 +66,9 @@ def main(config, args):
 
     project_name = config.get("project_name", "CT-CLIP-EXP")
     exp_name = config.get("exp_name", "train_from_scratch_default")
-    current_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+    # current_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
 
-    exp_folder = os.path.join(config["results_folder"], exp_name, current_time)
+    exp_folder = os.path.join(config["results_folder"], exp_name) #, current_time)
     ckpt_folder = os.path.join(exp_folder, "checkpoints")
     os.makedirs(ckpt_folder, exist_ok=True)
 
@@ -77,7 +77,7 @@ def main(config, args):
 
     wandb_mode = "offline" if args.debug else "online"
 
-    accelerator = Accelerator(log_with="wandb")
+    accelerator = Accelerator(log_with="wandb", project_dir=exp_folder)
 
     accelerator.init_trackers(
         project_name = project_name,
@@ -142,9 +142,9 @@ def main(config, args):
         use_all_token_embeds = False
     )
 
-    if resume_path is not None:
-        print(f"Resuming state dict from checkpoint: {resume_path}")
-        clip.load(resume_path)
+    # if resume_path is not None:
+    #     print(f"Resuming state dict from checkpoint: {resume_path}")
+    #     clip.load(resume_path)
 
     # also resume the trainer
     trainer = CTClipTrainer(
@@ -165,6 +165,7 @@ def main(config, args):
         # labels = config["labels"],
         # batch_size = config["batch_size"],
         results_folder = ckpt_folder,
+        auto_resume = args.auto_resume,
         # # results_folder = config["results_folder"],
         # num_train_steps = config["num_train_steps"],
         # num_workers = config["num_workers"],
@@ -182,6 +183,7 @@ if __name__ == "__main__":
     # read the config and set the args
     args = argparse.ArgumentParser(description='CT-CLIP')
     args.add_argument('--config', required=True, help='path to the config file')
+    args.add_argument('--auto_resume', action='store_true', help='auto resume from the latest checkpoint')
     args.add_argument('--resume', default=None, help='path to the checkpoint to resume training')
     args.add_argument('--debug', action='store_true', help='debug mode')
     args = args.parse_args()
