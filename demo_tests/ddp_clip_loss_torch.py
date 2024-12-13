@@ -19,7 +19,7 @@ linear_model = torch.nn.Linear(2, 2)
 
 # clip loss implemented by torch
 
-from .clip_loss import ClipLoss
+from clip_loss import ClipLoss
 
 # torch dataset
 from torch.utils.data import Dataset, DataLoader
@@ -80,8 +80,6 @@ def demo_basic(rank, world_size):
     # create model and move it to GPU with id rank
     model = linear_model.to(rank)
 
-    
-
     ddp_model = DDP(model, device_ids=[rank])
 
     print(f"before, linear model params:")
@@ -135,7 +133,7 @@ if __name__ == "__main__":
 
 # usage:
 # python -m torch.distributed.launch --nproc_per_node=2 --nnodes=$WORLD_SIZE --node_rank=$RANK \
-# 	--master_addr=$MASTER_ADDR --master_port=12355 --use_env demo_tests/ddp_clip_loss_torch.py
+# 	--master_port=12355 --use_env demo_tests/ddp_clip_loss_torch.py
 
 
 
