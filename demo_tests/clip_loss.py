@@ -120,4 +120,4 @@ class ClipLoss(nn.Module):
         i2t_acc = (logits_per_image.argmax(-1) == labels).sum() / len(logits_per_image)
         t2i_acc = (logits_per_text.argmax(-1) == labels).sum() / len(logits_per_text)
         acc = {"i2t": i2t_acc, "t2i": t2i_acc}
-        return total_loss, acc
+        return total_loss #, acc
