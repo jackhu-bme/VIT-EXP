@@ -75,9 +75,11 @@ acc_optim.zero_grad()
 
 print(f"x on process id: {accelerator.process_index} is {x}")
 
-outputs = acc_model(x)
+outputs = acc_model(x.to(accelerator.device))
 
 print(f"output on process id: {accelerator.process_index} is {outputs}")
+
+y = y.to(accelerator.device)
 
 print(f"y on process id: {accelerator.process_index} is {y}")
 
