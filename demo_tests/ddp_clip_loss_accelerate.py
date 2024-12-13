@@ -91,9 +91,16 @@ print(f"loss on process id: {accelerator.process_index} is {loss}")
 
 accelerator.backward(loss)
 
+# print grad
+print(f"grad of x on process id: {accelerator.process_index} is {x.grad}")
+
 acc_optim.step()
 
-print(f"after , linear model params: {linear_model.parameters()}")
+print(f"after , linear model params:")
+
+for name, param in acc_model.named_parameters():
+    print(f"Parameter name: {name}")
+    print(f"Value: {param}\n")
 
 
 
