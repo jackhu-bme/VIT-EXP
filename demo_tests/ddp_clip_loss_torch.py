@@ -80,19 +80,24 @@ def demo_basic(rank, world_size):
     # create model and move it to GPU with id rank
     model = linear_model.to(rank)
 
-    print(f"before optimization, model weight on rank {rank} is {model.weight}")
+    
 
     ddp_model = DDP(model, device_ids=[rank])
+
+    print(f"before, linear model params:")
+
+    for name, param in ddp_model.named_parameters():
+        print(f"Parameter name: {name}, Value: {param}\n")
 
     # loss_fn = nn.MSELoss()
 
     loss_fn = ClipLoss(local_loss=False, gather_with_grad=True, cache_labels=False, rank=rank, world_size=world_size, use_horovod=False, smoothing=0.)
 
-    optimizer = optim.SGD(ddp_model.parameters(), lr=0.001)
+    optimizer = optim.SGD(ddp_model.parameters(), lr=0.1)
 
     optimizer.zero_grad()
 
-    # x, y = next(iter(custom_dataloader)) # get the first batch
+    x, y = next(iter(custom_dataloader)) # get the first batch
 
     # currently directly use the global x, y
 
@@ -106,7 +111,11 @@ def demo_basic(rank, world_size):
     print(f"loss tensor on rank {rank} is {loss}")
     loss.backward()
     optimizer.step()
-    print(f"after optimization, model weight on rank {rank} is {model.weight}")
+    
+    print(f"after , linear model params:")
+
+    for name, param in ddp_model.named_parameters():
+        print(f"Parameter name: {name}, Value: {param}\n")
 
     cleanup()
     print(f"Finished running basic DDP example on rank {rank}.")
