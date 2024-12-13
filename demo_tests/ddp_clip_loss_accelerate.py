@@ -40,18 +40,13 @@ custom_dataloader = DataLoader(custom_dataset, batch_size=2, shuffle=False)
 from clip_loss_acc import ClipLossAcc
 
 
-
-
-
-
-
 from accelerate import Accelerator
 
 accelerator = Accelerator()
 
 # acc_model = accelerator.prepare_model(linear_model)
 
-optim = torch.optim.SGD(linear_model.parameters(), lr=0.001)
+optim = torch.optim.SGD(linear_model.parameters(), lr=0.1)
 
 
 custom_dataloader, acc_optim, acc_model = accelerator.prepare(custom_dataloader, optim, linear_model)
@@ -71,7 +66,10 @@ x, y = next(iter(custom_dataloader))
 
 loss_fn = ClipLossAcc(smoothing=0.)
 
-print(f"before , linear model: {linear_model}")
+print(f"before, linear model params:")
+
+for name, param in acc_model.named_parameters():
+    print(f"Parameter name: {name}, Value: {param}\n")
 
 acc_optim.zero_grad()
 
@@ -91,17 +89,13 @@ print(f"loss on process id: {accelerator.process_index} is {loss}")
 
 accelerator.backward(loss)
 
-# print grad
-print(f"grad of x on process id: {accelerator.process_index} is {x.grad}")
 
 acc_optim.step()
 
-print(f"after , linear model params:")
+print(f"after, linear model params:")
 
 for name, param in acc_model.named_parameters():
-    print(f"Parameter name: {name}")
-    print(f"Value: {param}\n")
-
+    print(f"Parameter name: {name}, Value: {param}\n")
 
 
 # for epoch in range(num_epochs):
