@@ -118,18 +118,17 @@ def demo_basic(rank, world_size):
     cleanup()
     print(f"Finished running basic DDP example on rank {rank}.")
 
-def run_demo(demo_fn, world_size):
+def run_demo(demo_fn, n_gpus):
     mp.spawn(demo_fn,
-             args=(world_size,),
-             nprocs=world_size,
+             args=(1,),
+             nprocs=n_gpus,
              join=True)
 
 
 if __name__ == "__main__":
     n_gpus = torch.cuda.device_count()
     assert n_gpus >= 2, f"Requires at least 2 GPUs to run, but got {n_gpus}"
-    world_size = n_gpus
-    run_demo(demo_basic, world_size)
+    run_demo(demo_basic, n_gpus)
 
 # usage:
 # python -m torch.distributed.launch --nproc_per_node=4 --nnodes=1 --master_port=12355 --use_env demo_tests/ddp_clip_loss_torch.py
