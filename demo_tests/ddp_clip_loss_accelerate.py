@@ -67,6 +67,8 @@ custom_dataloader, acc_optim, acc_model = accelerator.prepare(custom_dataloader,
 
 # loss_fn = nn.MSELoss()
 
+x, y = next(iter(custom_dataloader))
+
 loss_fn = ClipLossAcc(smoothing=0.)
 
 print(f"before , linear model: {linear_model}")
@@ -91,7 +93,7 @@ accelerator.backward(loss)
 
 acc_optim.step()
 
-print(f"after , linear model: {linear_model}")
+print(f"after , linear model params: {linear_model.parameters()}")
 
 
 
