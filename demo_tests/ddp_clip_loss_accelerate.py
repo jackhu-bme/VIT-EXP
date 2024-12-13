@@ -37,7 +37,7 @@ custom_dataloader = DataLoader(custom_dataset, batch_size=2, shuffle=False)
 
 # clip loss implemented by torch
 
-from .clip_loss_acc import ClipLossAcc
+from clip_loss_acc import ClipLossAcc
 
 
 
@@ -107,4 +107,4 @@ print(f"after , linear model: {linear_model}")
 
 
 # usage
-# acclerate launch demo
+# accelerate launch demo_tests/ddp_clip_loss_accelerate.py
