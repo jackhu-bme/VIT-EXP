@@ -42,9 +42,17 @@ def create_model():
 from torch.utils.data import DataLoader, DistributedSampler
 from torchvision import datasets, transforms
 
+
+# the preparation:
+# cd ~
+# mkdir MNIST
+# cd MNIST
+# wget www.di.ens.fr/~lelarge/MNIST.tar.gz 
+# tar -zxvf MNIST.tar.gz
+
 def create_dataloader(rank, world_size, batch_size=32):
     transform = transforms.Compose([transforms.ToTensor()])
-    dataset = datasets.MNIST(root='~/', train=True, download=True, transform=transform)
+    dataset = datasets.MNIST(root='~/MNIST', train=True, download=False, transform=transform)
     sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank)
     dataloader = DataLoader(dataset, batch_size=batch_size, sampler=sampler)
     return dataloader
