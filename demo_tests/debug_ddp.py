@@ -44,7 +44,7 @@ from torchvision import datasets, transforms
 
 def create_dataloader(rank, world_size, batch_size=32):
     transform = transforms.Compose([transforms.ToTensor()])
-    dataset = datasets.MNIST(root='/mnt/input/demo_datasets/MNIST', train=True, download=True, transform=transform)
+    dataset = datasets.MNIST(root='~/', train=True, download=True, transform=transform)
     sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank)
     dataloader = DataLoader(dataset, batch_size=batch_size, sampler=sampler)
     return dataloader
