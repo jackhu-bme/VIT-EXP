@@ -338,8 +338,9 @@ class CTClipTrainer(nn.Module):
 
         self.results_folder = Path(results_folder)
 
-        if len([*self.results_folder.glob('**/*')]) > 0 and yes_or_no('do you want to clear previous experiment checkpoints and results?'):
-            rmtree(str(self.results_folder))
+        if len([*self.results_folder.glob('**/*')]) > 0: #and yes_or_no('do you want to clear previous experiment checkpoints and results?'):
+            # rmtree(str(self.results_folder))
+            print(f"detecting previous experiment checkpoints and results, resume from them by default")
 
         self.results_folder.mkdir(parents=True, exist_ok=True)
 
