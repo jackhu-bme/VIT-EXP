@@ -29,6 +29,7 @@ from clip_loss import ClipLoss
 
 # torch dataset
 from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DistributedSampler
 
 class CustomDataset(Dataset):
     def __init__(self, x, y):
@@ -41,9 +42,6 @@ class CustomDataset(Dataset):
     def __getitem__(self, idx):
         return self.x[idx], self.y[idx]
 
-
-custom_dataset = CustomDataset(x, y)
-custom_dataloader = DataLoader(custom_dataset, batch_size=2, shuffle=False)
 
 
 import os
@@ -83,6 +81,17 @@ def demo_basic(rank, world_size):
     try:
         print(f"Running basic DDP example on rank {rank}.")
         setup(rank, world_size)
+
+        # create data tensors
+        # x = torch.rand(4, 2) # stands for 8 samples with 5 features, such as 8 images, and for each gpu it has 4 images
+        x = torch.tensor([[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8]])
+        # y = torch.rand(4, 2) # texts for the images, 4 texts for each gpu
+        y = torch.tensor([[0.2, 0.3], [0.3, 0.6], [0.4, 0.9], [0.2, 0.5]])
+
+        custom_dataset = CustomDataset(x, y)
+        sampler = DistributedSampler(custom_dataset, num_replicas=world_size, rank=rank)
+        custom_dataloader = DataLoader(custom_dataset, batch_size=2, sampler=sampler)
+
 
         # create model and move it to GPU with id rank
         model = linear_model.to(rank)

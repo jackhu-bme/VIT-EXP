@@ -95,7 +95,9 @@ class ClipLoss(nn.Module):
                 logits_per_text = logits_per_image.T
         else:
             logits_per_image = logit_scale * image_features @ text_features.T
+            print(f"logits per image is {logits_per_image}")
             logits_per_text = logit_scale * text_features @ image_features.T
+            print(f"logits per text is {logits_per_text}")
         # calculated ground-truth and cache if enabled
         num_logits = logits_per_image.shape[0]
         if self.prev_num_logits != num_logits or device not in self.labels:
@@ -114,6 +116,8 @@ class ClipLoss(nn.Module):
                 self.label_smoothing_cross_entropy(logits_per_text, labels)
                 ) / 2
         else:
+            print(f"image label entropy is {F.cross_entropy(logits_per_image, labels)}")
+            print(f"text label entropy is {F.cross_entropy(logits_per_text, labels)}")
             total_loss = (
                 F.cross_entropy(logits_per_image, labels) +
                 F.cross_entropy(logits_per_text, labels)
