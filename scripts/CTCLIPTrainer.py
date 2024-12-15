@@ -379,6 +379,7 @@ class CTClipTrainer(nn.Module):
                 self.steps += self.resume_step
                 self.dl = accelerate.skip_first_batches(self.dl, self.steps)
             else:
+                self.resume_step = None
                 print(f"no valid checkpoint found for auto resume, start from scratch")
                 # raise ValueError("no valid checkpoint found for auto resume")
         else:
