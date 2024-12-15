@@ -33,7 +33,9 @@ def gather_features(
     # We gather tensors from all gpus
     if gather_with_grad:
         all_image_features = torch.cat(torch.distributed.nn.all_gather(image_features), dim=0)
+        print(f"all image features on process id: {rank} is {all_image_features}")
         all_text_features = torch.cat(torch.distributed.nn.all_gather(text_features), dim=0)
+        print(f"all text features on process id: {rank} is {all_text_features}")
         # all_image_features = torch.cat(torch.distributed.nn.all_gather(image_features, async_op=True), dim=0)
         # all_text_features = torch.cat(torch.distributed.nn.all_gather(text_features, async_op=True), dim=0)
     else:
@@ -89,6 +91,7 @@ class ClipLoss(nn.Module):
                 logits_per_text = logit_scale * text_features @ all_image_features.T
             else:
                 logits_per_image = logit_scale * all_image_features @ all_text_features.T
+                print(f"logits per image on process id: {self.rank} is {logits_per_image}")
                 logits_per_text = logits_per_image.T
         else:
             logits_per_image = logit_scale * image_features @ text_features.T

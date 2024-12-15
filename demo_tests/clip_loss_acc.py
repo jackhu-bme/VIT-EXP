@@ -34,7 +34,10 @@ class ClipLossAcc(nn.Module):
         all_image_features = AllGather.apply(
             image_features, accelerator)
         all_text_features = AllGather.apply(text_features, accelerator)
+        print(f"all image features on process id: {accelerator.process_index} is {all_image_features}")
+        print(f"all text features on process id: {accelerator.process_index} is {all_text_features}")
         logits_per_image = logit_scale * all_image_features @ all_text_features.T
+        print(f"logits per image on process id: {accelerator.process_index} is {logits_per_image}")
         logits_per_text = logits_per_image.T
         # calculated ground-truth and cache if enabled
         num_logits = logits_per_image.shape[0]

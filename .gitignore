@@ -7,3 +7,4 @@ output_*/
 **.egg-info/
 demo_ckpt
 debug_*/
+logs_*
