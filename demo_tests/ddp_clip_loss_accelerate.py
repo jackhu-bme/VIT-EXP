@@ -11,11 +11,17 @@ torch.cuda.manual_seed_all(0)
 random.seed(0)
 
 # create data tensors
-x = torch.rand(8, 2) # stands for 8 samples with 5 features, such as 8 images, and for each gpu it has 4 images
-y = torch.rand(8, 2) # texts for the images, 4 texts for each gpu
+# x = torch.rand(4, 2) # stands for 8 samples with 5 features, such as 8 images, and for each gpu it has 4 images
+x = torch.tensor([[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8]])
+# y = torch.rand(4, 2) # texts for the images, 4 texts for each gpu
+y = torch.tensor([[0.2, 0.3], [0.3, 0.6], [0.4, 0.9], [0.2, 0.5]])
 
 # create model
 linear_model = torch.nn.Linear(2, 2)
+
+with torch.no_grad():
+    linear_model.weight.fill_(1.0)  # 将所有权重设置为1
+    linear_model.bias.fill_(0.0) 
 
 # torch dataset
 from torch.utils.data import Dataset, DataLoader
