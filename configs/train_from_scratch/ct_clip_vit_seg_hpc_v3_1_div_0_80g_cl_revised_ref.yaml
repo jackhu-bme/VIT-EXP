@@ -48,14 +48,14 @@ valid_data_list:
     data_valid: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/val
     labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv
     # sampler_type: InfinteCycleSampler
-  - name: TotalSegmentator
-    type: imageseg
-    batch_size: 1 # test if 2 is ok for 80g a100, if not ok, use 1 !
-    num_workers: 8
-    seg_data_train: /mnt/input/TotalSegmentator/seg_final_dataset/train_data
-    seg_data_valid: /mnt/input/TotalSegmentator/seg_final_dataset/valid_data
-    seg_mask_train: /mnt/input/TotalSegmentator/seg_final_dataset/train_mask
-    seg_mask_valid: /mnt/input/TotalSegmentator/seg_final_dataset/valid_mask
+  # - name: TotalSegmentator
+  #   type: imageseg
+  #   batch_size: 1 # test if 2 is ok for 80g a100, if not ok, use 1 !
+  #   num_workers: 8
+  #   seg_data_train: /mnt/input/TotalSegmentator/seg_final_dataset/train_data
+  #   seg_data_valid: /mnt/input/TotalSegmentator/seg_final_dataset/valid_data
+  #   seg_mask_train: /mnt/input/TotalSegmentator/seg_final_dataset/train_mask
+  #   seg_mask_valid: /mnt/input/TotalSegmentator/seg_final_dataset/valid_mask
     # sampler_type: InfinteCycleSampler
 
 
