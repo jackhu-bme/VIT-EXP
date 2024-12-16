@@ -318,17 +318,25 @@ class CTClipTrainer(nn.Module):
         # )
 
         self.dl_iter_list = [cycle(self.accelerator.prepare_data_loader(dl)) for dl in self.dl_list]
+        self.dl_step_list = [0, ] * len(self.dl_list)
         self.valid_dl_iter_list = [cycle(self.accelerator.prepare_data_loader(valid_dl)) for valid_dl in self.valid_dl_list]
-        self.CTClip = self.accelerator.prepare_model(self.CTClip)
-        self.optim = self.accelerator.prepare_optimizer(self.optim)
+        self.valid_dl_step_list = [0, ] * len(self.valid_dl_list)
+        # self.CTClip = self.accelerator.prepare_model(self.CTClip)
+        # self.optim = self.accelerator.prepare_optimizer(self.optim)\
         # in future, if use scheduler
         # fake a scheduler
-        self.scheduler = lr_scheduler.StepLR(self.optim, step_size=1000, gamma=1.0)
+        
         # self.scheduler = CosineAnnealingWarmUpRestarts(self.optim,
         #                                                 T_0=4000000,    # Maximum number of iterations
         #                                                 T_warmup=1000, # Number of warmup steps
         #                                                 eta_max=self.lr)
-        self.scheduler = self.accelerator.prepare_scheduler(self.scheduler)
+        
+        # self.scheduler = self.accelerator.prepare_scheduler(self.scheduler)
+        self.scheduler = lr_scheduler.StepLR(self.optim, step_size=1000, gamma=1.0)
+        (self.CTClip, self.optim, self.scheduler) = self.accelerator.prepare(
+            self.CTClip, self.optim, self.scheduler
+        )
+        
         # register for checkpointing
         self.accelerator.register_for_checkpointing(self.scheduler)
            
@@ -605,13 +613,13 @@ class CTClipTrainer(nn.Module):
 
 
         if not (steps % self.save_model_every):
-            state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
+            # state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
             # the following code will also work, and only get state_dict on rank0
             # save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
             # with FSDP.state_dict_type(self.CTCLIP, StateDictType.FULL_STATE_DICT, save_policy):
             #     state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
             if self.is_main:
-                print(f"save model at step: {steps}")
+                print(f"save model at step: {steps}, output_dir: {self.results_folder}")
                 self.accelerator.save_state(output_dir=self.results_folder)
                 # model_path = str(self.results_folder / f'CTClip.{steps}.pt')
                 # self.accelerator.save(state_dict, model_path)
