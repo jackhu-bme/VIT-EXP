@@ -611,6 +611,7 @@ class CTClipTrainer(nn.Module):
             # with FSDP.state_dict_type(self.CTCLIP, StateDictType.FULL_STATE_DICT, save_policy):
             #     state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
             if self.is_main:
+                print(f"save model at step: {steps}")
                 self.accelerator.save_state(output_dir=self.results_folder)
                 # model_path = str(self.results_folder / f'CTClip.{steps}.pt')
                 # self.accelerator.save(state_dict, model_path)
