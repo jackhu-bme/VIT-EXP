@@ -401,19 +401,19 @@ class CTClipTrainer(nn.Module):
         
 
 
-    def save(self, path):
-        # Ensure that the required attributes are not None before attempting to save
-        if self.accelerator is None or self.CTClip is None or self.optim is None:
-            raise ValueError("Accelerator, CTClip model, or optimizer is not initialized.")
+    # def save(self, path):
+    #     # Ensure that the required attributes are not None before attempting to save
+    #     if self.accelerator is None or self.CTClip is None or self.optim is None:
+    #         raise ValueError("Accelerator, CTClip model, or optimizer is not initialized.")
 
-        if not self.accelerator.is_local_main_process:
-            return
+    #     if not self.accelerator.is_local_main_process:
+    #         return
 
-        pkg = dict(
-            model=self.accelerator.get_state_dict(self.CTClip),
-            optim=self.optim.state_dict(),
-        )
-        torch.save(pkg, path)
+    #     pkg = dict(
+    #         model=self.accelerator.get_state_dict(self.CTClip),
+    #         optim=self.optim.state_dict(),
+    #     )
+    #     torch.save(pkg, path)
 
     # def load_model(self, path):
     #     path = Path(path)
