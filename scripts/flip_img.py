@@ -74,6 +74,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--current_split', type=int, default=0)
+    
+    args = parser.parse_args()
 
 
     all_file_list = os.listdir(train_mask_combined_dir)
