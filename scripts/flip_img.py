@@ -54,7 +54,7 @@ def process(file):
         flipped_data = np.flip(npz_data["arr_0"], axis=(1, 2))
         # current shape: (n_c, x, y, z)
         # resize to target shape
-        resized_data = torch.tensor(flipped_data.copy()).unsqueeze(0).int().cuda()
+        resized_data = torch.tensor(flipped_data.copy()).unsqueeze(0).int().float().cuda()
         # interpolate mask data, use area interpolation
         resized_data = F.interpolate(resized_data, size=(target_n_rows, target_n_cols, target_n_slices), mode='nearest')
         # convert to 0, 1
