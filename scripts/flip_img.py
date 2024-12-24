@@ -48,7 +48,7 @@ def process(file):
         print(f"Target Number of Slices: {target_n_slices}, Rows: {target_n_rows}, Columns: {target_n_cols}")
         # load the npz
         npz_file = os.path.join(train_mask_combined_dir, file)
-        npz_data = np.load(npz_file)
+        npz_data = np.load(npz_file, allow_pickle=True)
         print(f"npz data shape: {npz_data['arr_0'].shape}")
         # flip on dim 1 and 2
         flipped_data = np.flip(npz_data["arr_0"], axis=(1, 2))
