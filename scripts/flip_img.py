@@ -59,14 +59,15 @@ def process(file):
         resized_data = F.interpolate(resized_data, size=(target_n_rows, target_n_cols, target_n_slices), mode='nearest')
         # convert to 0, 1
         resized_data = torch.ceil(resized_data).int().cpu().numpy()
-        resized_data = resized_data.squeeze()
+        resized_data = resized_data.squeeze().astype(bool)
         print(f"resized data shape: {resized_data.shape}")
         # save as npz
         save_path = os.path.join(save_revise_train_mask_dir, file)
-        np.savez(save_path, resized_data)
+        # np.savez(save_path, resized_data)
+        np.savez_compressed(save_path, resized_data)
         torch.cuda.empty_cache()
 
-        # exit()
+        exit()
             
 if __name__ == "__main__":
     # with Pool(4) as p:
@@ -84,10 +85,10 @@ if __name__ == "__main__":
 
     current_split_list = all_file_list[current_split::n_splits]
 
-    # for file in current_split_list:
-    #     process(file)
-    with Pool(4) as p:
-        p.map(process, current_split_list)
+    for file in current_split_list:
+        process(file)
+    # with Pool(4) as p:
+    #     p.map(process, current_split_list)
 
 
 
