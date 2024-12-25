@@ -12,6 +12,8 @@ import torch.nn.functional as F
 import nibabel as nib
 import tqdm
 
+from transformers import BertTokenizer
+
 from multiprocessing import Pool
 
 from data_inference import *
@@ -262,6 +264,98 @@ class CTSegDataset(Dataset):
         # return video_tensor, mask_tensor
         return {"image": video_tensor, "seg_mask": mask_tensor, 
                 "data_type": "imageseg"}
+
+
+class CTOpenSegDataset(Dataset):
+    """
+    the ct seg dataset, used for both training and validation, as the image and seg mask data are returned
+    """
+    def __init__(self, data_folder, mask_folder, seg_mask_name_table, seg_mask_prompt_type="this_region"):
+        self.data_folder = data_folder
+        self.mask_folder = mask_folder
+        self.seg_mask_name_dict = self.read_xlsx(seg_mask_name_table)
+        self.seg_prompt_dict = self.load_seg_prompt_dict(seg_mask_prompt_type, self.seg_mask_name_dict)
+        self.tokenizer= BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
+        self.cache_data_list_folder = os.path.join(data_folder, './tmp_cache_data_list')
+        self.cache_mask_list_folder = os.path.join(mask_folder, './tmp_cache_mask_list')
+        os.makedirs(self.cache_data_list_folder, exist_ok=True)
+        os.makedirs(self.cache_mask_list_folder, exist_ok=True)
+        # self.accession_to_text = self.load_accession_text(csv_file)
+        self.paths=[]
+        self.samples = self.prepare_samples()
+        # percent = 100
+        # num_files = int((len(self.samples) * percent) / 100)
+        # self.samples = self.samples[:num_files]
+        # print(len(self.samples))
+        # self.count = 0
+
+    def read_xlsx(self, seg_mask_name_table):
+        df = pd.read_excel(seg_mask_name_table)
+        df_ids = df["ID"].tolist()
+        # all to int
+        df_ids = [int(i) for i in df_ids]
+        df_name = df["NAME"].tolist()
+        # create dict
+        df_dict = dict(zip(df_ids, df_name))
+        print(f"loaded seg mask name table: {df_dict}")
+        return df_dict
+
+    def load_seg_prompt_dict(self, seg_mask_prompt_type, seg_mask_name_dict):
+        if seg_mask_prompt_type == "this_region":
+            seg_mask_prompt_dict = {}
+            for key, value in seg_mask_name_dict.items():
+                prompt = f"This is region of {value}."
+                tokens = self.tokenizer(prompt, return_tensors="pt", padding="max_length", truncation=True, max_length=512)
+                seg_mask_prompt_dict[key] = tokens.input_ids
+            return seg_mask_prompt_dict
+        else:
+            raise ValueError(f"Unknown seg mask prompt type: {seg_mask_prompt_type}")
+    
+    def __len__(self):
+        return len(self.samples)
+    
+    # data lie in data_folder/*.npz, mask lie in mask_folder/*.npz
+    def prepare_samples(self):
+        img_sample_txt_path = os.path.join(self.cache_data_list_folder, 'image_samples.txt')
+        mask_sample_txt_path = os.path.join(self.cache_mask_list_folder, 'mask_samples.txt')
+        if os.path.exists(img_sample_txt_path) and os.path.exists(mask_sample_txt_path):
+            with open(img_sample_txt_path, 'r') as f:
+                img_samples_name = f.readlines()
+            img_samples = [sample.strip() for sample in img_samples_name]
+            with open(mask_sample_txt_path, 'r') as f:
+                mask_samples_name = f.readlines()
+            mask_samples = [sample.strip() for sample in mask_samples_name]
+            samples = list(zip(img_samples, mask_samples))
+            print(f"finished preparing samples with cache txt, the number of samples: {len(samples)}")
+            return samples
+        else:
+            data_names = glob.glob(os.path.join(self.data_folder, '*.npz'))
+            mask_names = glob.glob(os.path.join(self.mask_folder, '*.npz'))
+            assert len(data_names) == len(mask_names)
+            samples = list(zip(data_names, mask_names))
+            with open(img_sample_txt_path, 'w') as f:
+                for sample in data_names:
+                    f.write(f"{sample}\n")
+            with open(mask_sample_txt_path, 'w') as f:
+                for sample in mask_names:
+                    f.write(f"{sample}\n")
+        return samples
+
+    def __getitem__(self, index):
+        
+        data_file, mask_file = self.samples[index]
+        # the seg data is already preprocessed, no need to resize, pad, just load
+        try:
+            video_tensor = torch.tensor(np.load(data_file)['arr_0']).unsqueeze(0) # missing channel dim in the saved data
+            mask_tensor = torch.tensor(np.load(mask_file)['arr_0'])
+        except Exception as e:
+            print(f"error loading seg data: {e} for data file: {data_file}")
+            print(f"mask file: {mask_file}")
+
+        # return video_tensor, mask_tensor
+        return {"image": video_tensor, "seg_mask": mask_tensor, 
+                "data_type": "imageopenseg", "seg_mask_promp_dict": self.seg_prompt_dict}
+
 
 
 class InfiniteCycleSampler(Sampler):

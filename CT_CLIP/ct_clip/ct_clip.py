@@ -617,6 +617,7 @@ class CTCLIP(nn.Module):
     def tokenize(self, prompt):
         text_tokens=self.tokenizer(prompt, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(torch.cuda)
         return text_tokens
+    
     def token_embedding(self,input_ids):
         input_shape = input_ids.size()
         batch_size, seq_length = input_shape
@@ -701,9 +702,50 @@ class CTCLIP(nn.Module):
             return self.forward_batch_image_report(batch, device=device, accelerator=accelerator, **kwargs)
         elif batch["data_type"][0] == "imageseg":
             return self.forward_batch_image_seg(batch, device=device, accelerator=accelerator, **kwargs)
+        elif batch["data_type"][0] == "imageopenseg":
+            return self.forward_batch_image_open_seg(batch, device=device, accelerator=accelerator, **kwargs)
         else:
             raise ValueError(f"Data type {batch['data_type']} not recognized")
     
+    def open_seg_loss(a, b):
+        return F.cross_entropy(a, b)
+
+
+
+    def forward_batch_image_open_seg(self, batch, device=None, accelerator=None, **kwargs):
+        image = batch["image"]
+        seg_mask = batch["seg_mask"] # [B, C, H, W, D]
+        B_seg, C_seg, D, W, H = seg_mask.shape
+        seg_mask_flatten = seg_mask.permute((0, 2, 3, 4, 1)).reshape(B_seg, -1, C_seg) # (B, L, C)
+        seg_mask_promp_dict = batch["seg_mask_promp_dict"]
+        seg_mask_prompts = torch.tensor(list(seg_mask_promp_dict.values())) # already tokens, [C, n_hiddne_dim], C=num_labels
+        # get text embeddings by text transformers
+        seg_prompt_text_embeddings = self.text_transformer(seg_mask_prompts) # [C, n_hiddne_dim]
+        # get a lower dimension embedding with mlp
+        prompt_logits = self.open_text_head(seg_prompt_text_embeddings).unsqueeze(0) # [1, C, 64]
+        prompt_logits_batch = torch.tile(prompt_logits, (B_seg, 1, 1)) # [B, C, 64]
+        seg_embeddings_batch = seg_mask_flatten @ prompt_logits_batch # [B, L, 64]
+        loss_dict = {}
+        B, C, D, W, H = image.shape
+        enc_image= self.visual_transformer(image, return_encoded_tokens=True)
+        # use the seg valid mask to choose the image to be segmented
+        # due to memory issues, use one for seg only now
+        seg_mask = seg_mask.float().to(device)
+        enc_seg_image = enc_image
+        b, d, w, h, c = enc_seg_image.shape
+        p_h, p_w, p_d = H//h, W//w, D//d
+        tokens_to_seg = enc_seg_image.reshape(-1, c) # b, l, c -> b*l, c
+        # use the linear head for 
+        seg_logits = self.open_seg_head(tokens_to_seg)
+        # reshape the logits to the original shape, with each pixel
+        seg_preds = seg_logits.reshape(b, d, w, h, p_d, p_w, p_h, -1)
+        seg_preds = seg_preds.permute(0, 7, 1, 4, 2, 5, 3, 6).reshape(b, -1, D, W, H) # B, C, D, W, H as voxel embeddings
+        seg_preds = seg_preds.permute((0, 2, 3, 4, 1)).reshape(B_seg, -1, C_seg) # (B, L, C)
+        open_seg_loss = self.open_seg_loss(seg_preds, seg_embeddings_batch)
+        loss_dict["open_seg_loss"] = open_seg_loss.item()
+        return_list = [open_seg_loss, loss_dict]
+        return return_list
+
     
     def forward_batch_image_seg(self, batch, device=None, accelerator=None, return_metrics=False, return_vis=False, **kwargs):
         image = batch["image"]
