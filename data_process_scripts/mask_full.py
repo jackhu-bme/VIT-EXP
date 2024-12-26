@@ -76,12 +76,6 @@ def select_compare_save(train_img_path_list, save_mask_selected_dir):
     #     np.savez_compressed(save_mask_path, mask_data)
     #     print(f"Save mask to {save_mask_path}")
         # exit() # for test
-
-    # multiprocess
-    n_process = os.cpu_count()
-    with Pool(n_process) as pool:
-        pool.starmap(select_compare_save_single, [(train_img_path, save_mask_selected_dir) for train_img_path in train_img_path_list])
-    
     def select_compare_save_single(train_img_path, save_mask_selected_dir):
         mask_file_path = select_mask_file(train_img_path)
         # load the mask and img
@@ -98,6 +92,13 @@ def select_compare_save(train_img_path_list, save_mask_selected_dir):
         save_mask_path = os.path.join(save_mask_selected_dir, os.path.basename(mask_file_path))
         np.savez_compressed(save_mask_path, mask_data)
         print(f"Save mask to {save_mask_path}")
+
+    # multiprocess
+    n_process = os.cpu_count()
+    with Pool(n_process) as pool:
+        pool.starmap(select_compare_save_single, [(train_img_path, save_mask_selected_dir) for train_img_path in train_img_path_list])
+    
+    
 
 
 if __name__ == "__main__":
