@@ -4,6 +4,8 @@ import numpy as np
 
 from multiprocessing import Pool
 
+import torch.nn.functional as F
+
 # determine the mask for each img file, search for the corresponding mask file
 
 # and check the shape of mask and image, is the mask the same size as the image? (last 3 dimensions)                     
@@ -60,6 +62,11 @@ def select_compare_save(train_img_path_list, save_mask_selected_dir):
         img_data = np.load(train_img_path, allow_pickle=True)["arr_0"]
         if mask_data.shape[-3:] != img_data.shape[-3:]:
             print(f"Error: mask shape {mask_data.shape} is not the same as img shape {img_data.shape}")
+            # try resize to the same shape using pytorch
+            # mask_data = F.interpolate(torch.tensor(mask_data), size=img_data.shape[-3:], mode="trilinear", align_corners=False).numpy()
+            # resize using gpu
+            mask_data = F.interpolate(torch.tensor(mask_data).unsqueeze(0).cuda(), size=img_data.shape[-3:], mode="trilinear", align_corners=False).cpu().squeeze().numpy()
+            print(f"current mask shape {mask_data.shape}, img shape {img_data.shape}")
         save_mask_path = os.path.join(save_mask_selected_dir, os.path.basename(mask_file_path))
         # np.savez(save_mask_path, mask_data)
         np.savez_compressed(save_mask_path, mask_data)
