@@ -10,7 +10,7 @@ from multiprocessing import Pool
 
 ori_train_dir = "/mnt/input/CT-RATE/data_volumes/dataset/train_preprocessed_float32"
 
-mask_bank_dir = "./combined_seg_17_cls_revise"
+mask_bank_dir = "../combined_seg_17_cls_revise"
 
 # names for train files: 
 # train_2_a_2.npz for instance, the name format: train_{patient_id}_{scan_id}_{reconstruction_id}.npz
