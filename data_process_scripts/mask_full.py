@@ -65,7 +65,9 @@ def select_compare_save(train_img_path_list, save_mask_selected_dir):
             # try resize to the same shape using pytorch
             # mask_data = F.interpolate(torch.tensor(mask_data), size=img_data.shape[-3:], mode="trilinear", align_corners=False).numpy()
             # resize using gpu
+            mask_data = mask_data.astype(np.float32)
             mask_data = F.interpolate(torch.tensor(mask_data).unsqueeze(0).cuda(), size=img_data.shape[-3:], mode="trilinear", align_corners=False).cpu().squeeze().numpy()
+            mask_)data = mask_data.astype(bool)
             print(f"current mask shape {mask_data.shape}, img shape {img_data.shape}")
         save_mask_path = os.path.join(save_mask_selected_dir, os.path.basename(mask_file_path))
         # np.savez(save_mask_path, mask_data)
