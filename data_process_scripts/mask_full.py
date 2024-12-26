@@ -57,7 +57,32 @@ def get_train_img_path_list(train_img_dir):
 
 def select_compare_save(train_img_path_list, save_mask_selected_dir):
     os.makedirs(save_mask_selected_dir, exist_ok=True)
-    for train_img_path in train_img_path_list:
+    # for train_img_path in train_img_path_list:
+    #     mask_file_path = select_mask_file(train_img_path)
+    #     # load the mask and img
+    #     mask_data = np.load(mask_file_path, allow_pickle=True)["arr_0"].transpose((0, 3, 1, 2))
+    #     img_data = np.load(train_img_path, allow_pickle=True)["arr_0"]
+    #     if mask_data.shape[-3:] != img_data.shape[-3:]:
+    #         print(f"Error: mask shape {mask_data.shape} is not the same as img shape {img_data.shape}")
+    #         # try resize to the same shape using pytorch
+    #         # mask_data = F.interpolate(torch.tensor(mask_data), size=img_data.shape[-3:], mode="trilinear", align_corners=False).numpy()
+    #         # resize using gpu
+    #         mask_data = mask_data.astype(np.float32)
+    #         mask_data = F.interpolate(torch.tensor(mask_data).unsqueeze(0), size=img_data.shape[-3:], mode="trilinear", align_corners=False).squeeze().numpy()
+    #         mask_data = mask_data.astype(bool)
+    #         print(f"current mask shape {mask_data.shape}, img shape {img_data.shape}")
+    #     save_mask_path = os.path.join(save_mask_selected_dir, os.path.basename(mask_file_path))
+    #     # np.savez(save_mask_path, mask_data)
+    #     np.savez_compressed(save_mask_path, mask_data)
+    #     print(f"Save mask to {save_mask_path}")
+        # exit() # for test
+
+    # multiprocess
+    n_process = os.cpu_count()
+    with Pool(n_process) as pool:
+        pool.starmap(select_compare_save_single, [(train_img_path, save_mask_selected_dir) for train_img_path in train_img_path_list])
+    
+    def select_compare_save_single(train_img_path, save_mask_selected_dir):
         mask_file_path = select_mask_file(train_img_path)
         # load the mask and img
         mask_data = np.load(mask_file_path, allow_pickle=True)["arr_0"].transpose((0, 3, 1, 2))
@@ -70,28 +95,9 @@ def select_compare_save(train_img_path_list, save_mask_selected_dir):
             mask_data = mask_data.astype(np.float32)
             mask_data = F.interpolate(torch.tensor(mask_data).unsqueeze(0), size=img_data.shape[-3:], mode="trilinear", align_corners=False).squeeze().numpy()
             mask_data = mask_data.astype(bool)
-            print(f"current mask shape {mask_data.shape}, img shape {img_data.shape}")
         save_mask_path = os.path.join(save_mask_selected_dir, os.path.basename(mask_file_path))
-        # np.savez(save_mask_path, mask_data)
         np.savez_compressed(save_mask_path, mask_data)
         print(f"Save mask to {save_mask_path}")
-        # exit() # for test
-
-    # # multiprocess
-    # n_process = os.cpu_count()
-    # with Pool(n_process) as pool:
-    #     pool.starmap(select_compare_save_single, [(train_img_path, save_mask_selected_dir) for train_img_path in train_img_path_list])
-    
-    # def select_compare_save_single(train_img_path, save_mask_selected_dir):
-    #     mask_file_path = select_mask_file(train_img_path)
-    #     # load the mask and img
-    #     mask_data = np.load(mask_file_path, allow_pickle=True)["arr_0"]
-    #     img_data = np.load(train_img_path, allow_pickle=True)["arr_0"]
-    #     if mask_data.shape[-3:] != img_data.shape[-3:]:
-    #         print(f"Error: mask shape {mask_data.shape} is not the same as img shape {img_data.shape}")
-    #     save_mask_path = os.path.join(save_mask_selected_dir, os.path.basename(mask_file_path))
-    #     np.savez(save_mask_path, mask_data)
-    #     print(f"Save mask to {save_mask_path}")
 
 
 if __name__ == "__main__":
