@@ -37,9 +37,16 @@ def select_mask_file(train_img_file_path):
 def get_train_img_path_list(train_img_dir):
     # walk, and get full abs path list
     train_img_path_list = []
+    tmp_path_cache_list = os.path,join(train_img_dir, "cache_data_list", "image_samples.txt")
+    if os.path.exists(tmp_path_cache_list):
+        with open(tmp_path_cache_list, "r") as f:
+            for line in f.readlines():
+                train_img_path_list.append(line.strip())
+        return train_img_path_list
     for root, dirs, files in os.walk(train_img_dir):
         for file in files:
             if file.endswith(".npz"):
+                print(f"Add {file} to the list")
                 train_img_path_list.append(os.path.join(root, file))
     return train_img_path_list
 
