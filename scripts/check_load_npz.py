@@ -36,7 +36,7 @@ def find_npz_load_errors_walk_multiprocess(directory):
 # errors = find_npz_load_errors_walk_multiprocess('/home/xufluo/blobmnt/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0')
 # print(errors)
 
-npz_folder_path = "/mnt/input/RadGenome/combined_seg_17_cls"
+npz_folder_path = "/mnt/input/RadGenome/combined_seg_17_cls_new"
 errors = find_npz_load_errors_walk_multiprocess(npz_folder_path)
 with open("error_npz_seg_cls.txt", "w") as f:
     for error in errors:
