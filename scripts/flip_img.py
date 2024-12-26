@@ -13,7 +13,7 @@ import argparse
 
 from multiprocessing import Pool
 
-train_mask_combined_dir = "/mnt/input/RadGenome/combined_seg_17_cls"
+train_mask_combined_dir = "/mnt/input/RadGenome/combined_seg_17_cls_new"
 
 save_revise_train_mask_dir = "../combined_seg_17_cls_revise"
 os.makedirs(save_revise_train_mask_dir, exist_ok=True)
@@ -30,6 +30,11 @@ df = pd.read_csv(metadata_path)
 def process(file):
     if file.endswith(".npz"):
         try:
+            # save as npz
+            save_path = os.path.join(save_revise_train_mask_dir, file)
+            if os.path.exists(save_path):
+                print(f"File {file} already exists")
+                return
             file_name = file.replace(".npz", ".nii.gz")
             row = df[df['VolumeName'] == file_name]
             # slope = float(row["RescaleSlope"].iloc[0])
@@ -62,8 +67,7 @@ def process(file):
             resized_data = torch.ceil(resized_data).int().cpu().numpy()
             resized_data = resized_data.squeeze().astype(bool)
             print(f"resized data shape: {resized_data.shape}")
-            # save as npz
-            save_path = os.path.join(save_revise_train_mask_dir, file)
+            
             # np.savez(save_path, resized_data)
             np.savez_compressed(save_path, resized_data)
             torch.cuda.empty_cache()
