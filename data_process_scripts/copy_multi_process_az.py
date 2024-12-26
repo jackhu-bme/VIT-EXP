@@ -43,8 +43,8 @@ def copy(src, dst):
 if __name__ == "__main__":
     # src = "/home/xufluo/data/LUNA16/unzip_data"
     # dst = "/home/xufluo/blobmnt/LUNA16/unzip_data"
-    src = "/home/xufluo/data/RadGenome/data/train_anatomy_mask_combined"
-    dst = "RadGenome/combined_seg_17_cls_new"
+    src = "../combined_seg_17_cls_revise"
+    dst = "RadGenome/combined_seg_17_cls_new_revise"
     file_list = "./errors.txt"
     os.makedirs(dst, exist_ok=True)
     if not os.path.exists(dst):
