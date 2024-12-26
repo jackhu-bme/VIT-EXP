@@ -33,7 +33,9 @@ if __name__ == "__main__":
     os.makedirs(dst, exist_ok=True)
     if not os.path.exists(dst):
         os.makedirs(dst)
-    pool = Pool(8)
+    # cpu count
+    cpu_n = os.cpu_count()
+    pool = Pool(cpu_n)
     copy_pairs = get_copy_pairs(src, dst)
     pool.starmap(copy, copy_pairs)
     pool.close()
