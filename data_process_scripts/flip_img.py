@@ -106,10 +106,10 @@ if __name__ == "__main__":
 
     current_split_list = all_file_list[current_split::n_splits]
 
-    # for file in current_split_list:
-    #     process(file)
-    with Pool(4) as p:
-        p.map(process, current_split_list)
+    for file in current_split_list:
+        process(file)
+    # with Pool(4) as p:
+    #     p.map(process, current_split_list)
 
 
 
