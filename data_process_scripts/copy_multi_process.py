@@ -27,8 +27,8 @@ def copy(src, dst):
 if __name__ == "__main__":
     # src = "/home/xufluo/data/RadGenome"
     # dst = "/home/xufluo/blobmnt/RadGenome/full_dataset_revised"
-    src = "../combined_seg_17_cls_revise"
-    dst = "/mnt/input/RadGenome/combined_seg_17_cls_new_revise"
+    src = "./train_mask_final"
+    dst = "/mnt/input/RadGenome/train_mask_final_combined_seg_17_cls"
     # /home/xufluo/data/RadGenome/data/train_anatomy_mask_combined
     os.makedirs(dst, exist_ok=True)
     if not os.path.exists(dst):
