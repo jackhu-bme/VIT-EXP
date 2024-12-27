@@ -77,8 +77,10 @@ def process(file):
         resized_data = torch.tensor(flipped_data.copy()).unsqueeze(0).int().float().cuda()
         # interpolate mask data, use area interpolation
         resized_data = F.interpolate(resized_data, size=(target_n_rows, target_n_cols, target_n_slices), mode='trilinear', align_corners=False)
+        # inplace ceil
+        resized_data.ceil_()
         # convert to 0, 1
-        resized_data = torch.ceil(resized_data).int().cpu().numpy()
+        resized_data = resize_data.int().cpu().numpy()
         resized_data = resized_data.squeeze().astype(bool)   #.transpose((0, 3, 1, 2))
         print(f"resized data shape: {resized_data.shape}")
         
