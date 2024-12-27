@@ -61,7 +61,12 @@ def select_compare_save_single(train_img_path, save_mask_selected_dir):
             print(f"Skip {save_mask_path}")
             return
         # load the mask and img
-        mask_data = np.load(mask_file_path, allow_pickle=True)["arr_0"].transpose((0, 3, 1, 2))
+        try:
+            mask_data = np.load(mask_file_path, allow_pickle=True)["arr_0"].transpose((0, 3, 1, 2))
+        except Exception as e:
+            print(f"Error: {e}")
+            print(f"Skip {train_img_path}")
+            return (-1, train_img_path)
         img_data = np.load(train_img_path, allow_pickle=True)["arr_0"]
         if mask_data.shape[-3:] != img_data.shape[-3:]:
             print(f"Error: mask shape {mask_data.shape} is not the same as img shape {img_data.shape}")
@@ -73,6 +78,7 @@ def select_compare_save_single(train_img_path, save_mask_selected_dir):
             mask_data = mask_data.astype(bool)
         np.savez_compressed(save_mask_path, mask_data)
         print(f"Save mask to {save_mask_path}")
+        return (0, train_img_path)
 
 
 # def select_compare_save(train_img_path_list, save_mask_selected_dir):
@@ -108,7 +114,13 @@ if __name__ == "__main__":
     # multiprocess
     n_process = os.cpu_count()
     with Pool(n_process) as pool:
-        pool.starmap(select_compare_save_single, [(train_img_path, save_mask_selected_dir) for train_img_path in train_img_path_list])
+        res_list = pool.starmap(select_compare_save_single, [(train_img_path, save_mask_selected_dir) for train_img_path in train_img_path_list])
+    # collect the failed cases
+    error_list = [res[1] for res in res_list if res[0] == -1]
+    # write to file
+    with open("error_list_mask_full.txt", "w") as f:
+        for error in error_list:
+            f.write(f"{error}\n")
 
 
 
