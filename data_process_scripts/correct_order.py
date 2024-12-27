@@ -28,10 +28,11 @@ def process(mask_name):
         # exit() # for test
 
 if __name__ == "__main__":
-    mask_name_list = sorted(os.listdir(ori_wrong_mask_dir))
-    n_process = os.cpu_count()
-    with Pool(n_process) as pool:
-        pool.map(process, mask_name_list)
-    print("All done")
+    # mask_name_list = sorted(os.listdir(ori_wrong_mask_dir))
+    # n_process = os.cpu_count()
+    # with Pool(n_process) as pool:
+    #     pool.map(process, mask_name_list)
+    # print("All done")
+    process("train_13368_c_1.npz")
 
 
