@@ -96,20 +96,22 @@ if __name__ == "__main__":
     # with Pool(4) as p:
     #     p.map(process, os.listdir(train_mask_combined_dir))
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--current_split', type=int, default=0)
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--current_split', type=int, default=0)
     
-    args = parser.parse_args()
+    # args = parser.parse_args()
+
+    process("train_13368_c_1.npz")
 
 
-    all_file_list = os.listdir(train_mask_combined_dir)
-    n_splits = 4
-    current_split = args.current_split
+    # all_file_list = os.listdir(train_mask_combined_dir)
+    # n_splits = 4
+    # current_split = args.current_split
 
-    current_split_list = all_file_list[current_split::n_splits]
+    # current_split_list = all_file_list[current_split::n_splits]
 
-    for file in current_split_list:
-        process(file)
+    # for file in current_split_list:
+    #     process(file)
     # with Pool(4) as p:
     #     p.map(process, current_split_list)
 
