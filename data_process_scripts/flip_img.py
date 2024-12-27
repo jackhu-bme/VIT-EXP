@@ -15,8 +15,22 @@ from multiprocessing import Pool
 
 train_mask_combined_dir = "/mnt/input/RadGenome/combined_seg_17_cls_new"
 
-save_revise_train_mask_dir = "../train_combined_seg_17_cls_final"
+save_revise_train_mask_dir = "../combined_seg_17_cls_revise"
 os.makedirs(save_revise_train_mask_dir, exist_ok=True)
+
+
+train_mask_list = os.listdir(train_mask_combined_dir)
+
+saved_res_list = os.listdir(save_revise_train_mask_dir)
+
+print(f"n train mask files: {len(train_mask_list)}, n saved mask files: {len(saved_res_list)}")
+
+
+
+
+exit()
+
+
 
 # load train metadata
 metadata_path = "/mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv"
@@ -65,7 +79,7 @@ def process(file):
         resized_data = F.interpolate(resized_data, size=(target_n_rows, target_n_cols, target_n_slices), mode='nearest')
         # convert to 0, 1
         resized_data = torch.ceil(resized_data).int().cpu().numpy()
-        resized_data = resized_data.squeeze().astype(bool).transpose((0, 3, 1, 2))
+        resized_data = resized_data.squeeze().astype(bool)   #.transpose((0, 3, 1, 2))
         print(f"resized data shape: {resized_data.shape}")
         
         # np.savez(save_path, resized_data)
