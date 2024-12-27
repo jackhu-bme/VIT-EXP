@@ -56,6 +56,10 @@ def get_train_img_path_list(train_img_dir):
 
 def select_compare_save_single(train_img_path, save_mask_selected_dir):
         mask_file_path = select_mask_file(train_img_path)
+        save_mask_path = os.path.join(save_mask_selected_dir, os.path.basename(mask_file_path))
+        if os.path.exists(save_mask_path):
+            print(f"Skip {save_mask_path}")
+            return
         # load the mask and img
         mask_data = np.load(mask_file_path, allow_pickle=True)["arr_0"].transpose((0, 3, 1, 2))
         img_data = np.load(train_img_path, allow_pickle=True)["arr_0"]
@@ -67,7 +71,6 @@ def select_compare_save_single(train_img_path, save_mask_selected_dir):
             mask_data = mask_data.astype(np.float32)
             mask_data = F.interpolate(torch.tensor(mask_data).unsqueeze(0), size=img_data.shape[-3:], mode="trilinear", align_corners=False).squeeze().numpy()
             mask_data = mask_data.astype(bool)
-        save_mask_path = os.path.join(save_mask_selected_dir, os.path.basename(mask_file_path))
         np.savez_compressed(save_mask_path, mask_data)
         print(f"Save mask to {save_mask_path}")
 
