@@ -56,7 +56,7 @@ def get_train_img_path_list(train_img_dir):
 
 def select_compare_save_single(train_img_path, save_mask_selected_dir):
         mask_file_path = select_mask_file(train_img_path)
-        save_mask_path = os.path.join(save_mask_selected_dir, os.path.basename(mask_file_path))
+        save_mask_path = os.path.join(save_mask_selected_dir, os.path.basename(train_img_path))
         if os.path.exists(save_mask_path):
             print(f"Skip {save_mask_path}")
             return
