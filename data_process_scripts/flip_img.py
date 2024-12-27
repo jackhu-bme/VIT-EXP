@@ -28,7 +28,7 @@ print(f"n train mask files: {len(train_mask_list)}, n saved mask files: {len(sav
 
 
 
-exit()
+# exit()
 
 
 
