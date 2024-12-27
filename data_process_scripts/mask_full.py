@@ -59,7 +59,7 @@ def select_compare_save_single(train_img_path, save_mask_selected_dir):
         save_mask_path = os.path.join(save_mask_selected_dir, os.path.basename(train_img_path))
         if os.path.exists(save_mask_path):
             print(f"Skip {save_mask_path}")
-            return
+            return (0, train_img_path)
         # load the mask and img
         try:
             mask_data = np.load(mask_file_path, allow_pickle=True)["arr_0"].transpose((0, 3, 1, 2))
