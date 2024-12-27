@@ -80,7 +80,7 @@ def process(file):
         # inplace ceil
         resized_data.ceil_()
         # convert to 0, 1
-        resized_data = resize_data.int().cpu().numpy()
+        resized_data = resized_data.int().cpu().numpy()
         resized_data = resized_data.squeeze().astype(bool)   #.transpose((0, 3, 1, 2))
         print(f"resized data shape: {resized_data.shape}")
         
