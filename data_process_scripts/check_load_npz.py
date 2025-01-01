@@ -36,9 +36,9 @@ def find_npz_load_errors_walk_multiprocess(directory):
 # errors = find_npz_load_errors_walk_multiprocess('/home/xufluo/blobmnt/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0')
 # print(errors)
 
-npz_folder_path = "/mnt/input/RadGenome/train_preprocessed_img_organized_fp16/"
+npz_folder_path = "/mnt/input/RadGenome/train_preprocessed_mask_combined_bool/"
 errors = find_npz_load_errors_walk_multiprocess(npz_folder_path)
-with open("error_npz_pre+img_flp16.txt", "w") as f:
+with open("error_npz_pre_mask_bool.txt", "w") as f:
     for error in errors:
         f.write(str(error) + "\n")
 
