@@ -210,7 +210,7 @@ class CTReportDataset(Dataset):
                 report_samples_name = f.readlines()
             report_samples = [sample.strip() for sample in report_samples_name]
             samples = list(zip(image_samples, report_samples))
-            print(f"finished preparing samples with cache txt, the number of samples: {len(samples)}")
+            print(f"finished preparing samples with cache txt within the ct report dataset, the number of samples: {len(samples)}")
             return samples
         else:
             patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
@@ -287,7 +287,7 @@ class CTSegDataset(Dataset):
                 mask_samples_name = f.readlines()
             mask_samples = [sample.strip() for sample in mask_samples_name]
             samples = list(zip(img_samples, mask_samples))
-            print(f"finished preparing samples with cache txt, the number of samples: {len(samples)}")
+            print(f"finished preparing samples with cache txt within the ct seg dataset, the number of samples: {len(samples)}")
             return samples
         else:
             data_names = glob.glob(os.path.join(self.data_folder, '*.npz'))
@@ -385,7 +385,7 @@ class CTOpenSegDataset(Dataset):
                 mask_samples_name = f.readlines()
             mask_samples = [sample.strip() for sample in mask_samples_name]
             samples = list(zip(img_samples, mask_samples))
-            print(f"finished preparing samples with cache txt, the number of samples: {len(samples)}")
+            print(f"finished preparing samples with cache txt within the open seg dataset, the number of samples: {len(samples)}")
             return samples
         else:
             data_names = glob.glob(os.path.join(self.data_folder, '*.npz'))
