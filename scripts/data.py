@@ -96,6 +96,58 @@ def npz_to_tensor(path):
     return tensor
 
 
+def npz_mask_to_tensor(path):
+    img_data = np.load(path)['arr_0']
+    img_data= np.transpose(img_data, (0, 2, 3, 1))
+    # img_data = img_data*1000
+    # hu_min, hu_max = -1000, 1000
+    # img_data = np.clip(img_data, hu_min, hu_max)
+
+    # img_data = (img_data / 1000).astype(np.float32)
+    min_value, max_value = 0, 1
+    img_data = np.clip(img_data, min_value, max_value)
+    img_data = (img_data - min_value) / (max_value - min_value)
+    img_data = img_data.astype(np.float32)
+
+    # slices=[]
+
+    tensor = torch.tensor(img_data)
+    # Get the dimensions of the input tensor
+    target_shape = (480,480,240)
+    # Extract dimensions
+    h, w, d = tensor.shape
+
+    # Calculate cropping/padding values for height, width, and depth
+    dh, dw, dd = target_shape
+
+    h_start = max((h - dh) // 2, 0)
+    h_end = min(h_start + dh, h)
+    w_start = max((w - dw) // 2, 0)
+    w_end = min(w_start + dw, w)
+    d_start = max((d - dd) // 2, 0)
+    d_end = min(d_start + dd, d)
+
+    # Crop or pad the tensor
+    tensor = tensor[h_start:h_end, w_start:w_end, d_start:d_end]
+
+    pad_h_before = (dh - tensor.size(0)) // 2
+    pad_h_after = dh - tensor.size(0) - pad_h_before
+
+    pad_w_before = (dw - tensor.size(1)) // 2
+    pad_w_after = dw - tensor.size(1) - pad_w_before
+
+    pad_d_before = (dd - tensor.size(2)) // 2
+    pad_d_after = dd - tensor.size(2) - pad_d_before
+
+    tensor = torch.nn.functional.pad(tensor, (pad_d_before, pad_d_after, pad_w_before, pad_w_after, pad_h_before, pad_h_after), value=-1)
+
+    tensor = tensor.permute(0, 3, 1, 2)
+
+    tensor = tensor #.unsqueeze(0)
+
+    return tensor
+
+
 
 class CTReportDataset(Dataset):
     """
@@ -308,6 +360,13 @@ class CTOpenSegDataset(Dataset):
                 tokens = self.tokenizer(prompt, return_tensors="pt", padding="max_length", truncation=True, max_length=512)
                 seg_mask_prompt_dict[key] = tokens.input_ids
             return seg_mask_prompt_dict
+        elif seg_mask_prompt_type == "this_is":
+            seg_mask_prompt_dict = {}
+            for key, value in seg_mask_name_dict.items():
+                prompt = f"This is {value}."
+                tokens = self.tokenizer(prompt, return_tensors="pt", padding="max_length", truncation=True, max_length=512)
+                seg_mask_prompt_dict[key] = tokens.input_ids
+            return seg_mask_prompt_dict
         else:
             raise ValueError(f"Unknown seg mask prompt type: {seg_mask_prompt_type}")
     
@@ -346,8 +405,10 @@ class CTOpenSegDataset(Dataset):
         data_file, mask_file = self.samples[index]
         # the seg data is already preprocessed, no need to resize, pad, just load
         try:
-            video_tensor = torch.tensor(np.load(data_file)['arr_0']).unsqueeze(0) # missing channel dim in the saved data
-            mask_tensor = torch.tensor(np.load(mask_file)['arr_0'])
+            # video_tensor = torch.tensor(np.load(data_file)['arr_0'].unsqueeze(0) # missing channel dim in the saved data
+            video_tensor = npz_to_tensor(data_file)
+            # mask_tensor = torch.tensor(np.load(mask_file)['arr_0'])
+            mask_tensor = npz_mask_to_tensor(mask_file)
         except Exception as e:
             print(f"error loading seg data: {e} for data file: {data_file}")
             print(f"mask file: {mask_file}")
@@ -390,6 +451,8 @@ def create_train_ds(config):
         return CTReportDataset(config["data_train"], config["reports_file_train"], config["metadata_train"])
     elif config["type"] == "imageseg":
         return CTSegDataset(config["seg_data_train"], config["seg_mask_train"])
+    elif config["type"] == "imageopenseg":
+        return CTOpenSegDataset(config["seg_data_train"], config["seg_mask_train"], config["seg_mask_name_table"], config["seg_mask_prompt_type"])
     else:
         raise ValueError(f"Unknown dataset type: {config['type']}")
 

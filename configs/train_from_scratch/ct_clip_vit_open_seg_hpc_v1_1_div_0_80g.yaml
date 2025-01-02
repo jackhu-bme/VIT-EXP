@@ -29,13 +29,13 @@ train_data_list:
     type: imageopenseg
     batch_size: 2
     num_workers: 4
-    seg_data_train: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/train
-    seg_data_valid: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/val
+    seg_data_train: /mnt/input/RadGenome/train_preprocessed_img_organized_fp16
+    # seg_data_valid: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/val
     metadata_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv
-    seg_mask_train: /mnt/input/RadGenome/seg_final_dataset_17cls/train_mask
-    seg_mask_valid: /mnt/input/RadGenome/seg_final_dataset_17cls/valid_mask
-    seg_mask_name: /mnt/input/RadGenome/seg_final_dataset_17cls/seg_mask_name.xlsx
-    seg_prompt_type: this_region
+    seg_mask_train: /mnt/input/RadGenome/train_preprocessed_mask_combined_bool
+    # seg_mask_valid: /mnt/input/RadGenome/seg_final_dataset_17cls/valid_mask
+    seg_mask_name_table: /mnt/input/RadGenome/seg_final_dataset_17cls/seg_mask_name.xlsx
+    seg_mask_prompt_type: this_is
 
     # sampler_type: InfinteCycleSampler
   # - name: TotalSegmentator
@@ -96,5 +96,5 @@ arch:
     layer_type: mlp
     in_dim: 768
     mid_dim: 128
-    out_dim: 64 # a low dim representation for each voxel
+    out_dim: 16 # a low dim representation for each voxel
 
