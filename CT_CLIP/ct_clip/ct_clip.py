@@ -720,7 +720,7 @@ class CTCLIP(nn.Module):
         seg_mask_promp_dict = batch["seg_mask_promp_dict"]
         seg_mask_prompt_list = list(seg_mask_promp_dict.values()) # already tokens, [C, n_hiddne_dim], C=num_labels
         for i, prompt in enumerate(seg_mask_prompt_list):
-            print(f"Prompt {i}: {prompt}")
+            print(f"Prompt {i} shape: {prompt.shape}")
         exit()
         seg_mask_prompts = torch.tensor(list(seg_mask_promp_dict.values())) # already tokens, [C, n_hiddne_dim], C=num_labels
         # get text embeddings by text transformers
