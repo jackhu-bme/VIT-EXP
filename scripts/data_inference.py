@@ -127,7 +127,7 @@ class CTReportDatasetinfer(Dataset):
             with open(os.path.join(self.cache_data_list_folder, 'label_samples.pkl'), 'rb') as f:
                 label_samples = pickle.load(f)
             samples = list(zip(image_samples, report_samples, label_samples))
-            print(f"finished preparing samples with cache txt, the number of samples: {len(samples)}")
+            print(f"finished preparing samples with cache txt in ct report infer, the number of samples: {len(samples)}")
             return samples
         else:
             # Read labels once outside the loop
