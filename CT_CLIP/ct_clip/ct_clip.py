@@ -785,16 +785,17 @@ class CTCLIP(nn.Module):
             # calculate the cosine similarity for each class
             B, L, n_hidden_dim = seg_preds.shape
             B, L, C = seg_mask_flatten.shape
-            sim_res = torch.zeros(B, L, C)
+            open_seg_loss = 0.
             for i in range(C):
                 # get the prompt logits for the i-th class
-                prompt_logits = prompt_logits_batch[:, i, :]
+                prompt_logits = prompt_logits_batch[:, i, :] # [B, n_hidden_dim=16]
                 sim = F.cosine_similarity(seg_preds, prompt_logits.unsqueeze(1), dim=-1)
-                print(f"sim shape: {sim.shape}")
-                sim_res[:, :, i] = sim
-            # calculate the distance between similarity and gt, make the right class close to 1, wrong class close to 0
-            # just use l2 loss for now
-            open_seg_loss = F.mse_loss(sim_res, seg_mask_flatten) # default reduction is mean
+                print(f"sim shape: {sim.shape}") # (B, L)
+                # calculate the distance between similarity and gt, make the right class close to 1, wrong class close to 0
+                # just use l2 loss for now
+                open_seg_loss += F.mse_loss(sim, seg_mask_flatten[:, :, i]) # default reduction is mean
+                # empty the memory
+                del sim
             print(f"open_seg_loss shape: {open_seg_loss.shape}")
             return open_seg_loss
         else:
