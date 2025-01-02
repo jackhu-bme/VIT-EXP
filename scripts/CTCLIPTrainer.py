@@ -472,13 +472,13 @@ class CTClipTrainer(nn.Module):
             text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(self.device)
             batch["text"] = text_tokens
             batch["image"] = video
-        elif batch["data_type"][0] == "imageseg" or batch["data_type"][0] == "imagesegreport":
+        elif batch["data_type"][0] == "imageseg" or batch["data_type"][0] == "imageopenseg":
             seg_mask = batch["seg_mask"].to(self.device)
             seg_data = batch["image"].to(self.device)
             batch["seg_mask"] = seg_mask
             batch["image"] = seg_data
         else:
-            raise ValueError(f"unsupported data type: {batch['data_type']}")
+            raise ValueError(f"unsupported data type: {batch['data_type'][0]}, is open seg: {batch['data_type'][0] == 'imageopenseg'}")
         return batch
 
 
