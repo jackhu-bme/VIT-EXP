@@ -73,8 +73,8 @@ valid_data_list:
 
 
 DatasetSampler:
-  type: Combined # Combined means combine the weight of different data types in a training step
-  acc_steps_list: [1, 1]
+  type: Random # Combined means combine the weight of different data types in a training step
+  ratio_list: [1, 1]
 
 
 # arch for img
