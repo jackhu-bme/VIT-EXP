@@ -614,21 +614,21 @@ class CTCLIP(nn.Module):
             # open seg head
             open_seg_head_config = config.get("open_seg_head", {})
             open_seg_head_kwargs = dict(
-                head_n_layers = open_seg_head_config.get("head_n_layers", 2),
-                head_layer_type = open_seg_head_config.get("head_layer_type", "mlp"),
-                head_in_dim = open_seg_head_config.get("head_in_dim", 256),
-                head_mid_dim = open_seg_head_config.get("head_mid_dim", 128),
-                head_out_dim = open_seg_head_config.get("head_out_dim", 16) * self.visual_transformer.patch_voxel_nums
+                head_n_layers = open_seg_head_config.get("n_layers", 2),
+                head_layer_type = open_seg_head_config.get("layer_type", "mlp"),
+                head_in_dim = open_seg_head_config.get("in_dim", 256),
+                head_mid_dim = open_seg_head_config.get("mid_dim", 128),
+                head_out_dim = open_seg_head_config.get("out_dim", 16) * self.visual_transformer.patch_voxel_nums
             )
             self.open_seg_head = self.create_head(**open_seg_head_kwargs)
             # open text head
             open_text_head_config = config.get("open_text_head", {})
             open_text_head_kwargs = dict(
-                head_n_layers = open_text_head_config.get("head_n_layers", 2),
-                head_layer_type = open_text_head_config.get("head_layer_type", "mlp"),
-                head_in_dim = open_text_head_config.get("head_in_dim", 768),
-                head_mid_dim = open_text_head_config.get("head_mid_dim", 128),
-                head_out_dim = open_text_head_config.get("head_out_dim", 16)
+                head_n_layers = open_text_head_config.get("n_layers", 2),
+                head_layer_type = open_text_head_config.get("layer_type", "mlp"),
+                head_in_dim = open_text_head_config.get("in_dim", 768),
+                head_mid_dim = open_text_head_config.get("mid_dim", 128),
+                head_out_dim = open_text_head_config.get("out_dim", 16)
             )
             self.open_text_head = self.create_head(**open_text_head_kwargs)
             self.open_seg_loss_type = config.get("open_seg_loss_type", "cos_sim_l2")
