@@ -169,21 +169,7 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
     return emb
 
 
-def create_seg_head(seg_head_n_layers, seg_head_layer_type, seg_head_in_dim, seg_head_mid_dim, seg_head_out_dim):
-    # warning: todo: check output logits, if it is consistent with loss design!
-    if seg_head_layer_type == "mlp":
-        layers = []
-        for i in range(seg_head_n_layers):
-            in_dim = seg_head_in_dim if i == 0 else seg_head_mid_dim
-            out_dim = seg_head_out_dim if i == seg_head_n_layers - 1 else seg_head_mid_dim
-            act = nn.LeakyReLU(0.2) if i < seg_head_n_layers - 1 else nn.Identity()
-            layers.extend([
-                nn.Linear(in_dim, out_dim),
-                act
-            ])
-        return nn.Sequential(*layers)
-    else:
-        raise ValueError(f"Unsupported seg_head_layer_type: {seg_head_layer_type}")
+
 
 
 class CTViT3D(nn.Module):
@@ -232,6 +218,8 @@ class CTViT3D(nn.Module):
         self.temporal_patch_size = temporal_patch_size
         n_t, n_h, n_w = temporal_size // temporal_patch_size, image_size // patch_height, image_size // patch_width
 
+        self.patch_voxel_nums = patch_height * patch_width * temporal_patch_size
+
         self.pos_embed = nn.Parameter(torch.zeros(1, n_t * n_h * n_w, dim), requires_grad = False)  # for encoder
 
         self.init_pos_embed((n_t, n_h, n_w))
@@ -269,25 +257,7 @@ class CTViT3D(nn.Module):
 
         self.enc_3D = Transformer(depth = transformer_blocks, **transformer_kwargs)
 
-        if use_seg:
-            self.use_seg=True
-            out_final_dim = kwargs.get("seg_head_out_dim", 22) * patch_width * patch_height * temporal_patch_size
-            seg_head_kwargs = dict(
-                seg_head_n_layers = kwargs.get("seg_head_n_layers", 2),
-                seg_head_layer_type = kwargs.get("seg_head_layer_type", "mlp"),
-                seg_head_in_dim = kwargs.get("seg_head_in_dim", 256),
-                seg_head_mid_dim = kwargs.get("seg_head_mid_dim", 128),
-                seg_head_out_dim = out_final_dim,
-                # dim = dim,
-                # depth = transformer_blocks,
-                # num_classes = 22,
-                # num_layers = 2,
-                # mid_dim = 128
-            )
-            self.seg_head = create_seg_head(**seg_head_kwargs)
-        else:
-            self.use_seg=False
-            self.seg_head = None
+        
 
         # self.enc_spatial_transformer = Transformer(depth = spatial_depth, **transformer_kwargs)
         # self.enc_temporal_transformer = Transformer(depth = temporal_depth, **transformer_kwargs)

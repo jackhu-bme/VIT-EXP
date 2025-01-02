@@ -139,7 +139,8 @@ def main(config, args):
         extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
         use_mlm=False,
         downsample_image_embeds = False,
-        use_all_token_embeds = False
+        use_all_token_embeds = False,
+        config=config["ct_clip_arch"],
     )
 
     # if resume_path is not None:

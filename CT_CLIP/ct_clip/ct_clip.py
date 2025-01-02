@@ -449,6 +449,7 @@ class CTCLIP(nn.Module):
             image_ssl_loss_weight = 0.05,
             multiview_loss_weight = 0.1,
             checkpoint_during_training = False,
+            config = None,
             **kwargs
     ):
         super().__init__()
@@ -457,6 +458,8 @@ class CTCLIP(nn.Module):
         #assert use_all_token_embeds or (visual_has_cls_token or text_has_cls_token), 'CLS token must be included on both vision and text transformers if you are not using fine-grained contrastive learning loss'
         self.dtype=torch.float32
         # store some parameters for access
+
+        self.config = config
 
         self.dim_text = dim_text
         self.dim_image = dim_image
@@ -591,6 +594,64 @@ class CTCLIP(nn.Module):
 
         self.seg_criterion = nn.BCEWithLogitsLoss()
 
+        self.use_seg = config.get("use_seg", False)
+        if use_seg:
+            seg_head_config = config.get("seg_head", {})
+            out_final_dim = seg_head_config.get("head_out_dim", 22) * self.visual_transformer.patch_voxel_nums
+            seg_head_kwargs = dict(
+                head_n_layers = seg_head_config.get("head_n_layers", 2),
+                head_layer_type = seg_head_config.get("head_layer_type", "mlp"),
+                head_in_dim = seg_head_config.get("head_in_dim", 256),
+                head_mid_dim = seg_head_config.get("head_mid_dim", 128),
+                head_out_dim = out_final_dim,
+            )
+            self.seg_head = self.create_head(**seg_head_kwargs)
+        else:
+            self.seg_head = None
+
+        self.use_open_seg = config.get("use_open_seg", False)
+        if use_open_seg:
+            # open seg head
+            open_seg_head_config = config.get("open_seg_head", {})
+            open_seg_head_kwargs = dict(
+                head_n_layers = open_seg_head_config.get("head_n_layers", 2),
+                head_layer_type = open_seg_head_config.get("head_layer_type", "mlp"),
+                head_in_dim = open_seg_head_config.get("head_in_dim", 256),
+                head_mid_dim = open_seg_head_config.get("head_mid_dim", 128),
+                head_out_dim = open_seg_head_config.get("head_out_dim", 16) * self.visual_transformer.patch_voxel_nums
+            )
+            self.open_seg_head = self.create_head(**open_seg_head_kwargs)
+            # open text head
+            open_text_head_config = config.get("open_text_head", {})
+            open_text_head_kwargs = dict(
+                head_n_layers = open_text_head_config.get("head_n_layers", 2),
+                head_layer_type = open_text_head_config.get("head_layer_type", "mlp"),
+                head_in_dim = open_text_head_config.get("head_in_dim", 768),
+                head_mid_dim = open_text_head_config.get("head_mid_dim", 128),
+                head_out_dim = open_text_head_config.get("head_out_dim", 16)
+            )
+            self.open_text_head = self.create_head(**open_text_head_kwargs)
+       
+
+    @staticmethod
+    def create_head(head_n_layers, head_layer_type, head_in_dim, head_mid_dim, head_out_dim):
+        # warning: todo: check output logits, if it is consistent with loss design!
+        if head_layer_type == "mlp":
+            layers = []
+            for i in range(head_n_layers):
+                in_dim = head_in_dim if i == 0 else head_mid_dim
+                out_dim = head_out_dim if i == head_n_layers - 1 else head_mid_dim
+                act = nn.LeakyReLU(0.2) if i < head_n_layers - 1 else nn.Identity()
+                layers.extend([
+                    nn.Linear(in_dim, out_dim),
+                    act
+                ])
+            return nn.Sequential(*layers)
+        else:
+            raise ValueError(f"Unsupported head_layer_type: {head_layer_type}")
+
+
+
     def state_dict(self, *args, **kwargs):
         return super().state_dict(*args, **kwargs)
 
@@ -720,14 +781,20 @@ class CTCLIP(nn.Module):
         seg_mask_promp_dict = batch["seg_mask_promp_dict"]
         seg_mask_prompt_list = list(seg_mask_promp_dict.values()) # [C tensors of shape (B, length=512, )], just input_ids for bert model!
         seg_mask_prompt_list = [prompt[0:1] for prompt in seg_mask_prompt_list] # as all the samples use same classes, just take the first one sample
-        seg_mask_prompts = torch.cat(seg_mask_prompt_list, dim=0) # already tokens, [C, n_hiddne_dim], C=num_labels
-        print(f"seg_mask_prompts shape: {seg_mask_prompts.shape}")
+        seg_mask_prompts = torch.cat(seg_mask_prompt_list, dim=0) # already tokens, [C, length=512], C=num_labels
+        # print(f"seg_mask_prompts shape: {seg_mask_prompts.shape}")
         # get text embeddings by text transformers
-        seg_prompt_text_embeddings = self.text_transformer(seg_mask_prompts)[0] # [C, n_hiddne_dim]
-        print(f"seg_prompt_text_embeddings shape: {seg_prompt_text_embeddings.shape}")
-        exit()
+        seg_prompt_text_embeddings = self.text_transformer(seg_mask_prompts)[0] # [C, length=512, n_hidden_dim]
+        # print(f"seg_prompt_text_embeddings shape: {seg_prompt_text_embeddings.shape}")
+        # exit()
+        
+        # follow the way in ct-clip to get the latents: the first token of the text embeddings
+        seg_prompt_latents = seg_prompt_text_embeddings[:, 0, :] # [C, n_hidden_dim]
+
         # get a lower dimension embedding with mlp
-        prompt_logits = self.open_text_head(seg_prompt_text_embeddings).unsqueeze(0) # [1, C, 64]
+        prompt_logits = self.open_text_head(seg_prompt_latents).unsqueeze(0) # [1, C, 64]
+        print(f"prompt_logits shape: {prompt_logits.shape}")
+        exit()
         prompt_logits_batch = torch.tile(prompt_logits, (B_seg, 1, 1)) # [B, C, 64]
         seg_embeddings_batch = seg_mask_flatten @ prompt_logits_batch # [B, L, 64]
         loss_dict = {}
@@ -766,7 +833,7 @@ class CTCLIP(nn.Module):
         p_h, p_w, p_d = H//h, W//w, D//d
         tokens_to_seg = enc_seg_image.reshape(-1, c) # b, l, c -> b*l, c
         # use the linear head for 
-        seg_logits = self.visual_transformer.seg_head(tokens_to_seg)
+        seg_logits = self.seg_head(tokens_to_seg)
         # reshape the logits to the original shape, with each pixel
         seg_preds = seg_logits.reshape(b, d, w, h, p_d, p_w, p_h, -1)
         seg_preds = seg_preds.permute(0, 7, 1, 4, 2, 5, 3, 6).reshape(b, -1, D, W, H)
