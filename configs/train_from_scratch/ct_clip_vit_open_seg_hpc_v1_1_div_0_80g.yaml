@@ -100,7 +100,7 @@ ct_clip_arch:
     layer_type: mlp
     in_dim: 768
     mid_dim: 128
-    out_dim: 16 # a low dim representation for each voxel
+    out_dim: 8 # a low dim representation for each voxel
   open_text_head:
     n_layers: 2
     layer_type: mlp
