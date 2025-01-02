@@ -34,7 +34,7 @@ train_data_list:
     metadata_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv
     seg_mask_train: /mnt/input/RadGenome/train_preprocessed_mask_combined_bool
     # seg_mask_valid: /mnt/input/RadGenome/seg_final_dataset_17cls/valid_mask
-    seg_mask_name_table: /mnt/input/RadGenome/label_mappings/seg_mask_name.xlsx
+    seg_mask_name_table: /mnt/input/RadGenome/label_mappings/radgenome_labels.xlsx
     seg_mask_prompt_type: this_is
 
     # sampler_type: InfinteCycleSampler
