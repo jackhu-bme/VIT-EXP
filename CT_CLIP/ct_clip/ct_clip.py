@@ -795,7 +795,7 @@ class CTCLIP(nn.Module):
                 # just use l2 loss for now
                 open_seg_loss += F.mse_loss(sim, seg_mask_flatten[:, :, i]) # default reduction is mean
                 # empty the memory
-                del sim
+                torch.cuda.empty_cache()
             print(f"open_seg_loss shape: {open_seg_loss.shape}")
             return open_seg_loss
         else:
