@@ -115,7 +115,7 @@ def npz_mask_to_tensor(path):
     # Get the dimensions of the input tensor
     target_shape = (480,480,240)
     # Extract dimensions
-    h, w, d = tensor.shape
+    n_c, h, w, d = tensor.shape
 
     # Calculate cropping/padding values for height, width, and depth
     dh, dw, dd = target_shape
@@ -139,7 +139,11 @@ def npz_mask_to_tensor(path):
     pad_d_before = (dd - tensor.size(2)) // 2
     pad_d_after = dd - tensor.size(2) - pad_d_before
 
-    tensor = torch.nn.functional.pad(tensor, (pad_d_before, pad_d_after, pad_w_before, pad_w_after, pad_h_before, pad_h_after), value=-1)
+    print(f"before padding: {tensor.shape}")
+
+    tensor = torch.nn.functional.pad(tensor, (pad_d_before, pad_d_after, pad_w_before, pad_w_after, pad_h_before, pad_h_after), value=0)
+
+    print(f"after padding: {tensor.shape}")
 
     tensor = tensor.permute(0, 3, 1, 2)
 
