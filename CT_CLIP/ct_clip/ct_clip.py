@@ -797,6 +797,7 @@ class CTCLIP(nn.Module):
                 # just use l2 loss for now
                 continue_train = input("Continue training? 5")
                 open_seg_loss += F.mse_loss(sim, seg_mask_flatten[:, :, i]) # default reduction is mean
+                continue_train = input("Continue training? 6")
                 # empty the memory
                 torch.cuda.empty_cache()
             print(f"open_seg_loss shape: {open_seg_loss.shape}")
