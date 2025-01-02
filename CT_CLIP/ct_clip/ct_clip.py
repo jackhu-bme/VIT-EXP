@@ -718,13 +718,12 @@ class CTCLIP(nn.Module):
         B_seg, C_seg, D, W, H = seg_mask.shape
         seg_mask_flatten = seg_mask.permute((0, 2, 3, 4, 1)).reshape(B_seg, -1, C_seg) # (B, L, C)
         seg_mask_promp_dict = batch["seg_mask_promp_dict"]
-        seg_mask_prompt_list = list(seg_mask_promp_dict.values()) # already tokens, [C, n_hiddne_dim], C=num_labels
-        for i, prompt in enumerate(seg_mask_prompt_list):
-            print(f"Prompt {i} shape: {prompt.shape}")
-        exit()
-        seg_mask_prompts = torch.tensor(list(seg_mask_promp_dict.values())) # already tokens, [C, n_hiddne_dim], C=num_labels
+        seg_mask_prompt_list = list(seg_mask_promp_dict.values()) # [C tensors of shape (length=512, )], just input_ids for bert model!
+        seg_mask_prompts = torch.cat(list(seg_mask_promp_dict.values()), dim=0) # already tokens, [C, n_hiddne_dim], C=num_labels
         # get text embeddings by text transformers
         seg_prompt_text_embeddings = self.text_transformer(seg_mask_prompts) # [C, n_hiddne_dim]
+        print(f"seg_prompt_text_embeddings shape: {seg_prompt_text_embeddings.shape}")
+        exit()
         # get a lower dimension embedding with mlp
         prompt_logits = self.open_text_head(seg_prompt_text_embeddings).unsqueeze(0) # [1, C, 64]
         prompt_logits_batch = torch.tile(prompt_logits, (B_seg, 1, 1)) # [B, C, 64]
