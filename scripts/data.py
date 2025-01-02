@@ -128,16 +128,16 @@ def npz_mask_to_tensor(path):
     d_end = min(d_start + dd, d)
 
     # Crop or pad the tensor
-    tensor = tensor[h_start:h_end, w_start:w_end, d_start:d_end]
+    tensor = tensor[:, h_start:h_end, w_start:w_end, d_start:d_end]
 
-    pad_h_before = (dh - tensor.size(0)) // 2
-    pad_h_after = dh - tensor.size(0) - pad_h_before
+    pad_h_before = (dh - tensor.size(1)) // 2
+    pad_h_after = dh - tensor.size(1) - pad_h_before
 
-    pad_w_before = (dw - tensor.size(1)) // 2
-    pad_w_after = dw - tensor.size(1) - pad_w_before
+    pad_w_before = (dw - tensor.size(2)) // 2
+    pad_w_after = dw - tensor.size(2) - pad_w_before
 
-    pad_d_before = (dd - tensor.size(2)) // 2
-    pad_d_after = dd - tensor.size(2) - pad_d_before
+    pad_d_before = (dd - tensor.size(3)) // 2
+    pad_d_after = dd - tensor.size(3) - pad_d_before
 
     print(f"before padding: {tensor.shape}")
 
