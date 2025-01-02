@@ -837,6 +837,7 @@ class CTCLIP(nn.Module):
         b, d, w, h, c = enc_seg_image.shape
         p_h, p_w, p_d = H//h, W//w, D//d
         tokens_to_seg = enc_seg_image.reshape(-1, c) # b, l, c -> b*l, c
+        print(f"tokens_to_seg shape: {tokens_to_seg.shape}")
         # use the linear head for 
         seg_logits = self.open_seg_head(tokens_to_seg)
         # reshape the logits to the original shape, with each pixel
