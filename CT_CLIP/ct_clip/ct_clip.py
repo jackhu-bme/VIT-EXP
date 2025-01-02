@@ -718,7 +718,7 @@ class CTCLIP(nn.Module):
         B_seg, C_seg, D, W, H = seg_mask.shape
         seg_mask_flatten = seg_mask.permute((0, 2, 3, 4, 1)).reshape(B_seg, -1, C_seg) # (B, L, C)
         seg_mask_promp_dict = batch["seg_mask_promp_dict"]
-        seg_mask_prompt_list = list(seg_mask_promp_dict.keys()) # already tokens, [C, n_hiddne_dim], C=num_labels
+        seg_mask_prompt_list = list(seg_mask_promp_dict.values()) # already tokens, [C, n_hiddne_dim], C=num_labels
         for i, prompt in enumerate(seg_mask_prompt_list):
             print(f"Prompt {i}: {prompt}")
         exit()
