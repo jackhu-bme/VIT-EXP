@@ -94,6 +94,7 @@ arch:
 ct_clip_arch:
   use_seg: False
   use_open_seg: True
+  open_seg_loss_type: cos_sim_l2
   open_seg_head:
     n_layers: 2
     layer_type: mlp

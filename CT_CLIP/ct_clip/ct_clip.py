@@ -631,9 +631,11 @@ class CTCLIP(nn.Module):
                 head_out_dim = open_text_head_config.get("head_out_dim", 16)
             )
             self.open_text_head = self.create_head(**open_text_head_kwargs)
+            self.open_seg_loss_type = config.get("open_seg_loss_type", "cos_sim_l2")
         else:
             self.open_seg_head = None
             self.open_text_head = None
+            self.open_seg_loss_type = None
        
 
     @staticmethod
@@ -771,8 +773,32 @@ class CTCLIP(nn.Module):
         else:
             raise ValueError(f"Data type {batch['data_type']} not recognized")
     
-    def open_seg_loss(a, b):
-        return F.cross_entropy(a, b)
+    def open_seg_loss(self, seg_preds, seg_mask_flatten, prompt_logits_batch):
+        # seg_preds: [B, L, n_hidden_dim=16]
+        # seg_mask_flatten: [B, L, C]
+        # prompt_logits_batch: [B, C, n_hidden_dim=16]
+        print(f"seg_preds shape: {seg_preds.shape}")
+        print(f"seg_mask_flatten shape: {seg_mask_flatten.shape}")
+        print(f"prompt_logits_batch shape: {prompt_logits_batch.shape}")
+        # exit()
+        if self.open_seg_loss_type == "cos_sim_l2":
+            # calculate the cosine similarity for each class
+            B, L, n_hidden_dim = seg_preds.shape
+            B, L, C = seg_mask_flatten.shape
+            sim_res = torch.zeros(B, L, C)
+            for i in range(C):
+                # get the prompt logits for the i-th class
+                prompt_logits = prompt_logits_batch[:, i, :]
+                sim = F.cosine_similarity(seg_preds, prompt_logits.unsqueeze(1), dim=-1)
+                print(f"sim shape: {sim.shape}")
+                sim_res[:, :, i] = sim
+            # calculate the distance between similarity and gt, make the right class close to 1, wrong class close to 0
+            # just use l2 loss for now
+            open_seg_loss = F.mse_loss(sim_res, seg_mask_flatten) # default reduction is mean
+            print(f"open_seg_loss shape: {open_seg_loss.shape}")
+            return open_seg_loss
+        else:
+            raise ValueError(f"Unsupported open seg loss type: {self.open_seg_loss_type}")
 
 
 
@@ -795,11 +821,12 @@ class CTCLIP(nn.Module):
         seg_prompt_latents = seg_prompt_text_embeddings[:, 0, :] # [C, n_hidden_dim]
 
         # get a lower dimension embedding with mlp
-        prompt_logits = self.open_text_head(seg_prompt_latents).unsqueeze(0) # [1, C, 64]
-        print(f"prompt_logits shape: {prompt_logits.shape}")
-        exit()
-        prompt_logits_batch = torch.tile(prompt_logits, (B_seg, 1, 1)) # [B, C, 64]
-        seg_embeddings_batch = seg_mask_flatten @ prompt_logits_batch # [B, L, 64]
+        prompt_logits = self.open_text_head(seg_prompt_latents).unsqueeze(0) # [1, C, 16]
+        # print(f"prompt_logits shape: {prompt_logits.shape}")
+        # exit()
+        prompt_logits_batch = torch.tile(prompt_logits, (B_seg, 1, 1)) # [B, C, n_hidden_dim=16]
+        low_latent_dim = prompt_logits_batch.shape[-1]
+        print(f"prompt_logits_batch shape: {prompt_logits_batch.shape}")
         loss_dict = {}
         B, C, D, W, H = image.shape
         enc_image= self.visual_transformer(image, return_encoded_tokens=True)
@@ -815,8 +842,8 @@ class CTCLIP(nn.Module):
         # reshape the logits to the original shape, with each pixel
         seg_preds = seg_logits.reshape(b, d, w, h, p_d, p_w, p_h, -1)
         seg_preds = seg_preds.permute(0, 7, 1, 4, 2, 5, 3, 6).reshape(b, -1, D, W, H) # B, C, D, W, H as voxel embeddings
-        seg_preds = seg_preds.permute((0, 2, 3, 4, 1)).reshape(B_seg, -1, C_seg) # (B, L, C)
-        open_seg_loss = self.open_seg_loss(seg_preds, seg_embeddings_batch)
+        seg_preds = seg_preds.permute((0, 2, 3, 4, 1)).reshape(B_seg, -1, low_latent_dim) # (B, L, n_hidden_dim=16)
+        open_seg_loss = self.open_seg_loss(seg_preds, seg_mask_flatten, prompt_logits_batch)
         loss_dict["open_seg_loss"] = open_seg_loss.item()
         return_list = [open_seg_loss, loss_dict]
         return return_list
