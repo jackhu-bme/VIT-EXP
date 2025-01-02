@@ -786,13 +786,16 @@ class CTCLIP(nn.Module):
             B, L, n_hidden_dim = seg_preds.shape
             B, L, C = seg_mask_flatten.shape
             open_seg_loss = 0.
+            continue_train = input("Continue training? 3")
             for i in range(C):
                 # get the prompt logits for the i-th class
                 prompt_logits = prompt_logits_batch[:, i, :] # [B, n_hidden_dim=16]
+                continue_train = input("Continue training? 4")
                 sim = F.cosine_similarity(seg_preds, prompt_logits.unsqueeze(1), dim=-1)
                 print(f"sim shape: {sim.shape}") # (B, L)
                 # calculate the distance between similarity and gt, make the right class close to 1, wrong class close to 0
                 # just use l2 loss for now
+                continue_train = input("Continue training? 5")
                 open_seg_loss += F.mse_loss(sim, seg_mask_flatten[:, :, i]) # default reduction is mean
                 # empty the memory
                 torch.cuda.empty_cache()
@@ -831,6 +834,7 @@ class CTCLIP(nn.Module):
         loss_dict = {}
         B, C, D, W, H = image.shape
         enc_image= self.visual_transformer(image, return_encoded_tokens=True)
+        continue_train = input("Continue training? 1")
         # use the seg valid mask to choose the image to be segmented
         # due to memory issues, use one for seg only now
         seg_mask = seg_mask.float().to(device)
@@ -841,6 +845,7 @@ class CTCLIP(nn.Module):
         print(f"tokens_to_seg shape: {tokens_to_seg.shape}")
         # use the linear head for 
         seg_logits = self.open_seg_head(tokens_to_seg)
+        continue_train = input("Continue training? 2")
         # reshape the logits to the original shape, with each pixel
         seg_preds = seg_logits.reshape(b, d, w, h, p_d, p_w, p_h, -1)
         seg_preds = seg_preds.permute(0, 7, 1, 4, 2, 5, 3, 6).reshape(b, -1, D, W, H) # B, C, D, W, H as voxel embeddings
