@@ -326,8 +326,8 @@ class CTOpenSegDataset(Dataset):
         self.data_folder = data_folder
         self.mask_folder = mask_folder
         self.seg_mask_name_dict = self.read_xlsx(seg_mask_name_table)
-        self.seg_prompt_dict = self.load_seg_prompt_dict(seg_mask_prompt_type, self.seg_mask_name_dict)
         self.tokenizer= BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
+        self.seg_prompt_dict = self.load_seg_prompt_dict(seg_mask_prompt_type, self.seg_mask_name_dict)
         self.cache_data_list_folder = os.path.join(data_folder, './tmp_cache_data_list')
         self.cache_mask_list_folder = os.path.join(mask_folder, './tmp_cache_mask_list')
         os.makedirs(self.cache_data_list_folder, exist_ok=True)
