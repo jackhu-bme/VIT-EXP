@@ -720,8 +720,9 @@ class CTCLIP(nn.Module):
         seg_mask_promp_dict = batch["seg_mask_promp_dict"]
         seg_mask_prompt_list = list(seg_mask_promp_dict.values()) # [C tensors of shape (length=512, )], just input_ids for bert model!
         seg_mask_prompts = torch.cat(list(seg_mask_promp_dict.values()), dim=0) # already tokens, [C, n_hiddne_dim], C=num_labels
+        print(f"seg_mask_prompts shape: {seg_mask_prompts.shape}")
         # get text embeddings by text transformers
-        seg_prompt_text_embeddings = self.text_transformer(seg_mask_prompts) # [C, n_hiddne_dim]
+        seg_prompt_text_embeddings = self.text_transformer(seg_mask_prompts)[0] # [C, n_hiddne_dim]
         print(f"seg_prompt_text_embeddings shape: {seg_prompt_text_embeddings.shape}")
         exit()
         # get a lower dimension embedding with mlp
