@@ -1,7 +1,7 @@
 random_seed: 42
 results_folder: ./output_train_scratch
-project_name: ct-clip-vit-seg-ref
-exp_name: ctclip_vit_seg_v3_hpc_1_div0_cl_revised_ref
+project_name: ct-clip-vit-open-seg
+exp_name: ctclip_vit_open_seg_hpc_v1_1_div0_80g
 
 trainer:
   lr: 1.25e-6
@@ -73,8 +73,8 @@ valid_data_list:
 
 
 DatasetSampler:
-  type: Random # Combined means combine the weight of different data types in a training step
-  ratio_list: [2, 1]
+  type: Combined # Combined means combine the weight of different data types in a training step
+  ratio_list: [1, 1]
 
 
 # arch
