@@ -369,7 +369,9 @@ class CTOpenSegDataset(Dataset):
             for key, value in seg_mask_name_dict.items():
                 prompt = f"This is {value}."
                 tokens = self.tokenizer(prompt, return_tensors="pt", padding="max_length", truncation=True, max_length=512)
+                print(f"tokens: {tokens}")
                 seg_mask_prompt_dict[key] = tokens.input_ids
+                print(f"input ids: {tokens.input_ids}")
             return seg_mask_prompt_dict
         else:
             raise ValueError(f"Unknown seg mask prompt type: {seg_mask_prompt_type}")
