@@ -27,7 +27,7 @@ train_data_list:
     labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv
   - name: RadGenome
     type: imageopenseg
-    batch_size: 2
+    batch_size: 1
     num_workers: 4
     seg_data_train: /mnt/input/RadGenome/train_preprocessed_img_organized_fp16
     # seg_data_valid: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/val
@@ -106,6 +106,6 @@ ct_clip_arch:
     layer_type: mlp
     in_dim: 768
     mid_dim: 128
-    out_dim: 16 # a low dim representation for each voxel
+    out_dim: 8 # a low dim representation for each voxel
   
 
