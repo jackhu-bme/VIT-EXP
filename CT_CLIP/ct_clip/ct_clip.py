@@ -595,7 +595,7 @@ class CTCLIP(nn.Module):
         self.seg_criterion = nn.BCEWithLogitsLoss()
 
         self.use_seg = config.get("use_seg", False)
-        if use_seg:
+        if self.use_seg:
             seg_head_config = config.get("seg_head", {})
             out_final_dim = seg_head_config.get("head_out_dim", 22) * self.visual_transformer.patch_voxel_nums
             seg_head_kwargs = dict(
@@ -610,7 +610,7 @@ class CTCLIP(nn.Module):
             self.seg_head = None
 
         self.use_open_seg = config.get("use_open_seg", False)
-        if use_open_seg:
+        if self.use_open_seg:
             # open seg head
             open_seg_head_config = config.get("open_seg_head", {})
             open_seg_head_kwargs = dict(
@@ -631,6 +631,9 @@ class CTCLIP(nn.Module):
                 head_out_dim = open_text_head_config.get("head_out_dim", 16)
             )
             self.open_text_head = self.create_head(**open_text_head_kwargs)
+        else:
+            self.open_seg_head = None
+            self.open_text_head = None
        
 
     @staticmethod
