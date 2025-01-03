@@ -6,11 +6,11 @@ exp_name: ctclip_vit_open_seg_hpc_v1_1_div0_80g
 trainer:
   lr: 1.25e-6
   wd: 0.
-  num_train_steps: 80001
+  num_train_steps: 200001
   max_grad_norm: 0.5
   gradient_accumulation_steps: 1 # todo: in future, if pass [1, 2], means 1 for ct-rate, 2 for total-segmentator, not supported yet
-  save_results_every: 10
-  save_model_every: 10
+  save_results_every: 1000
+  save_model_every: 1000
   balance_loss_weight: [1.0, 1.0]
 
 
