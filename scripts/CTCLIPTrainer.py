@@ -14,6 +14,8 @@ from torch import nn
 
 from data import create_train_dl_list, create_valid_dl_list
 
+from zero_shot import ctclip_image_report_zero_shot_cls_test
+
 import numpy as np
 import pandas as pd
 # import tqdm
@@ -219,6 +221,15 @@ class CombinedDatasetSampler():
         # generate a random number according to step
         return self.acc_steps_list
 
+def create_valid_tests(test_name_list):
+    tests = []
+    for test_name in test_name_list:
+        if test_name == "ctclip_image_report_zero_shot_cls_test":
+            tests.append(ctclip_image_report_zero_shot_cls_test)
+        else:
+            raise ValueError(f"test name {test_name} is not supported")
+    return tests
+
 
 class CTClipTrainer(nn.Module):
     def __init__(
@@ -282,7 +293,7 @@ class CTClipTrainer(nn.Module):
         self.dl_list = create_train_dl_list(config["train_data_list"])
         # print(f"datasets: {self.dl_list}")
 
-        self.valid_dl_list = create_valid_dl_list(config["valid_data_list"])
+        # self.valid_dl_list = create_valid_dl_list(config["valid_data_list"])
 
         self.dataset_sampler = self.create_dataset_sampler(config["DatasetSampler"])
 
@@ -305,6 +316,9 @@ class CTClipTrainer(nn.Module):
         self.device = self.accelerator.device
         self.CTClip.to(self.device)
 
+        self.valid_tests = create_valid_tests(config["valid_test_list"])
+
+
         # (
  		# 	self.dl_iter,
         #     self.valid_dl_iter,
@@ -319,8 +333,10 @@ class CTClipTrainer(nn.Module):
 
         self.dl_iter_list = [cycle(self.accelerator.prepare_data_loader(dl)) for dl in self.dl_list]
         self.dl_step_list = [0, ] * len(self.dl_list)
-        self.valid_dl_iter_list = [cycle(self.accelerator.prepare_data_loader(valid_dl)) for valid_dl in self.valid_dl_list]
-        self.valid_dl_step_list = [0, ] * len(self.valid_dl_list)
+        # self.valid_dl_iter_list = [cycle(self.accelerator.prepare_data_loader(valid_dl)) for valid_dl in self.valid_dl_list]
+        # self.valid_dl_step_list = [0, ] * len(self.valid_dl_list)
+
+
         # self.CTClip = self.accelerator.prepare_model(self.CTClip)
         # self.optim = self.accelerator.prepare_optimizer(self.optim)\
         # in future, if use scheduler
@@ -343,6 +359,8 @@ class CTClipTrainer(nn.Module):
 
         self.save_model_every = trainer_config["save_model_every"]
         self.save_results_every = trainer_config["save_results_every"]
+
+        self.eval_model_every = trainer_config.get("eval_model_every", 2000)
 
         self.results_folder = Path(results_folder)
 
@@ -521,6 +539,23 @@ class CTClipTrainer(nn.Module):
                 loss_dict_single = self.train_step_single_dataset(dataset_index=i)
                 loss_dict = self.loss_update(loss_dict, loss_dict_single)
         return loss_dict
+    
+    def eval_tests(self, models_to_evaluate):
+        (model, steps) = models_to_evaluate
+        for test_func in self.valid_tests:
+            results = test_func(model)
+            to_log_dict = results["log_dict"]
+            for key, value in to_log_dict.items():
+                self.print(f"eval results: {key}: {value}")
+                # log the results
+                self.wandb_logger.log({key: value}, step=steps)
+            to_visualize = results.get("to_visualize_dict", None)
+            # log the image
+            # todo: debug the image logging process
+            if to_visualize is not None:
+                for key, value in to_visualize.items():
+                    image_value = wandb.Image(value, caption=key)
+                    self.wandb_logger.log({key: image_value}, step=steps)
 
 
     def train_step(self):
@@ -546,12 +581,11 @@ class CTClipTrainer(nn.Module):
 
         self.wandb_logger.log(logs, step=self.steps.int().item())
 
-        # if self.is_main and not (steps % self.save_results_every):
-        #     with torch.no_grad():
-
-        #         models_to_evaluate = ((self.CTClip, str(steps)),)
-
-        #         print(f"evaluating model: {steps}")
+        if self.is_main and not (steps % self.eval_model_every):
+            with torch.no_grad():
+                models_to_evaluate = ((self.CTClip, str(steps)),)
+                print(f"evaluating model: {steps}")
+                self.eval_tests(models_to_evaluate)
 
         #         for model, filename in models_to_evaluate:
         #             model.eval()

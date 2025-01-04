@@ -330,6 +330,29 @@ class CTClipInference(nn.Module):
 
 
 
+def ctclip_image_report_zero_shot_cls_test(ctclip):
+    """
+    ctclip: CTCLIP model
+    """
+    data_folder = '/mnt/input/CT-RATE/organized_dataset/val_images_preprocessed'
+    reports_file= "/mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv"
+    labels = "/mnt/input/CT-RATE/organized_dataset/csv_dir/labels/valid_predicted_labels.csv"
+    batch_size = 1
+    num_train_steps = 1
+    inference = CTClipInferenceFast(
+        ctclip,
+        data_folder = data_folder,
+        reports_file= reports_file,
+        labels = labels,
+        batch_size = batch_size,
+        results_folder="./",
+        num_train_steps = num_train_steps,
+    )
+    results_dict = inference.infer_return_res_dict() # the dict of results to be logged directly with wandb (todo: remember to log the dict and the training step!)
+    return results_dict
+
+
+
 class CTClipInferenceFast(nn.Module):
     """
     A faster version for inference on single gpu
@@ -470,111 +493,104 @@ class CTClipInferenceFast(nn.Module):
     def is_main(self):
         return self.accelerator.is_main_process
 
-    def train_step(self):
-        
-
+    def train_step(self, save_results=True, return_dict=False):
         steps = int(self.steps.item())
         # logs
         logs = {}
-        if True:
-            with torch.no_grad():
+        with torch.no_grad():
+            # models_to_evaluate = ((self.CTClip, str(steps)),)
+            # for model, filename in models_to_evaluate:
+            model = self.CTClip
+            model.eval()
+            predictedall=[]
+            realalltmp=[]
+            accession_names=[]
+            
+            for i in tqdm.tqdm(range(len(self.ds))):
+                # if i > 10:
+                #     break
+                valid_data, text, onehotlabels, acc_name = next(self.dl_iter)
 
-                # models_to_evaluate = ((self.CTClip, str(steps)),)
+                valid_data = valid_data.cuda()
 
-                # for model, filename in models_to_evaluate:
-                model = self.CTClip
-                model.eval()
-                predictedall=[]
-                realalltmp=[]
-                accession_names=[]
-                
-                for i in tqdm.tqdm(range(len(self.ds))):
-                    # if i > 10:
-                    #     break
-                    valid_data, text, onehotlabels, acc_name = next(self.dl_iter)
+                # enc_image= self.visual_transformer(image, return_encoded_tokens=True)
+                image_embed = model.visual_transformer(valid_data, return_encoded_tokens=True)
+                plotdir = self.result_folder_txt
+                Path(plotdir).mkdir(parents=True, exist_ok=True)
 
-                    valid_data = valid_data.cuda()
+                predictedlabels=[]
+                onehotlabels_append=[]
 
-                    # enc_image= self.visual_transformer(image, return_encoded_tokens=True)
-                    image_embed = model.visual_transformer(valid_data, return_encoded_tokens=True)
-                    plotdir = self.result_folder_txt
-                    Path(plotdir).mkdir(parents=True, exist_ok=True)
+                for i, patho_txtt in enumerate(self.patho_txtt_list):
+                    # patho_txtt = self.patho_txtt_list[i]
+                    # pathology = patho_txtt["pathology"]
+                    text_tokens = patho_txtt["text_tokens"]
+                    text_embed = patho_txtt["text_embed"]
 
-                    predictedlabels=[]
-                    onehotlabels_append=[]
+                    output = model.forward_infer(text_tokens, valid_data, buffer_text_embed=text_embed, buffer_image_embed=image_embed)
+                    output = apply_softmax(output)             
+                    # print(f"output: {output}")
+                    # append_out=output.detach().cpu().numpy()
+                    # print("a out 0: ", append_out[0])
+                    predictedlabels.append(output[0])
+                    # step_3_time = time.time() - step_2_time - start_time
+                    # print(f"step 3 time: {step_3_time}")             
+                predictedall.append(predictedlabels)
+                # print(f"one hot labels in the loop: {onehotlabels}")
+                realalltmp.append(onehotlabels[0])
+                accession_names.append(acc_name[0])
 
-                    for i, patho_txtt in enumerate(self.patho_txtt_list):
-                        # patho_txtt = self.patho_txtt_list[i]
-                        # pathology = patho_txtt["pathology"]
-                        text_tokens = patho_txtt["text_tokens"]
-                        text_embed = patho_txtt["text_embed"]
+                # exit()
+            
+            realall = []
+            for labels in realalltmp:
+                labels = labels.detach().cpu().numpy()
+                realall.append(labels)
+            realall=np.array(realall)
+            # final load the labels from gpu to cpu
+            for labels in predictedall:
+                for i in range(len(labels)):
+                    labels[i] = labels[i].detach().cpu().numpy()
+            print(f"predictedall: {predictedall}")
+            predictedall=np.array(predictedall)
 
-                        
-
-
-                        output = model.forward_infer(text_tokens, valid_data, buffer_text_embed=text_embed, buffer_image_embed=image_embed)
-
-
-                        output = apply_softmax(output)
-
-                    
-                        # print(f"output: {output}")
-                        # append_out=output.detach().cpu().numpy()
-                        # print("a out 0: ", append_out[0])
-                        predictedlabels.append(output[0])
-
-                        # step_3_time = time.time() - step_2_time - start_time
-                        # print(f"step 3 time: {step_3_time}")
-                        
-                    
-                    predictedall.append(predictedlabels)
-                    # print(f"one hot labels in the loop: {onehotlabels}")
-                    realalltmp.append(onehotlabels[0])
-                    accession_names.append(acc_name[0])
-
-                    # exit()
-                
-                realall = []
-                for labels in realalltmp:
-                    labels = labels.detach().cpu().numpy()
-                    realall.append(labels)
-                realall=np.array(realall)
-                # final load the labels from gpu to cpu
-                for labels in predictedall:
-                    for i in range(len(labels)):
-                        labels[i] = labels[i].detach().cpu().numpy()
-                print(f"predictedall: {predictedall}")
-                predictedall=np.array(predictedall)
-
+            if save_results:
                 print(f"saving results to {plotdir}")
-
                 np.savez(f"{plotdir}labels_weights.npz", data=realall)
                 np.savez(f"{plotdir}predicted_weights.npz", data=predictedall)
                 with open(f"{plotdir}accessions.txt", "w") as file:
                     for item in accession_names:
                         file.write(item + "\n")
 
-                dfs = evaluate_internal(predictedall,realall, self.patho_list, plotdir)
-
+            dfs = evaluate_internal(predictedall,realall, self.patho_list, plotdir)
+            if save_results:
                 writer = pd.ExcelWriter(f'{plotdir}aurocs.xlsx', engine='xlsxwriter')
-
                 dfs.to_excel(writer, sheet_name='Sheet1', index=False)
-
                 writer.close()
         self.steps += 1
-        return logs
-
+        if return_dict:
+            roc_dict = {
+                col_name: dfs[col_name].iloc[0]
+                for col_name in dfs.columns
+            }
+            return {"log_dict": roc_dict}
+        else:
+            return logs
 
 
 
     def infer(self, log_fn=noop):
         device = next(self.CTClip.parameters()).device
         device=torch.device('cuda')
-        while self.steps < self.num_train_steps:
-            logs = self.train_step()
-            log_fn(logs)
-
+        logs = self.train_step()
+        log_fn(logs)
         self.print('Inference complete')
+
+    def infer_return_res_dict(self):
+        device = next(self.CTClip.parameters()).device
+        device=torch.device('cuda')
+        result_dict = self.train_step(return_dict=True, save_results=False)
+        return result_dict
 
 
 class CTClipInferenceSeg(nn.Module):
