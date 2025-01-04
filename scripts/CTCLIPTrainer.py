@@ -578,6 +578,7 @@ class CTClipTrainer(nn.Module):
         self.optim.zero_grad()
         # self.print(f"{steps}: loss: {logs['loss']}")
         self.print(f"log: {logs}")
+        exit()
 
         self.wandb_logger.log(logs, step=self.steps.int().item())
 
