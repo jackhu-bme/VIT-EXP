@@ -542,7 +542,6 @@ class CTClipTrainer(nn.Module):
     
     def eval_tests(self, models_to_evaluate):
         for model, steps, model_name in models_to_evaluate:
-            (model, steps) = models_to_evaluate
             for test_func in self.valid_tests:
                 results = test_func(model)
                 to_log_dict = results["log_dict"]
