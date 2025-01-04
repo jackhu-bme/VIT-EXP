@@ -545,19 +545,18 @@ class CTClipTrainer(nn.Module):
             for test_func in self.valid_tests:
                 results = test_func(model)
                 to_log_dict = results["log_dict"]
-                for key, value in to_log_dict.items():
-                    # self.print(f"eval results: {key}: {value} for model: {model_name} at step: {steps}")
-                    # log the results
-                    wandb_log_dict = {f"{model_name}_" + key: value}
-                    print(f"wandb log dict: {wandb_log_dict}")
-                    self.wandb_logger.log(wandb_log_dict, step=steps)
+                wandb_log_dict = {f"{model_name}_" + key: value for key, value in to_log_dict.items()}
+                print(f"wandb log dict: {wandb_log_dict}")
+                self.wandb_logger.log(wandb_log_dict, step=steps)
                 to_visualize = results.get("to_visualize_dict", None)
                 # log the image
                 # todo: debug the image logging process
                 if to_visualize is not None:
+                    wandb_image_log_dict = {}
                     for key, value in to_visualize.items():
                         image_value = wandb.Image(value, caption=key)
-                        self.wandb_logger.log({f"{model_name}_" + key: image_value}, step=steps)
+                        wandb_image_log_dict[f"{model_name}_" + key] = image_value
+                    self.wandb_logger.log(wandb_image_log_dict, step=steps)
 
 
     def train_step(self):
@@ -586,7 +585,7 @@ class CTClipTrainer(nn.Module):
 
         if self.is_main and not (steps % self.eval_model_every):
             with torch.no_grad():
-                models_to_evaluate = ((self.CTClip, str(steps), "ctclip"),)
+                models_to_evaluate = ((self.CTClip, int(steps), "ctclip"),)
                 print(f"evaluating model: {steps}")
                 self.eval_tests(models_to_evaluate)
 
