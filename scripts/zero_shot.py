@@ -507,8 +507,8 @@ class CTClipInferenceFast(nn.Module):
             accession_names=[]
             
             for i in tqdm.tqdm(range(len(self.ds))):
-                if i > 10:
-                    break
+                # if i > 10:
+                #     break
                 valid_data, text, onehotlabels, acc_name = next(self.dl_iter)
 
                 valid_data = valid_data.cuda()
