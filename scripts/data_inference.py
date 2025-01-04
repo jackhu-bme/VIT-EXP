@@ -115,6 +115,7 @@ class CTReportDatasetinfer(Dataset):
         return samples
 
     def prepare_samples(self):
+        print(f"debugp: cache_data_list_folder: {self.cache_data_list_folder}")
         if os.path.exists(os.path.join(self.cache_data_list_folder, 'image_samples.txt')) and \
             os.path.exists(os.path.join(self.cache_data_list_folder, 'report_samples.txt')) and \
             os.path.exists(os.path.join(self.cache_data_list_folder, 'label_samples.pkl')):
