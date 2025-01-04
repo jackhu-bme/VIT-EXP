@@ -777,9 +777,9 @@ class CTCLIP(nn.Module):
         # seg_preds: [B, L, n_hidden_dim=16]
         # seg_mask_flatten: [B, L, C]
         # prompt_logits_batch: [B, C, n_hidden_dim=16]
-        print(f"seg_preds shape: {seg_preds.shape}")
-        print(f"seg_mask_flatten shape: {seg_mask_flatten.shape}")
-        print(f"prompt_logits_batch shape: {prompt_logits_batch.shape}")
+        # print(f"seg_preds shape: {seg_preds.shape}")
+        # print(f"seg_mask_flatten shape: {seg_mask_flatten.shape}")
+        # print(f"prompt_logits_batch shape: {prompt_logits_batch.shape}")
         # exit()
         if self.open_seg_loss_type == "cos_sim_l2":
             # calculate the cosine similarity for each class
@@ -792,7 +792,7 @@ class CTCLIP(nn.Module):
                 prompt_logits = prompt_logits_batch[:, i, :] # [B, n_hidden_dim=16]
                 # continue_train = input("Continue training? 4")
                 sim = F.cosine_similarity(seg_preds, prompt_logits.unsqueeze(1), dim=-1)
-                print(f"sim shape: {sim.shape}") # (B, L)
+                # print(f"sim shape: {sim.shape}") # (B, L)
                 # calculate the distance between similarity and gt, make the right class close to 1, wrong class close to 0
                 # just use l2 loss for now
                 # continue_train = input("Continue training? 5")

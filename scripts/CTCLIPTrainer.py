@@ -546,9 +546,11 @@ class CTClipTrainer(nn.Module):
                 results = test_func(model)
                 to_log_dict = results["log_dict"]
                 for key, value in to_log_dict.items():
-                    self.print(f"eval results: {key}: {value} for model: {model_name} at step: {steps}")
+                    # self.print(f"eval results: {key}: {value} for model: {model_name} at step: {steps}")
                     # log the results
-                    self.wandb_logger.log({f"{model_name}_" + key: value}, step=steps)
+                    wandb_log_dict = {f"{model_name}_" + key: value}
+                    print(f"wandb log dict: {wandb_log_dict}")
+                    self.wandb_logger.log(wandb_log_dict, step=steps)
                 to_visualize = results.get("to_visualize_dict", None)
                 # log the image
                 # todo: debug the image logging process
@@ -578,7 +580,7 @@ class CTClipTrainer(nn.Module):
         self.optim.zero_grad()
         # self.print(f"{steps}: loss: {logs['loss']}")
         self.print(f"log: {logs}")
-        exit()
+        # exit()
 
         self.wandb_logger.log(logs, step=self.steps.int().item())
 
