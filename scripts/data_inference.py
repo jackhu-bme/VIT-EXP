@@ -20,7 +20,7 @@ class CTReportDatasetinfer(Dataset):
     def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True, labels = "labels.csv"):
         self.data_folder = data_folder
         self.min_slices = min_slices
-        self.cache_data_list_folder = os.path.join(data_folder, './tmp_cache_data_list')
+        self.cache_data_list_folder = os.path.join(data_folder, './tmp_cache_data_list_val')
         os.makedirs(self.cache_data_list_folder, exist_ok=True)
         self.labels = labels
         self.accession_to_text = self.load_accession_text(csv_file)
