@@ -115,7 +115,7 @@ class CTReportDatasetinfer(Dataset):
         return samples
 
     def prepare_samples(self):
-        print(f"debugp: cache_data_list_folder: {self.cache_data_list_folder}")
+        # print(f"debugp: cache_data_list_folder: {self.cache_data_list_folder}")
         if os.path.exists(os.path.join(self.cache_data_list_folder, 'image_samples.txt')) and \
             os.path.exists(os.path.join(self.cache_data_list_folder, 'report_samples.txt')) and \
             os.path.exists(os.path.join(self.cache_data_list_folder, 'label_samples.pkl')):
@@ -136,13 +136,13 @@ class CTReportDatasetinfer(Dataset):
             test_label_cols = list(test_df.columns[1:])
             test_df['one_hot_labels'] = list(test_df[test_label_cols].values)
             patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
-            print(f"debugp: patient folders length: {len(patient_folders)}, first 5 folder: {patient_folders[0:5]}")
+            # print(f"debugp: patient folders length: {len(patient_folders)}, first 5 folder: {patient_folders[0:5]}")
             print(f"start prepraring samples")
             with Pool() as pool:
                 # Use a lambda or partial to pass additional arguments
                 results = pool.starmap(self.process_patient_folder, [(folder, self.accession_to_text, self.paths, test_df) for folder in patient_folders])
 
-            print(f"debugp results length: {len(results)}, first 5 results: {results[0:5]}")
+            # print(f"debugp results length: {len(results)}, first 5 results: {results[0:5]}")
 
             # Combine all patient folder results
             samples = [item for sublist in results for item in sublist]
