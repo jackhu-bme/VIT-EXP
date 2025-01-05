@@ -12,6 +12,8 @@ trainer:
   save_results_every: 1000
   save_model_every: 1000
   eval_model_every: 2000
+  vis_train_every: [-1, 100] # visualization while training, each element is for correpsonding training, dataset
+  vis_val_every: 200 # the interval of visualization for validation on valid dataset
   balance_loss_weight: [1.0, 2.0]
 
 
@@ -28,8 +30,8 @@ train_data_list:
     labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv
   - name: RadGenome
     type: imageopenseg
-    batch_size: 2
-    num_workers: 8
+    batch_size: 1
+    num_workers: 4
     seg_data_train: /mnt/input/RadGenome/train_preprocessed_img_organized_fp16
     # seg_data_valid: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/val
     metadata_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv
@@ -67,9 +69,8 @@ valid_test_list:
 
 
 DatasetSampler:
-  type: Random # Combined means combine the weight of different data types in a training step
-  ratio_list: [1, 1]
-
+  type: Combined # Combined means combine the weight of different data types in a training step
+  acc_steps_list: [1, 1]
 
 # arch for img
 arch:
