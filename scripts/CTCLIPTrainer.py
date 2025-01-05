@@ -37,7 +37,9 @@ import os
 
 import random
 
-# import wandb
+import wandb
+
+
 
 # helpers
 def apply_softmax(array):
@@ -318,6 +320,8 @@ class CTClipTrainer(nn.Module):
 
         self.valid_tests = create_valid_tests(config["valid_test_list"])
 
+        self.vis_train_interval = trainer_config.get("vis_train_every", [-1, ] * len(self.dl_list))
+
 
         # (
  		# 	self.dl_iter,
@@ -500,14 +504,20 @@ class CTClipTrainer(nn.Module):
         return batch
 
 
-    def train_step_single_dataset(self, dataset_index=None):
+    def train_step_single_dataset(self, dataset_index=None, vis=False):
         batch = next(self.dl_iter_list[dataset_index])
         batch = self.prepare_batch(batch)
         #video = video
+        
         with self.accelerator.accumulate(self.CTClip):
             with self.accelerator.autocast():
-                loss, loss_dict = self.CTClip(batch, return_loss=True, return_loss_dict=True, 
-                                              device=self.device, accelerator=self.accelerator)
+                if not vis:
+                    loss, loss_dict = self.CTClip(batch, return_loss=True, return_loss_dict=True, 
+                                                device=self.device, accelerator=self.accelerator)
+                else:
+                    loss, loss_dict, to_visualize = self.CTClip(batch, return_loss=True, return_loss_dict=True, 
+                                                return_visualize=True, device=self.device, accelerator=self.accelerator)
+                    self.wandb_logger.log(to_visualize, step=self.steps.int().item())
                 # times the weight for this dataset to the loss and loss dict
                 loss = loss * self.balance_loss_weight[dataset_index]
                 bal_loss_dict = {}
@@ -533,16 +543,38 @@ class CTClipTrainer(nn.Module):
         the batch size used for each dataset is defined by the dataloader, so we don't need to worry about the batch size
         """
         acc_steps_list = self.dataset_sampler.sample(self.steps.item())
+        vis_list = [False, ] * len(self.dl_list)
+        for i in range(len(self.vis_train_interval)):
+            if self.vis_train_interval[i] > 0 and self.dl_step_list[i] % self.vis_train_interval[i] == 0:
+                vis_list[i] = True
         loss_dict = {}
         for i, acc_step in enumerate(acc_steps_list):
-            for _ in range(acc_step):
-                loss_dict_single = self.train_step_single_dataset(dataset_index=i)
+            for j in range(acc_step):
+                loss_dict_single = self.train_step_single_dataset(dataset_index=i, vis = vis_list[i] and j==0) # only vis for the first step in acc_step
                 loss_dict = self.loss_update(loss_dict, loss_dict_single)
         return loss_dict
     
     def eval_tests(self, models_to_evaluate):
         for model, steps, model_name in models_to_evaluate:
             for test_func in self.valid_tests:
+                results = test_func(model)
+                to_log_dict = results["log_dict"]
+                wandb_log_dict = {f"{model_name}_" + key: value for key, value in to_log_dict.items()}
+                print(f"wandb log dict: {wandb_log_dict}")
+                self.wandb_logger.log(wandb_log_dict, step=steps)
+                to_visualize = results.get("to_visualize_dict", None)
+                # log the image
+                # todo: debug the image logging process
+                if to_visualize is not None:
+                    wandb_image_log_dict = {}
+                    for key, value in to_visualize.items():
+                        image_value = wandb.Image(value, caption=key)
+                        wandb_image_log_dict[f"{model_name}_" + key] = image_value
+                    self.wandb_logger.log(wandb_image_log_dict, step=steps)
+    
+    def sample_tests(self, models_to_evaluate):
+        for model, steps, model_name in models_to_evaluate:
+            for test_func in self.sample_tests:
                 results = test_func(model)
                 to_log_dict = results["log_dict"]
                 wandb_log_dict = {f"{model_name}_" + key: value for key, value in to_log_dict.items()}
@@ -588,6 +620,7 @@ class CTClipTrainer(nn.Module):
                 models_to_evaluate = ((self.CTClip, int(steps), "ctclip"),)
                 print(f"evaluating model: {steps}")
                 self.eval_tests(models_to_evaluate)
+
 
         #         for model, filename in models_to_evaluate:
         #             model.eval()

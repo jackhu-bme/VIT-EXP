@@ -12,6 +12,8 @@ trainer:
   save_results_every: 10
   save_model_every: 10
   eval_model_every: 20
+  vis_train_every: [-1, 10] # visualization while training, each element is for correpsonding training, dataset
+  vis_val_every: 20 # the interval of visualization for validation on valid dataset
   balance_loss_weight: [1.0, 2.0]
 
 
@@ -51,10 +53,13 @@ valid_test_list: []
   # - ctclip_image_report_zero_shot_cls_test
 
 
-DatasetSampler:
-  type: Random # Combined means combine the weight of different data types in a training step
-  ratio_list: [1, 1]
+# DatasetSampler:
+#   type: Random # Combined means combine the weight of different data types in a training step
+#   ratio_list: [1, 1]
 
+DatasetSampler:
+  type: Combined # Combined means combine the weight of different data types in a training step
+  acc_steps_list: [1, 1]
 
 # arch for img
 arch:

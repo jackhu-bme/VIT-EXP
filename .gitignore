@@ -9,3 +9,4 @@ demo_ckpt
 debug_*/
 logs_*
 demo_tests/training_checkpoints
+demo_tests/wandb

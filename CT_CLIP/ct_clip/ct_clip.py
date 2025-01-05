@@ -21,6 +21,10 @@ import time
 
 import random
 
+import matplotlib.pyplot as plt
+
+from ct_clip.utils import vis_3d_img_list
+
 # helper functions
 
 def identity(t, *args, **kwargs):
@@ -833,6 +837,12 @@ class CTCLIP(nn.Module):
         return new_tensor, start_index
 
 
+    @staticmethod
+    def vis_3d_img_list(img_list, slice_ratio_list = [0.25, 0.5, 0.75]):
+        # generate the visualization of 3d images by sampling on each dim according to the slice ratio list
+        pass
+
+
     def forward_batch_image_open_seg(self, batch, device=None, accelerator=None, **kwargs):
         image = batch["image"]
         seg_mask = batch["seg_mask"] # [B, C, H, W, D]
@@ -858,7 +868,7 @@ class CTCLIP(nn.Module):
         # exit()
         prompt_logits_batch = torch.tile(prompt_logits, (B_seg, 1, 1)) # [B, C, n_hidden_dim=16]
         low_latent_dim = prompt_logits_batch.shape[-1]
-        print(f"prompt_logits_batch shape: {prompt_logits_batch.shape}")
+        # print(f"prompt_logits_batch shape: {prompt_logits_batch.shape}")
         loss_dict = {}
         B, C, D, W, H = image.shape
         enc_image= self.visual_transformer(image, return_encoded_tokens=True)
@@ -870,7 +880,7 @@ class CTCLIP(nn.Module):
         b, d, w, h, c = enc_seg_image.shape
         p_h, p_w, p_d = H//h, W//w, D//d
         tokens_to_seg = enc_seg_image.reshape(-1, c) # b, l, c -> b*l, c
-        print(f"tokens_to_seg shape: {tokens_to_seg.shape}")
+        # print(f"tokens_to_seg shape: {tokens_to_seg.shape}")
         # use the linear head for 
         seg_logits = self.open_seg_head(tokens_to_seg)
         # continue_train = input("Continue training? 2")
@@ -883,6 +893,28 @@ class CTCLIP(nn.Module):
         open_seg_loss = self.open_seg_loss(seg_preds, seg_mask_flatten, prompt_logits_batch) # keep the start index same
         loss_dict["open_seg_loss"] = open_seg_loss.item()
         return_list = [open_seg_loss, loss_dict]
+
+        # visualize when training
+        vis = kwargs.get("return_visualize", False)
+        down_img = self.random_downsample(image, self.open_seg_loss_down_factor, start_index=start_index)[0]
+        B, C, D_down, W_down, H_down = down_img.shape
+        if vis:
+            # visualize the normed similarity and the gt mask for each class
+            with torch.no_grad():
+                vis_dict = {}
+                for i in range(C):
+                    # get the prompt logits for the i-th class
+                    prompt_logits = prompt_logits_batch[:, i, :] # [B, n_hidden_dim=16]
+                    # continue_train = input("Continue training? 4")
+                    sim = F.cosine_similarity(seg_preds, prompt_logits.unsqueeze(1), dim=-1)
+                    sium_vis_0 = sim.reshape(B_seg, D_down, W_down, H_down)[0]
+                    mask_gt_vis_0 = seg_mask_flatten[:, :, i].reshape(B_seg, D_down, W_down, H_down)[0]
+                    down_img_vis_0 = down_img[0, 0].reshape(D_down, W_down, H_down)
+                    # vis the similarity, gt mask, and downsampled image
+                    vis_res = vis_3d_img_list([down_img_vis_0, sium_vis_0, mask_gt_vis_0], img_name=f"channel_{i}")
+                    # update the vis dict with each key-value pair
+                    vis_dict.update(vis_res)
+                return_list.append(vis_dict)
         return return_list
 
     
