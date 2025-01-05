@@ -205,6 +205,31 @@ class CTReportDataset(Dataset):
                 paths.append(nii_file)
         return samples
 
+    def get_file_by_walk(self, root_folder, ext=".npz"):
+        npz_file_lists = []
+        for root, dirs, files in os.walk(root_folder):
+            for file in files:
+                if file.endswith(ext):
+                    npz_file_lists.append(os.path.join(root, file))
+        return npz_file_lists
+
+    def process_patient_npz(self, npz_file_lists, accession_to_text, paths):
+        samples = []
+        for npz_file in npz_file_lists:
+            accession_number = npz_file.split("/")[-1].replace(".npz", ".nii.gz")
+            if accession_number not in accession_to_text:
+                continue
+
+            impression_text = accession_to_text[accession_number]
+            if impression_text == "Not given.":
+                impression_text = ""
+
+            input_text_concat = "".join(str(text) for text in impression_text) if impression_text else ""
+            samples.append((npz_file, input_text_concat))
+            paths.append(npz_file)
+        return samples
+
+
     def prepare_samples(self):
         if os.path.exists(os.path.join(self.cache_data_list_folder, 'image_samples.txt')) and os.path.exists(os.path.join(self.cache_data_list_folder, 'report_samples.txt')):
             with open(os.path.join(self.cache_data_list_folder, 'image_samples.txt'), 'r') as f:
@@ -217,14 +242,22 @@ class CTReportDataset(Dataset):
             print(f"finished preparing samples with cache txt within the ct report dataset, the number of samples: {len(samples)}")
             return samples
         else:
-            patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
-            print(f"start prepraring samples")
-            with Pool() as pool:
-                # Use a lambda or partial to pass additional arguments
-                results = pool.starmap(self.process_patient_folder, [(folder, self.accession_to_text, self.paths) for folder in patient_folders])
+            # patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
+            # print(f"start prepraring samples")
+            # # with Pool() as pool:
+            # #     # Use a lambda or partial to pass additional arguments
+            # #     results = pool.starmap(self.process_patient _folder, [(folder, self.accession_to_text, self.paths) for folder in patient_folders])
+
+            # results = []
+            # for patient_folder in patient_folders:
+            #     samples = self.process_patient_folder(patient_folder, self.accession_to_text, self.paths)
+            #     results.append(samples)
+
+            npz_file_lists = self.get_file_by_walk(self.data_folder, ext=".npz")
+            results = self.process_patient_npz(npz_file_lists, self.accession_to_text, self.paths)
 
             # Combine all patient folder results
-            samples = [item for sublist in results for item in sublist]
+            samples = results
             print(f"finished preparing samples, the number of samples: {len(samples)}")
             # Save the samples to cache
             image_samples = [sample[0] for sample in samples]

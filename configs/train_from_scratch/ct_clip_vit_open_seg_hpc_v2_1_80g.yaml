@@ -6,12 +6,12 @@ exp_name: ctclip_vit_open_seg_hpc_v2_1_div0_80g
 trainer:
   lr: 1.25e-6
   wd: 0.
-  num_train_steps: 201
+  num_train_steps: 200001
   max_grad_norm: 0.5
   gradient_accumulation_steps: 1 # todo: in future, if pass [1, 2], means 1 for ct-rate, 2 for total-segmentator, not supported yet
-  save_results_every: 10
-  save_model_every: 10
-  eval_model_every: 20
+  save_results_every: 1000
+  save_model_every: 1000
+  eval_model_every: 2000
   balance_loss_weight: [1.0, 2.0]
 
 
@@ -20,18 +20,22 @@ train_data_list:
     type: imagereport
     batch_size: 4
     num_workers: 8
-    reports_file_train: /home/xufluo/ct-clip-vit/ct_rate/sub_sample_30_dataset/csv_dir/reports/train_reports.csv
-    reports_file_valid: /home/xufluo/ct-clip-vit/ct_rate/sub_sample_30_dataset/csv_dir/reports/validation_reports.csv
-    metadata_train: /home/xufluo/ct-clip-vit/ct_rate/sub_sample_30_dataset/csv_dir/metadata/train_metadata.csv
-    data_train: /home/xufluo/ct-clip-vit/ct_rate/sub_sample_30_dataset/train_img_pre
+    reports_file_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/reports/train_reports.csv
+    # reports_file_valid: /mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv
+    metadata_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv
+    data_train: /mnt/input/CT-RATE/organized_dataset/train_images_preprocessed
+    # data_valid: /mnt/input/CT-RATE/organized_dataset/val_images_preprocessed
+    labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv
   - name: RadGenome
     type: imageopenseg
-    batch_size: 1
-    num_workers: 4
-    seg_data_train: /home/xufluo/ct-clip-vit/rad-genome/sub_30_sample_dataset/train_img_pre
-    metadata_train: /home/xufluo/ct-clip-vit/ct_rate/sub_sample_30_dataset/csv_dir/metadata/train_metadata.csv
-    seg_mask_train: /home/xufluo/ct-clip-vit/rad-genome/sub_30_sample_dataset/train_mask_pre
-    seg_mask_name_table: /home/xufluo/ct-clip-vit/rad-genome/sub_30_sample_dataset/label_mappings/radgenome_labels.xlsx
+    batch_size: 2
+    num_workers: 8
+    seg_data_train: /mnt/input/RadGenome/train_preprocessed_img_organized_fp16
+    # seg_data_valid: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/val
+    metadata_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv
+    seg_mask_train: /mnt/input/RadGenome/train_preprocessed_mask_combined_bool
+    # seg_mask_valid: /mnt/input/RadGenome/seg_final_dataset_17cls/valid_mask
+    seg_mask_name_table: /mnt/input/RadGenome/label_mappings/radgenome_labels.xlsx
     seg_mask_prompt_type: this_is
 
     # sampler_type: InfinteCycleSampler
@@ -45,10 +49,21 @@ train_data_list:
   #   seg_mask_valid: /mnt/input/TotalSegmentator/seg_final_dataset/valid_mask
     # sampler_type: InfinteCycleSampler
 
+# valid_data_list:
+#   - name: CT-RATE
+#     type: imagereport
+#     batch_size: 4
+#     num_workers: 8
+#     reports_file_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/reports/train_reports.csv
+#     reports_file_valid: /mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv
+#     metadata_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv
+#     data_train: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/train
+#     data_valid: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/val
+#     labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv
 
 
-valid_test_list: []
-  # - ctclip_image_report_zero_shot_cls_test
+valid_test_list:
+  - ctclip_image_report_zero_shot_cls_test
 
 
 DatasetSampler:
