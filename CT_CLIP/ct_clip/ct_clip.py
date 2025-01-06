@@ -907,11 +907,11 @@ class CTCLIP(nn.Module):
                     prompt_logits = prompt_logits_batch[:, i, :] # [B, n_hidden_dim=16]
                     # continue_train = input("Continue training? 4")
                     sim = F.cosine_similarity(seg_preds, prompt_logits.unsqueeze(1), dim=-1)
-                    sium_vis_0 = sim.reshape(B_seg, D_down, W_down, H_down)[0]
+                    sim_vis_0 = sim.reshape(B_seg, D_down, W_down, H_down)[0]
                     mask_gt_vis_0 = seg_mask_flatten[:, :, i].reshape(B_seg, D_down, W_down, H_down)[0]
                     down_img_vis_0 = down_img[0, 0].reshape(D_down, W_down, H_down)
                     # vis the similarity, gt mask, and downsampled image
-                    vis_res = vis_3d_img_list([down_img_vis_0, sium_vis_0, mask_gt_vis_0], img_name=f"channel_{i}")
+                    vis_res = vis_3d_img_list([down_img_vis_0, sim_vis_0, mask_gt_vis_0], img_name=f"channel_{i}")
                     # update the vis dict with each key-value pair
                     vis_dict.update(vis_res)
                 return_list.append(vis_dict)
