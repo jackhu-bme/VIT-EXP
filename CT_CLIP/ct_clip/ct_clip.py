@@ -895,10 +895,11 @@ class CTCLIP(nn.Module):
         return_list = [open_seg_loss, loss_dict]
 
         # visualize when training
-        vis = kwargs.get("return_visualize", False)
+        vis = kwargs.get("return_visualize", False) or kwargs.get("return_vis", False)
         down_img = self.random_downsample(image, self.open_seg_loss_down_factor, start_index=start_index)[0]
         B, C, D_down, W_down, H_down = down_img.shape
         if vis:
+            img_prefix = kwargs.get("img_prefix", "")
             # visualize the normed similarity and the gt mask for each class
             with torch.no_grad():
                 vis_dict = {}
@@ -911,7 +912,8 @@ class CTCLIP(nn.Module):
                     mask_gt_vis_0 = seg_mask_flatten[:, :, i].reshape(B_seg, D_down, W_down, H_down)[0]
                     down_img_vis_0 = down_img[0, 0].reshape(D_down, W_down, H_down)
                     # vis the similarity, gt mask, and downsampled image
-                    vis_res = vis_3d_img_list([down_img_vis_0, sim_vis_0, mask_gt_vis_0], img_name=f"channel_{i}")
+                    img_name = f"{img_prefix}_channel_{i}"
+                    vis_res = vis_3d_img_list([down_img_vis_0, sim_vis_0, mask_gt_vis_0], img_name=img_name)
                     # update the vis dict with each key-value pair
                     vis_dict.update(vis_res)
                 return_list.append(vis_dict)
@@ -1493,3 +1495,10 @@ class CTCLIP(nn.Module):
                 return loss
             else:
                 return loss, loss_dict
+
+
+
+
+
+
+

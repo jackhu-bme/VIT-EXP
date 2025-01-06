@@ -1,7 +1,7 @@
 random_seed: 42
 results_folder: ./output_train_scratch
 project_name: ct-clip-vit-open-seg
-exp_name: ctclip_vit_open_seg_hpc_v2_1_80g_1gpu
+exp_name: ctclip_vit_open_seg_hpc_v2_1_80g
 
 trainer:
   lr: 1.25e-6
@@ -13,7 +13,7 @@ trainer:
   save_model_every: 1000
   eval_model_every: 2000
   vis_train_every: [-1, 100] # visualization while training, each element is for correpsonding training, dataset
-  vis_val_every: 200 # the interval of visualization for validation on valid dataset
+  sample_val_every: 200 # the interval of visualization for validation on valid dataset
   balance_loss_weight: [1.0, 2.0]
 
 
@@ -66,6 +66,9 @@ train_data_list:
 
 valid_test_list:
   - ctclip_image_report_zero_shot_cls_test
+
+sample_test_list:
+  - radgenome_image_open_seg_test_ten_images
 
 
 DatasetSampler:

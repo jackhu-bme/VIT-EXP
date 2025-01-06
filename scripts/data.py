@@ -506,6 +506,8 @@ def create_train_dl(train_ds, train_dl_config):
 def create_valid_ds(config):
     if config["type"] == "imagereport":
         return CTReportDatasetinfer(config["data_valid"], config["reports_file_valid"], labels = config["labels"])
+    elif config["type"] == "imageopenseg":
+        return CTOpenSegDataset(config["seg_data_valid"], config["seg_mask_valid"], config["seg_mask_name_table"], config["seg_mask_prompt_type"])
     else:
         raise ValueError(f"Unknown dataset type: {config['type']}")
 

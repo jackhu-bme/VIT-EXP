@@ -41,6 +41,42 @@ import wandb
 
 
 
+
+def radgenome_image_open_seg_test_ten_images(model):
+    # create radgenome validation image dataset and dataloader
+    data_config_dict = {}
+    data_config_dict["seg_data_valid"] = "/mnt/input/RadGenome/valid_preprocessed_img_organized_fp16"
+    data_config_dict["metadata_valid"] = "/mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/validation_metadata.csv"
+    data_config_dict["seg_mask_valid"] = "/mnt/input/RadGenome/train_preprocessed_mask_combined_bool"
+    data_config_dict["seg_mask_name_table"] = "/mnt/input/RadGenome/label_mappings/radgenome_labels.xlsx"
+    data_config_dict["seg_mask_prompt_type"] = "this_is"
+    data_config_dict["type"] = "imageopenseg"
+    data_config_dict["batch_size"] = 1
+    data_config_dict["num_workers"] = 0
+
+    valid_dl = create_valid_dl_list([data_config_dict])[0]
+
+    all_vis_dict = {}
+
+    # visualize the segmentation results, for each image in the batch
+    # 10 images for most
+
+    device = torch.device('cuda:0')
+
+    for i, batch in enumerate(valid_dl):
+        if i >= 10:
+            break
+        seg_mask = batch["seg_mask"].to(device)
+        seg_data = batch["image"].to(device)
+        batch["seg_mask"] = seg_mask
+        batch["image"] = seg_data
+        _, _, vis_res = model(batch, return_vis=True, img_prefix=f"valid_{i}")
+        all_vis_dict.update(vis_res)
+
+    return {"to_vis_dict": all_vis_dict}
+    
+
+
 # helpers
 def apply_softmax(array):
     """
@@ -228,6 +264,8 @@ def create_valid_tests(test_name_list):
     for test_name in test_name_list:
         if test_name == "ctclip_image_report_zero_shot_cls_test":
             tests.append(ctclip_image_report_zero_shot_cls_test)
+        elif test_name == "radgenome_image_open_seg_test_ten_images":
+            tests.append(radgenome_image_open_seg_test_ten_images)
         else:
             raise ValueError(f"test name {test_name} is not supported")
     return tests
@@ -320,7 +358,11 @@ class CTClipTrainer(nn.Module):
 
         self.valid_tests = create_valid_tests(config["valid_test_list"])
 
+        self.vis_val_tests = create_valid_tests(config["sample_test_list"])
+
         self.vis_train_interval = trainer_config.get("vis_train_every", [-1, ] * len(self.dl_list))
+
+        self.sample_val_every = trainer_config.get("sample_val_every", 100)
 
 
         # (
@@ -574,20 +616,25 @@ class CTClipTrainer(nn.Module):
     
     def sample_tests(self, models_to_evaluate):
         for model, steps, model_name in models_to_evaluate:
-            for test_func in self.sample_tests:
+            for test_func in self.vis_val_tests:
                 results = test_func(model)
                 to_log_dict = results["log_dict"]
                 wandb_log_dict = {f"{model_name}_" + key: value for key, value in to_log_dict.items()}
                 print(f"wandb log dict: {wandb_log_dict}")
                 self.wandb_logger.log(wandb_log_dict, step=steps)
-                to_visualize = results.get("to_visualize_dict", None)
+                to_visualize = results.get("to_vis_dict", None)
                 # log the image
                 # todo: debug the image logging process
                 if to_visualize is not None:
                     wandb_image_log_dict = {}
                     for key, value in to_visualize.items():
-                        image_value = wandb.Image(value, caption=key)
-                        wandb_image_log_dict[f"{model_name}_" + key] = image_value
+                        if isinstance(value, wandb.Image):
+                            img_value = value
+                        elif isinstance(value, np.ndarray):
+                            img_value = wandb.Image(value, cation=key)
+                        else:
+                            raise ValueError(f"unsupported type of value for visualization: {type(value)}")
+                        wandb_image_log_dict[f"{model_name}_" + key] = img_value
                     self.wandb_logger.log(wandb_image_log_dict, step=steps)
 
 
@@ -614,6 +661,13 @@ class CTClipTrainer(nn.Module):
         # exit()
 
         self.wandb_logger.log(logs, step=self.steps.int().item())
+
+        if self.is_main and (steps % self.sample_val_every):
+            with torch.no_grad():
+                models_to_sample = ((self.CTClip, int(steps), "ctclip"),)
+                print(f"sampling eval data on model: {steps}")
+                self.sample_tests(models_to_sample)
+
 
         if self.is_main and not (steps % self.eval_model_every):
             with torch.no_grad():
