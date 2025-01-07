@@ -508,6 +508,7 @@ class CTClipInferenceFast(nn.Module):
             accession_names=[]
             
             for i in tqdm.tqdm(range(len(self.ds))):
+                print(f"fast inference on ct clip, batch {i}")
                 if i > 10:
                     break
                 valid_data, text, onehotlabels, acc_name = next(self.dl_iter)
