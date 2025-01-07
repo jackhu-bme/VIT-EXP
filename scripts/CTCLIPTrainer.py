@@ -358,7 +358,7 @@ class CTClipTrainer(nn.Module):
 
         self.valid_tests = create_valid_tests(config["valid_test_list"])
 
-        self.vis_val_tests = create_valid_tests(config["sample_test_list"])
+        self.vis_val_tests = create_valid_tests(config.get("sample_test_list", []))
 
         self.vis_train_interval = trainer_config.get("vis_train_every", [-1, ] * len(self.dl_list))
 
