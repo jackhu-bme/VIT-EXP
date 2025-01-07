@@ -388,7 +388,7 @@ class CTClipInferenceFast(nn.Module):
     ):
         super().__init__()
         ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
-        self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs], **accelerate_kwargs)
+        # self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs], **accelerate_kwargs)
         self.CTClip = CTClip
         self.tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
         self.results_folder = results_folder
@@ -417,7 +417,8 @@ class CTClipInferenceFast(nn.Module):
         )
         # prepare with accelerator
         self.dl_iter=cycle(self.dl)
-        self.device = self.accelerator.device
+        # self.device = self.accelerator.device
+        self.device = torch.device('cuda:0')
         self.CTClip.to(self.device)
         self.lr_scheduler = CosineAnnealingWarmUpRestarts(self.optim,
                                                   T_0=4000000,    # Maximum number of iterations
@@ -425,17 +426,17 @@ class CTClipInferenceFast(nn.Module):
                                                   eta_max=lr)   # Maximum learning rate
 
 
-        (
- 			self.dl_iter,
-            self.CTClip,
-            self.optim,
-            self.lr_scheduler
-        ) = self.accelerator.prepare(
-            self.dl_iter,
-            self.CTClip,
-            self.optim,
-            self.lr_scheduler
-        )
+        # (
+ 		# 	self.dl_iter,
+        #     self.CTClip,
+        #     self.optim,
+        #     self.lr_scheduler
+        # ) = self.accelerator.prepare(
+        #     self.dl_iter,
+        #     self.CTClip,
+        #     self.optim,
+        #     self.lr_scheduler
+        # )
 
         self.save_model_every = save_model_every
         self.save_results_every = save_results_every
