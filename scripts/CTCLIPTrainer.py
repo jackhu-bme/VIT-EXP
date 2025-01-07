@@ -662,18 +662,20 @@ class CTClipTrainer(nn.Module):
 
         self.wandb_logger.log(logs, step=self.steps.int().item())
 
-        if self.is_main and ((steps + 1) % self.sample_val_every):
-            with torch.no_grad():
-                models_to_sample = ((self.CTClip, int(steps), "ctclip"),)
-                print(f"sampling eval data on model: {steps}")
-                self.sample_tests(models_to_sample)
+        if not ((steps + 1) % self.sample_val_every):
+            if self.is_main:
+                with torch.no_grad():
+                    models_to_sample = ((self.CTClip, int(steps), "ctclip"),)
+                    print(f"sampling eval data on model: {steps}")
+                    self.sample_tests(models_to_sample)
 
 
-        if self.is_main and not ((steps + 1) % self.eval_model_every):
-            with torch.no_grad():
-                models_to_evaluate = ((self.CTClip, int(steps), "ctclip"),)
-                print(f"evaluating model: {steps}")
-                self.eval_tests(models_to_evaluate)
+        if not ((steps + 1) % self.eval_model_every):
+            if self.is_main: 
+                with torch.no_grad():
+                    models_to_evaluate = ((self.CTClip, int(steps), "ctclip"),)
+                    print(f"evaluating model: {steps}")
+                    self.eval_tests(models_to_evaluate)
 
 
         #         for model, filename in models_to_evaluate:
