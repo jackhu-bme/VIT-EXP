@@ -1,7 +1,7 @@
 import os
 
 data_dir = "/mnt/input/RadGenome/valid_preprocessed_img_organized_fp16"
-mask_dir = "/mnt/input/RadGenome/train_preprocessed_mask_combined_bool"
+mask_dir = "/mnt/input/RadGenome/valid_preprocessed_mask_combined_bool"
 
 def get_file_names(data_dir, mask_dir):
     data_files = os.listdir(data_dir)

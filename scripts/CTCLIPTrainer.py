@@ -47,7 +47,7 @@ def radgenome_image_open_seg_test_ten_images(model):
     data_config_dict = {}
     data_config_dict["seg_data_valid"] = "/mnt/input/RadGenome/valid_preprocessed_img_organized_fp16"
     data_config_dict["metadata_valid"] = "/mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/validation_metadata.csv"
-    data_config_dict["seg_mask_valid"] = "/mnt/input/RadGenome/train_preprocessed_mask_combined_bool"
+    data_config_dict["seg_mask_valid"] = "/mnt/input/RadGenome/valid_preprocessed_mask_combined_bool"
     data_config_dict["seg_mask_name_table"] = "/mnt/input/RadGenome/label_mappings/radgenome_labels.xlsx"
     data_config_dict["seg_mask_prompt_type"] = "this_is"
     data_config_dict["type"] = "imageopenseg"
