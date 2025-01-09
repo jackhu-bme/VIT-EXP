@@ -70,6 +70,10 @@ def radgenome_image_open_seg_test_ten_images(model):
         seg_data = batch["image"].to(device)
         batch["seg_mask"] = seg_mask
         batch["image"] = seg_data
+        seg_mask_promp_dict = batch["seg_mask_promp_dict"]
+        for key, value in seg_mask_promp_dict.items():
+            seg_mask_promp_dict[key] = value.to(device)
+        batch["seg_mask_promp_dict"] = seg_mask_promp_dict
         _, _, vis_res = model(batch, return_vis=True, img_prefix=f"valid_{i}")
         all_vis_dict.update(vis_res)
 
@@ -536,11 +540,20 @@ class CTClipTrainer(nn.Module):
             text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(self.device)
             batch["text"] = text_tokens
             batch["image"] = video
-        elif batch["data_type"][0] == "imageseg" or batch["data_type"][0] == "imageopenseg":
+        elif batch["data_type"][0] == "imageseg":
             seg_mask = batch["seg_mask"].to(self.device)
             seg_data = batch["image"].to(self.device)
             batch["seg_mask"] = seg_mask
             batch["image"] = seg_data
+        elif batch["data_type"][0] == "imageopenseg":
+            seg_mask = batch["seg_mask"].to(self.device)
+            seg_data = batch["image"].to(self.device)
+            batch["seg_mask"] = seg_mask
+            batch["image"] = seg_data
+            seg_mask_promp_dict = batch["seg_mask_promp_dict"]
+            for key, value in seg_mask_promp_dict.items():
+                seg_mask_promp_dict[key] = value.to(self.device)
+            batch["seg_mask_promp_dict"] = seg_mask_promp_dict
         else:
             raise ValueError(f"unsupported data type: {batch['data_type'][0]}, is open seg: {batch['data_type'][0] == 'imageopenseg'}")
         return batch
