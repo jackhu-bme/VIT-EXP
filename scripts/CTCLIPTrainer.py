@@ -613,10 +613,11 @@ class CTClipTrainer(nn.Module):
         for model, steps, model_name in models_to_evaluate:
             for test_func in self.valid_tests:
                 results = test_func(model)
-                to_log_dict = results["log_dict"]
-                wandb_log_dict = {f"{model_name}_" + key: value for key, value in to_log_dict.items()}
-                print(f"wandb log dict: {wandb_log_dict}")
-                self.wandb_logger.log(wandb_log_dict, step=steps)
+                to_log_dict = results.get("log_dict", None)
+                if to_log_dict is not None:
+                    wandb_log_dict = {f"{model_name}_" + key: value for key, value in to_log_dict.items()}
+                    print(f"wandb log dict: {wandb_log_dict}")
+                    self.wandb_logger.log(wandb_log_dict, step=steps)
                 to_visualize = results.get("to_visualize_dict", None)
                 # log the image
                 # todo: debug the image logging process
@@ -631,10 +632,11 @@ class CTClipTrainer(nn.Module):
         for model, steps, model_name in models_to_evaluate:
             for test_func in self.vis_val_tests:
                 results = test_func(model)
-                to_log_dict = results["log_dict"]
-                wandb_log_dict = {f"{model_name}_" + key: value for key, value in to_log_dict.items()}
-                print(f"wandb log dict: {wandb_log_dict}")
-                self.wandb_logger.log(wandb_log_dict, step=steps)
+                to_log_dict = results.get("log_dict", None)
+                if to_log_dict is not None:
+                    wandb_log_dict = {f"{model_name}_" + key: value for key, value in to_log_dict.items()}
+                    print(f"wandb log dict: {wandb_log_dict}")
+                    self.wandb_logger.log(wandb_log_dict, step=steps)
                 to_visualize = results.get("to_vis_dict", None)
                 # log the image
                 # todo: debug the image logging process
