@@ -83,13 +83,15 @@ def main(config, args):
     wandb_mode = "offline" if args.debug else "online"
 
     project_config = ProjectConfiguration(
-        project_dir=exp_folder,        
+                
         automatic_checkpoint_naming=True,  
         total_limit=10000            
         )
 
     accelerator_kwargs = {}
 
+
+    accelerator_kwargs["project_dir"] = exp_folder
     accelerator_kwargs["log_with"] = "wandb"
     accelerator_kwargs["project_config"] = project_config
     accelerator_kwargs["gradient_accumulation_steps"] = config["trainer"].get("gradient_accumulation_steps", 1)
