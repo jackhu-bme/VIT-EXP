@@ -10,9 +10,9 @@ trainer:
   max_grad_norm: 0.5
   gradient_accumulation_steps: 1 # todo: in future, if pass [1, 2], means 1 for ct-rate, 2 for total-segmentator, not supported yet
   save_results_every: 1000
-  save_model_every: 1000
+  save_model_every: 2
   eval_model_every: 2000
-  vis_train_every: [-1, 10] # visualization while training, each element is for correpsonding training, dataset
+  vis_train_every: [-1, 100] # visualization while training, each element is for correpsonding training, dataset
   sample_val_every: 10 # the interval of visualization for validation on valid dataset
   balance_loss_weight: [1.0, 2.0]
 

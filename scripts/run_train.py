@@ -20,6 +20,9 @@ import time
 
 from accelerate import Accelerator
 
+from accelerate.utils import ProjectConfiguration
+# ProjectConfiguration
+
 
 def create_img_encoder(config):
     if config.get("use_seg", False):
@@ -77,7 +80,13 @@ def main(config, args):
 
     wandb_mode = "offline" if args.debug else "online"
 
-    accelerator = Accelerator(log_with="wandb", project_dir=exp_folder)
+    project_config = ProjectConfiguration(
+        project_dir=exp_folder,        
+        automatic_checkpoint_naming=True,  
+        total_limit=10000            
+        )
+
+    accelerator = Accelerator(log_with="wandb", project_config=project_config)
 
     accelerator.init_trackers(
         project_name = project_name,
