@@ -14,7 +14,7 @@ trainer:
   eval_model_every: 2000
   vis_train_every: [-1, 100] # visualization while training, each element is for correpsonding training, dataset
   sample_val_every: 1000 # the interval of visualization for validation on valid dataset
-  balance_loss_weight: [1.0, 2.0]
+  balance_loss_weight: [1.0, 5.0]
 
 
 train_data_list:
