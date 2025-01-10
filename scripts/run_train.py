@@ -83,18 +83,19 @@ def main(config, args):
 
     project_name = config.get("project_name", "CT-CLIP-EXP")
     exp_name = config.get("exp_name", "train_from_scratch_default")
+    exp_folder = os.path.join(config["results_folder"], exp_name) #, current_time)
     # current_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
 
     if args.resume:
         resume_iteration = read_resume_dir_iteration(args.resume)
         print(f"Resuming from iteration: {resume_iteration}")
     elif args.auto_resume:
-        resume_iteration = find_latest_save_iteration(config["results_folder"])
+        resume_iteration = find_latest_save_iteration(exp_folder)
         print(f"Resuming from iteration: {resume_iteration}")
     else:
         resume_iteration = 0
 
-    exp_folder = os.path.join(config["results_folder"], exp_name) #, current_time)
+    
     ckpt_folder = os.path.join(exp_folder, "checkpoints")
     os.makedirs(ckpt_folder, exist_ok=True)
 
