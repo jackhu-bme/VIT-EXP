@@ -394,7 +394,7 @@ class CTClipTrainer(nn.Module):
         )
         
         # register for checkpointing
-        self.accelerator.register_for_checkpointing(self.scheduler)
+        # self.accelerator.register_for_checkpointing(self.scheduler)
            
 
         self.save_model_every = trainer_config["save_model_every"]
