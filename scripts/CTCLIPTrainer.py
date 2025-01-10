@@ -422,6 +422,7 @@ class CTClipTrainer(nn.Module):
             self.load(resume_path)
             # restore the state of the dataloader
             self.dl = accelerate.skip_first_batches(self.dl, self.steps)
+            print(f"after loading, steps: {self.steps}")
         elif auto_resume:
             # try to find the lastest checkpoint that is saved properly and could be loaded
             ckpt_list = sorted([*self.results_folder.glob('checkpoint_*')])
