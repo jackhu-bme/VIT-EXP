@@ -289,13 +289,12 @@ class CTClipTrainer(nn.Module):
     ):
         super().__init__()
         ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
-        accelerate_kwargs = create_accelerate_kwargs(config)
         kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=3600))
         if accelerator_kwargs is None:
-            self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], **accelerate_kwargs)
+            self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], **accelerator_kwargs)
         else:
             print(f"accelerator kwargs: {accelerator_kwargs}")
-            self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], **accelerate_kwargs)
+            self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], **accelerator_kwargs)
 
         # init the wandb tracker
         if wandb_init_kwargs is not None:
