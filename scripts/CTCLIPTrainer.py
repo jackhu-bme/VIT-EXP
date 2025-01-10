@@ -415,14 +415,16 @@ class CTClipTrainer(nn.Module):
             self.print(f"resuming the sheduler and the model from {resume_path}")
             # set the step according to the model's name
             self.print(f"before loading, steps: {self.steps}")
+            self.load(resume_path)
+            print(f"after loading, steps: {self.steps}")
             # self.resume_step = int(os.path.basename(resume_path).split(".")[-2]) # this is for old ctclip version checkpoints
             self.resume_step = int(resume_path.split("_")[1].split(".")[0])
             self.steps += self.resume_step
             self.print(f"resuming from step {self.steps} according to the model's name: {resume_path}")
-            self.load(resume_path)
+            
             # restore the state of the dataloader
             self.dl = accelerate.skip_first_batches(self.dl, self.steps)
-            print(f"after loading, steps: {self.steps}")
+            
         elif auto_resume:
             # try to find the lastest checkpoint that is saved properly and could be loaded
             ckpt_list = sorted([*self.results_folder.glob('checkpoint_*')])
