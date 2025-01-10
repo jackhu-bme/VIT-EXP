@@ -95,7 +95,7 @@ def main(config, args):
     accelerator_kwargs["gradient_accumulation_steps"] = config["trainer"].get("gradient_accumulation_steps", 1)
 
     wandb_init_kwargs = {
-        "project": project_name,
+        "project_name": project_name,
         "init_kwargs": {"wandb": {
             "name": exp_name,
             "mode": wandb_mode,
