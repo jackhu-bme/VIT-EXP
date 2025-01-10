@@ -742,6 +742,7 @@ class CTClipTrainer(nn.Module):
             if self.is_main:
                 print(f"save model at step: {steps}, output_dir: {self.results_folder}")
                 self.accelerator.save_state(output_dir=self.results_folder)
+                print(f"successfully saved model at step: {steps}")
                 # model_path = str(self.results_folder / f'CTClip.{steps}.pt')
                 # self.accelerator.save(state_dict, model_path)
         self.steps += 1
