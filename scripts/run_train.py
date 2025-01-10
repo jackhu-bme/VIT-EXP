@@ -18,9 +18,9 @@ import wandb
 
 import time
 
-from accelerate import Accelerator
+from accelerate import Accelerator, DistributedDataParallelKwargs
 
-from accelerate.utils import ProjectConfiguration
+from accelerate.utils import ProjectConfiguration, InitProcessGroupKwargs
 # ProjectConfiguration
 
 
@@ -86,7 +86,11 @@ def main(config, args):
         total_limit=10000            
         )
 
-    accelerator = Accelerator(log_with="wandb", 
+    ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
+    kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=3600))
+
+    accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], 
+                              log_with="wandb", 
                               project_config=project_config, 
                               gradient_accumulation_steps=config["trainer"].get("gradient_accumulation_steps", 1))
 
