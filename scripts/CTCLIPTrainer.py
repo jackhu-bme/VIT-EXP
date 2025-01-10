@@ -280,7 +280,8 @@ class CTClipTrainer(nn.Module):
         self,
         CTClip: CTCLIP,
         tokenizer=None,
-        accelerator=None,
+        accelerator_kwargs=None,
+        wandb_init_kwargs=None,
         config=None,
         results_folder = '/shares/menze.dqbm.uzh/ihamam/ctclip/',
         resume_path = None,
@@ -290,10 +291,15 @@ class CTClipTrainer(nn.Module):
         ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
         accelerate_kwargs = create_accelerate_kwargs(config)
         kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=3600))
-        if accelerator is None:
+        if accelerator_kwargs is None:
             self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], **accelerate_kwargs)
         else:
-            self.accelerator = accelerator
+            self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], **accelerate_kwargs)
+
+        # init the wandb tracker
+        if wandb_init_kwargs is not None:
+            self.accelerator.init_trackers(**wandb_init_kwargs)
+
         self.CTClip = CTClip
         if tokenizer != None:
             self.tokenizer=tokenizer
@@ -733,7 +739,7 @@ class CTClipTrainer(nn.Module):
         #             del output
 
 
-        if not (steps % self.save_model_every):
+        if not ((steps + 1) % self.save_model_every):
             # state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
             # the following code will also work, and only get state_dict on rank0
             # save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
@@ -759,3 +765,5 @@ class CTClipTrainer(nn.Module):
                 logs = self.train_step()
                 log_fn(logs)
                 pbar.update(1)
+        self.accelerator.wait_for_everyone() # todo: check if this is necessary
+        self.accelerator.end_training()

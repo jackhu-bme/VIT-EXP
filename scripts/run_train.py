@@ -88,26 +88,21 @@ def main(config, args):
         total_limit=10000            
         )
 
-    ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
-    kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=3600))
+    accelerator_kwargs = {}
 
-    accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], 
-                              log_with="wandb", 
-                              project_config=project_config, 
-                              gradient_accumulation_steps=config["trainer"].get("gradient_accumulation_steps", 1))
+    accelerator_kwargs["log_with"] = "wandb"
+    accelerator_kwargs["project_config"] = project_config
+    accelerator_kwargs["gradient_accumulation_steps"] = config["trainer"].get("gradient_accumulation_steps", 1)
 
-
-    accelerator.init_trackers(
-        project_name = project_name,
-        init_kwargs = {"wandb": {
+    wandb_init_kwargs = {
+        "project": project_name,
+        "init_kwargs": {"wandb": {
             "name": exp_name,
             "mode": wandb_mode,
             "dir": wandb_folder,
             "config": config
-        }
-        }
-    )
-
+        }}
+    }
 
     txt_folder = os.path.join(exp_folder, "txt")
     os.makedirs(txt_folder, exist_ok=True)
@@ -173,7 +168,8 @@ def main(config, args):
         clip,
         config=config,
         tokenizer=tokenizer,
-        accelerator=accelerator,
+        accelerator_kwargs = accelerator_kwargs,
+        wandb_init_kwargs = wandb_init_kwargs,
         # reports_file_train= config["reports_file_train"],
         # reports_file_valid= config["reports_file_valid"],
         # metadata_train= config["metadata_train"],
@@ -197,7 +193,6 @@ def main(config, args):
         )
 
     trainer.train()
-    accelerator.end_training()
 
 
 if __name__ == "__main__":
