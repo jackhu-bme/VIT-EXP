@@ -369,7 +369,10 @@ class CTClipTrainer(nn.Module):
         # )
 
         self.dl_iter_list = [cycle(self.accelerator.prepare_data_loader(dl)) for dl in self.dl_list]
-        self.dl_step_list = [0, ] * len(self.dl_list)
+
+        self.register_buffer('dl_step_list', torch.Tensor([0, ] * len(self.dl_list)))
+        # self.dl_step_list = [0, ] * len(self.dl_list)
+
         # self.valid_dl_iter_list = [cycle(self.accelerator.prepare_data_loader(valid_dl)) for valid_dl in self.valid_dl_list]
         # self.valid_dl_step_list = [0, ] * len(self.valid_dl_list)
 
@@ -417,42 +420,27 @@ class CTClipTrainer(nn.Module):
             self.print(f"before loading, steps: {self.steps}")
             self.load(resume_path)
             print(f"after loading, steps: {self.steps}")
-            # self.resume_step = int(os.path.basename(resume_path).split(".")[-2]) # this is for old ctclip version checkpoints
-            self.resume_step = int(resume_path.split("_")[1].split(".")[0])
-            self.steps += self.resume_step
-            self.print(f"resuming from step {self.steps} according to the model's name: {resume_path}")
+
             
             # restore the state of the dataloader
-            self.dl = accelerate.skip_first_batches(self.dl, self.steps)
+            new_dl_list = []
+            for i, dl in enumerate(self.dl_list):
+                new_dl_list.append(self.accelerator.skip_first_batches(dl, self.dl_step_list[i].item()))
+            self.dl_list = new_dl_list
+            self.dl_iter_list = [cycle(self.accelerator.prepare_data_loader(dl)) for dl in self.dl_list]
             
         elif auto_resume:
             self.accelerator.load_state()
-            # # try to find the lastest checkpoint that is saved properly and could be loaded
-            # ckpt_list = sorted([*self.results_folder.glob('checkpoint_*')])
-            # # sort the ckpt_list according to the step
-            # ckpt_list = sorted(ckpt_list, key=lambda x: int(x.name.split("_")[1].split(".")[0]))
-            # chosen_ckpt = None
-            # for ckpt in ckpt_list:
-            #     try:
-            #         self.print(f"try to load from checkpoint: {ckpt}")
-            #         self.load_state(ckpt)
-            #         self.print(f"successfully loaded from checkpoint: {ckpt}")
-            #         chosen_ckpt = ckpt
-            #         break
-            #     except Exception as e:
-            #         self.print(f"failed to load from checkpoint: {ckpt}, error: {e}")
-            #         continue
-            # if chosen_ckpt is not None:
-            #     self.print(f"resuming from step {self.steps} according to the model's name: {chosen_ckpt}")
-            #     self.resume_step = int(ckpt.name.split("_")[1].split(".")[0])
-            #     self.steps += self.resume_step
-            #     self.dl = accelerate.skip_first_batches(self.dl, self.steps)
-            # else:
-            #     self.resume_step = None
-            #     print(f"no valid checkpoint found for auto resume, start from scratch")
-            #     # raise ValueError("no valid checkpoint found for auto resume")
+
+            # restore the state of the dataloader
+            new_dl_list = []
+            for i, dl in enumerate(self.dl_list):
+                new_dl_list.append(self.accelerator.skip_first_batches(dl, self.dl_step_list[i].item()))
+            self.dl_list = new_dl_list
+            self.dl_iter_list = [cycle(self.accelerator.prepare_data_loader(dl)) for dl in self.dl_list]
         else:
-            self.resume_step = None
+            print(f"nothing to resume, the auto_resume: {auto_resume}, and resume_path: {resume_path}.")
+            print(f"training from scratch")
         
         self.wandb_logger = self.accelerator.get_tracker("wandb")
         
@@ -501,8 +489,8 @@ class CTClipTrainer(nn.Module):
     #         print(f"successfully loaded the model state dict after removing the module prefix")
 
     def load(self, path):
-        path = Path(path)
-        assert path.exists()
+        # path = Path(path)
+        # assert path.exists()
         self.accelerator.load_state(path)
         # pkg = torch.load(path)
 
@@ -591,12 +579,13 @@ class CTClipTrainer(nn.Module):
         acc_steps_list = self.dataset_sampler.sample(self.steps.item())
         vis_list = [False, ] * len(self.dl_list)
         for i in range(len(self.vis_train_interval)):
-            if self.vis_train_interval[i] > 0 and self.dl_step_list[i] % self.vis_train_interval[i] == 0:
+            if self.vis_train_interval[i] > 0 and self.dl_step_list[i].item() % self.vis_train_interval[i] == 0:
                 vis_list[i] = True
         loss_dict = {}
         for i, acc_step in enumerate(acc_steps_list):
             for j in range(acc_step):
                 loss_dict_single = self.train_step_single_dataset(dataset_index=i, vis = vis_list[i] and j==0) # only vis for the first step in acc_step
+                self.dl_step_list[i] += 1
                 loss_dict = self.loss_update(loss_dict, loss_dict_single)
         return loss_dict
     

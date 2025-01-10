@@ -16,13 +16,7 @@ import numpy as np
 import os
 
 
-import wandb
-
-import time
-
-from accelerate import Accelerator, DistributedDataParallelKwargs
-
-from accelerate.utils import ProjectConfiguration, InitProcessGroupKwargs
+from accelerate.utils import ProjectConfiguration
 # ProjectConfiguration
 
 
@@ -65,13 +59,40 @@ def create_img_encoder(config):
         )
     return image_encoder
 
+def find_latest_save_iteration(project_dir):
+    # the ckpt dir have many dirs: checkpoints/checkpoint_0/1/2/... find the biggest number
+    # return the biggest number
+    names = os.listdir(os.path.join(project_dir, "checkpoints"))
+    names = [name for name in names if name.startswith("checkpoint_")]
+    return max([int(name.split("_")[-1]) for name in names])
 
+def read_resume_dir_iteration(resume_dir):
+    if resume_dir.endswith("/"):
+        resume_dir = resume_dir[:-1]
+    if resume_dir.endswith("checkpoints"):
+        return find_latest_save_iteration(resume_dir)
+    else:
+        try:
+            prefix, number = resume_dir.split("/")[-1].split("_")
+            assert prefix == "checkpoint"
+            return int(number)
+        except:
+            raise ValueError(f"Invalid resume dir: {resume_dir}")
 
 def main(config, args):
 
     project_name = config.get("project_name", "CT-CLIP-EXP")
     exp_name = config.get("exp_name", "train_from_scratch_default")
     # current_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+
+    if args.resume:
+        resume_iteration = read_resume_dir_iteration(args.resume)
+        print(f"Resuming from iteration: {resume_iteration}")
+    elif args.auto_resume:
+        resume_iteration = find_latest_save_iteration(config["results_folder"])
+        print(f"Resuming from iteration: {resume_iteration}")
+    else:
+        resume_iteration = 0
 
     exp_folder = os.path.join(config["results_folder"], exp_name) #, current_time)
     ckpt_folder = os.path.join(exp_folder, "checkpoints")
@@ -83,9 +104,11 @@ def main(config, args):
     wandb_mode = "offline" if args.debug else "online"
 
     project_config = ProjectConfiguration(
-                
         automatic_checkpoint_naming=True,  
-        total_limit=10000            
+        total_limit=10000,
+        iteration=resume_iteration,  
+        # set the iteration to the latest/your set checkpoint
+        # this is accelerator.save_iteration, not the training steps! indicating the checkpoint save path (for auto checkpoint naming)
         )
 
     accelerator_kwargs = {}
