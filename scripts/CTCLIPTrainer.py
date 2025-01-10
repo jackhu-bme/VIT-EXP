@@ -280,39 +280,20 @@ class CTClipTrainer(nn.Module):
         self,
         CTClip: CTCLIP,
         tokenizer=None,
+        accelerator=None,
         config=None,
-        # num_train_steps,
-        # batch_size,
-        # data_train = "train",
-        # data_valid = "valid",
-        # use_seg = False,
-        # seg_data_train = None,
-        # seg_data_valid = None,
-        # seg_mask_train = None,
-        # seg_mask_valid = None,
-        # balance_report_seg = 1.0,
-        # reports_file_train = "data_reports.xslx",
-        # reports_file_valid = "data_reports.xslx",
-        # labels = "labels.csv",
-        # tokenizer = None,
-        # lr = 1.25e-6,
-        # wd = 0.,
-        # max_grad_norm = 0.5,
-        # save_results_every = 1000,
-        # save_model_every = 1000 ,
         results_folder = '/shares/menze.dqbm.uzh/ihamam/ctclip/',
-        # num_workers = 8,
-        # accelerate_kwargs: dict = dict(),
         resume_path = None,
         auto_resume = False,
-        # metadata_train = "train_metadata.csv",
-        wandb_logger = None,
     ):
         super().__init__()
         ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
         accelerate_kwargs = create_accelerate_kwargs(config)
         kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=3600))
-        self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], **accelerate_kwargs)
+        if accelerator is None:
+            self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], **accelerate_kwargs)
+        else:
+            self.accelerator = accelerator
         self.CTClip = CTClip
         if tokenizer != None:
             self.tokenizer=tokenizer
@@ -416,7 +397,7 @@ class CTClipTrainer(nn.Module):
 
         if len([*self.results_folder.glob('**/*')]) > 0: #and yes_or_no('do you want to clear previous experiment checkpoints and results?'):
             # rmtree(str(self.results_folder))
-            print(f"detecting previous experiment checkpoints and results, resume from them by default")
+            print(f"detecting previous experiment checkpoints and results, the auto_resume: {auto_resume}")
             print(f"results folder: {self.results_folder}")
 
         self.results_folder.mkdir(parents=True, exist_ok=True)
@@ -463,7 +444,7 @@ class CTClipTrainer(nn.Module):
         else:
             self.resume_step = None
         
-        self.wandb_logger = wandb_logger
+        self.wandb_logger = self.accelerator.get_tracker("wandb")
         
 
     def create_dataset_sampler(self, config):

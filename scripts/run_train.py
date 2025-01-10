@@ -86,7 +86,10 @@ def main(config, args):
         total_limit=10000            
         )
 
-    accelerator = Accelerator(log_with="wandb", project_config=project_config)
+    accelerator = Accelerator(log_with="wandb", 
+                              project_config=project_config, 
+                              gradient_accumulation_steps=config["trainer"].get("gradient_accumulation_steps", 1))
+
 
     accelerator.init_trackers(
         project_name = project_name,
@@ -110,7 +113,6 @@ def main(config, args):
     os.system("cp " + os.path.join(txt_folder, "git_status.txt") + " " + os.path.join(wandb_folder, "git_status.txt"))
     os.system("cp " + os.path.join(txt_folder, "git_log.txt") + " " + os.path.join(wandb_folder, "git_log.txt"))
 
-    wandb_logger = accelerator.get_tracker("wandb")
 
     # fix the random seed based on the config args
     seed = int(config["random_seed"])
@@ -157,10 +159,15 @@ def main(config, args):
     #     clip.load(resume_path)
 
     # also resume the trainer
+
+    # now try to define the accelerator within the run_trian python script!
+
+
     trainer = CTClipTrainer(
         clip,
         config=config,
         tokenizer=tokenizer,
+        accelerator=accelerator,
         # reports_file_train= config["reports_file_train"],
         # reports_file_valid= config["reports_file_valid"],
         # metadata_train= config["metadata_train"],
@@ -180,7 +187,6 @@ def main(config, args):
         # num_train_steps = config["num_train_steps"],
         # num_workers = config["num_workers"],
         # accelerate_kwargs = {"gradient_accumulation_steps": config["gradient_accumulation_steps"]},
-        wandb_logger = wandb_logger,
         resume_path = resume_path,
         )
 
