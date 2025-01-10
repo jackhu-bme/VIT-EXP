@@ -801,7 +801,7 @@ class CTCLIP(nn.Module):
                 # get the prompt logits for the i-th class
                 prompt_logits = prompt_logits_batch[:, i, :] # [B, n_hidden_dim=16]
                 # continue_train = input("Continue training? 4")
-                sim = F.cosine_similarity(seg_preds, prompt_logits.unsqueeze(1), dim=-1)
+                sim = (F.cosine_similarity(seg_preds, prompt_logits.unsqueeze(1), dim=-1) + 1) / 2
                 # print(f"sim shape: {sim.shape}") # (B, L)
                 # calculate the distance between similarity and gt, make the right class close to 1, wrong class close to 0
                 # just use l2 loss for now
@@ -827,7 +827,7 @@ class CTCLIP(nn.Module):
             # calculate the cosine similarity for each class
             B, L, C = seg_mask_flatten.shape
             open_seg_loss = 0.
-            sim_all = F.cosine_similarity(seg_preds.unsqueeze(2), prompt_logits_batch.unsqueeze(1), dim=-1) # [B, L, C]
+            sim_all = (F.cosine_similarity(seg_preds.unsqueeze(2), prompt_logits_batch.unsqueeze(1), dim=-1) + 1) / 2 # [B, L, C]
             # sim_logits = torch.einsum('bld,bcd->blc', seg_preds, prompt_logits_batch)
             open_seg_loss = self.bce_criterion(sim_all.reshape(-1, C), seg_mask_flatten.reshape(-1, C))
             return open_seg_loss 
@@ -838,7 +838,7 @@ class CTCLIP(nn.Module):
             B, L, C = seg_mask_flatten.shape
             open_seg_loss = 0.
             # continue_train = input("Continue training? 3")
-            sim_all = F.cosine_similarity(seg_preds.unsqueeze(2), prompt_logits_batch.unsqueeze(1), dim=-1) # [B, L, C]
+            sim_all = (F.cosine_similarity(seg_preds.unsqueeze(2), prompt_logits_batch.unsqueeze(1), dim=-1) + 1) / 2 # [B, L, C]
             p = sim_all.reshape(-1, C)
             targets = seg_mask_flatten.reshape(-1, C)
             bce_loss = self.bce_criterion(p, targets, reduction='none')
