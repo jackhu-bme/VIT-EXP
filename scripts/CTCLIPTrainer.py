@@ -752,8 +752,7 @@ class CTClipTrainer(nn.Module):
         # device = next(self.CTClip.parameters()).device
         # device = torch.device('cuda')
         with tqdm(total=self.num_train_steps, desc='Training', unit='step') as pbar:
-            if self.resume_step is not None:
-                pbar.update(self.resume_step)
+            pbar.update(self.steps.item().int())
             while self.steps < self.num_train_steps:
                 logs = self.train_step()
                 log_fn(logs)
