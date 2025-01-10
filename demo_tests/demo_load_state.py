@@ -16,8 +16,10 @@ def find_latest_save_iteration(project_dir):
 
 project_dir = "./training_checkpoints/with_step"
 
-
-latest_save_iter = find_latest_save_iteration(project_dir)
+try:
+    latest_save_iter = find_latest_save_iteration(project_dir)
+except:
+    latest_save_iter = 0
 
 # Define the ProjectConfiguration
 config = ProjectConfiguration(automatic_checkpoint_naming=True, total_limit=1000, iteration=latest_save_iter)
@@ -58,7 +60,9 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
 # Instantiate the model, loss function, and optimizer
 model = LinearModel()
-optimizer = optim.SGD(model.parameters(), lr=0.01)
+# optimizer = optim.SGD(model.parameters(), lr=0.01)
+# adam optimizer
+optimizer = optim.Adam(model.parameters(), lr=0.01)
 loss_fn = nn.MSELoss()
 
 # Prepare everything with the accelerator
@@ -70,7 +74,7 @@ print(f"1 accelerator save iteration: {accelerator.save_iteration}")
 # load the state
 
 # Load the state from the specified project directory
-accelerator.load_state()
+# accelerator.load_state()
 
 
 
