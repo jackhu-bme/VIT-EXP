@@ -294,6 +294,7 @@ class CTClipTrainer(nn.Module):
         if accelerator_kwargs is None:
             self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], **accelerate_kwargs)
         else:
+            print(f"accelerator kwargs: {accelerator_kwargs}")
             self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], **accelerate_kwargs)
 
         # init the wandb tracker
