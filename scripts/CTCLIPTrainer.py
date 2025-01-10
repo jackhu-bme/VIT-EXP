@@ -427,7 +427,7 @@ class CTClipTrainer(nn.Module):
             for i, dl in enumerate(self.dl_list):
                 new_dl_list.append(self.accelerator.skip_first_batches(dl, self.dl_step_list[i].item()))
             self.dl_list = new_dl_list
-            self.dl_iter_list = [cycle(self.accelerator.prepare_data_loader(dl)) for dl in self.dl_list]
+            self.dl_iter_list = [cycle(dl) for dl in self.dl_list]
             
         elif auto_resume:
             self.accelerator.load_state()
@@ -437,7 +437,7 @@ class CTClipTrainer(nn.Module):
             for i, dl in enumerate(self.dl_list):
                 new_dl_list.append(self.accelerator.skip_first_batches(dl, self.dl_step_list[i].item()))
             self.dl_list = new_dl_list
-            self.dl_iter_list = [cycle(self.accelerator.prepare_data_loader(dl)) for dl in self.dl_list]
+            self.dl_iter_list = [cycle(dl) for dl in self.dl_list]
         else:
             print(f"nothing to resume, the auto_resume: {auto_resume}, and resume_path: {resume_path}.")
             print(f"training from scratch")
