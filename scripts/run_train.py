@@ -3,6 +3,8 @@ from transformers import BertTokenizer, BertModel
 from ct_clip import CTCLIP, TextTransformer
 from CTCLIPTrainer import CTClipTrainer
 
+from datetime import timedelta
+
 import yaml
 
 import argparse
