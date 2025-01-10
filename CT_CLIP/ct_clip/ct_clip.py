@@ -641,6 +641,7 @@ class CTCLIP(nn.Module):
             self.open_seg_loss_down_factor = int(config.get("open_seg_loss_down_factor", 1))
             self.open_seg_loss_hyper_config = config.get("open_seg_loss_hyper_config", {})
             self.bce_criterion = nn.BCELoss()
+            self.bce_no_reduction_criterion = nn.BCELoss(reduction='none')
         else:
             self.open_seg_head = None
             self.open_text_head = None
@@ -841,7 +842,8 @@ class CTCLIP(nn.Module):
             sim_all = (F.cosine_similarity(seg_preds.unsqueeze(2), prompt_logits_batch.unsqueeze(1), dim=-1) + 1) / 2 # [B, L, C]
             p = sim_all.reshape(-1, C)
             targets = seg_mask_flatten.reshape(-1, C)
-            bce_loss = self.bce_criterion(p, targets, reduction='none')
+            # bce_loss = self.bce_criterion(p, targets, reduction='none')
+            bce_loss = self.bce_no_reduction_criterion(p, targets)
 
             p_t = p * targets + (1 - p) * (1 - targets)
     
