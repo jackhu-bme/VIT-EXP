@@ -45,7 +45,7 @@ class LinearModel(nn.Module):
     def __init__(self):
         super(LinearModel, self).__init__()
         self.linear = nn.Linear(1, 1)
-        self.register_buffer("step", torch.tensor(0))
+        # self.register_buffer("step", torch.tensor(0))
 
     def forward(self, x):
         return self.linear(x)
@@ -100,8 +100,8 @@ for epoch in range(num_epochs):
         
         # Forward pass
         predictions = model(x_batch)
-        print(f"Step: {model.step}")
-        model.step += 1
+        # print(f"Step: {model.step}")
+        # model.step += 1
         loss = loss_fn(predictions, y_batch)
         
         # Backward pass
