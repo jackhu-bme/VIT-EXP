@@ -918,7 +918,7 @@ class CTCLIP(nn.Module):
         seg_preds = seg_preds.permute(0, 7, 1, 4, 2, 5, 3, 6).reshape(b, -1, D, W, H) # B, C, D, W, H as voxel embeddings
         # downsample the seg_logits
         seg_preds = self.random_downsample(seg_preds, self.open_seg_loss_down_factor, start_index=start_index)[0]
-        seg_preds = seg_preds.permute((0, 2, 3, 4, 1)).view(B_seg, -1, low_latent_dim) # (B, L, n_hidden_dim=16)
+        seg_preds = seg_preds.permute((0, 2, 3, 4, 1)).reshape(B_seg, -1, low_latent_dim) # (B, L, n_hidden_dim=16)
         open_seg_loss = self.open_seg_loss(seg_preds, seg_mask_flatten, prompt_logits_batch) # keep the start index same
         loss_dict["open_seg_loss"] = open_seg_loss.item()
         return_list = [open_seg_loss, loss_dict]
