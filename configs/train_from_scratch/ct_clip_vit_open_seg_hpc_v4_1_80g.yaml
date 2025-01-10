@@ -92,11 +92,9 @@ arch:
 ct_clip_arch:
   use_seg: False
   use_open_seg: True
-  open_seg_loss_type: clip_loss
-  # open_seg_loss_temp: 0.1 # temperature for clip loss
+  open_seg_loss_type: clip_bce_loss
   open_seg_loss_down_factor: 4
-  open_seg_loss_hyper_config:
-    temp: 0.1
+  open_seg_loss_hyper_config: {}
   open_seg_head:
     n_layers: 2
     layer_type: mlp
