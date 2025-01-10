@@ -903,7 +903,7 @@ class CTCLIP(nn.Module):
             # visualize the normed similarity and the gt mask for each class
             with torch.no_grad():
                 vis_dict = {}
-                for i in range(C):
+                for i in range(C_seg):
                     # get the prompt logits for the i-th class
                     prompt_logits = prompt_logits_batch[:, i, :] # [B, n_hidden_dim=16]
                     # continue_train = input("Continue training? 4")
@@ -912,7 +912,7 @@ class CTCLIP(nn.Module):
                     mask_gt_vis_0 = seg_mask_flatten[:, :, i].reshape(B_seg, D_down, W_down, H_down)[0]
                     down_img_vis_0 = down_img[0, 0].reshape(D_down, W_down, H_down)
                     # vis the similarity, gt mask, and downsampled image
-                    img_name = f"{img_prefix}_channel_{i}"
+                    img_name = f"{img_prefix}_channel_{i}" if img_prefix else f"channel_{i}"
                     vis_res = vis_3d_img_list([down_img_vis_0, sim_vis_0, mask_gt_vis_0], img_name=img_name)
                     # update the vis dict with each key-value pair
                     vis_dict.update(vis_res)
