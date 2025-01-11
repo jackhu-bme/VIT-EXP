@@ -543,7 +543,7 @@ class CTClipTrainer(nn.Module):
         batch = next(self.dl_iter_list[dataset_index])
         print(f"finish data loading batch for dataset: {dataset_index} for step: {self.steps.item()} on process id:{self.accelerator.process_index}")
         batch = self.prepare_batch(batch)
-        print(f"finish data preparation for dataset: {dataset_index} for step: {self.steps.item()} on process id:{self.accelerator.process_index})
+        print(f"finish data preparation for dataset: {dataset_index} for step: {self.steps.item()} on process id:{self.accelerator.process_index}")
         #video = video
         
         with self.accelerator.accumulate(self.CTClip):
