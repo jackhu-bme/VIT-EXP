@@ -736,17 +736,17 @@ class CTClipTrainer(nn.Module):
 
 
         if not ((steps + 1) % self.save_model_every):
-            # state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
+            state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
             # the following code will also work, and only get state_dict on rank0
             # save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
             # with FSDP.state_dict_type(self.CTCLIP, StateDictType.FULL_STATE_DICT, save_policy):
             #     state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
             if self.is_main:
-                self.print(f"save model at step: {steps}, output_dir: {self.results_folder}")
-                self.accelerator.save_state()
-            # print(f"successfully saved model at step: {steps}")
-            # # model_path = str(self.results_folder / f'CTClip.{steps}.pt')
-            # # self.accelerator.save(state_dict, model_path)
+                # self.print(f"save model at step: {steps}, output_dir: {self.results_folder}")
+                # self.accelerator.save_state()
+                # print(f"successfully saved model at step: {steps}")
+                model_path = str(self.results_folder / f'CTClip.{steps}.pt')
+                self.accelerator.save(state_dict, model_path)
         
         # sync
         print(f"step {steps} finished for current process:{self.accelerator.local_process_index} before waiting for everyone")
