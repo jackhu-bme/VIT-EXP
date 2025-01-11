@@ -747,6 +747,12 @@ class CTClipTrainer(nn.Module):
             # print(f"successfully saved model at step: {steps}")
             # # model_path = str(self.results_folder / f'CTClip.{steps}.pt')
             # # self.accelerator.save(state_dict, model_path)
+        
+        # sync
+        print(f"step {steps} finished for current process:{self.accelerator.local_process_index} before waiting for everyone")
+        self.accelerator.wait_for_everyone()
+        print(f"step {steps} finished for current process:{self.accelerator.local_process_index} after waiting for everyone")
+        
         # print(f"steps: {steps} finished for current process:{self.accelerator.local_process_index}")
         self.steps += 1
         return logs
