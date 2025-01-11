@@ -64,7 +64,7 @@ def radgenome_image_open_seg_test_ten_images(model):
     device = torch.device('cuda:0')
 
     for i, batch in enumerate(valid_dl):
-        if i >= 10:
+        if i >= 3: # only visualize 3 images
             break
         seg_mask = batch["seg_mask"].to(device)
         seg_data = batch["image"].to(device)
@@ -744,7 +744,7 @@ class CTClipTrainer(nn.Module):
             # print(f"successfully saved model at step: {steps}")
             # # model_path = str(self.results_folder / f'CTClip.{steps}.pt')
             # # self.accelerator.save(state_dict, model_path)
-        print(f"steps: {steps} finished for current process:{self.accelerator.local_process_index}")
+        # print(f"steps: {steps} finished for current process:{self.accelerator.local_process_index}")
         self.steps += 1
         return logs
 
@@ -758,5 +758,4 @@ class CTClipTrainer(nn.Module):
                 logs = self.train_step()
                 log_fn(logs)
                 pbar.update(1)
-        self.accelerator.wait_for_everyone() # todo: check if this is necessary
         self.accelerator.end_training()
