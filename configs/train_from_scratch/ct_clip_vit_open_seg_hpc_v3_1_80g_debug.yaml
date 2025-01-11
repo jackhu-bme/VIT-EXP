@@ -13,7 +13,7 @@ trainer:
   save_model_every: 2
   eval_model_every: 2000
   vis_train_every: [-1, 100] # visualization while training, each element is for correpsonding training, dataset
-  sample_val_every: 10 # the interval of visualization for validation on valid dataset
+  sample_val_every: 100 # the interval of visualization for validation on valid dataset
   balance_loss_weight: [1.0, 2.0]
 
 
@@ -93,8 +93,10 @@ ct_clip_arch:
   use_seg: False
   use_open_seg: True
   open_seg_loss_type: clip_loss
-  open_seg_loss_temp: 0.1 # temperature for clip loss
+  # open_seg_loss_temp: 0.1 # temperature for clip loss
   open_seg_loss_down_factor: 4
+  open_seg_loss_hyper_config:
+    temp: 0.1
   open_seg_head:
     n_layers: 2
     layer_type: mlp
