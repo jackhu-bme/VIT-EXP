@@ -52,7 +52,7 @@ def radgenome_image_open_seg_test_ten_images(model):
     data_config_dict["seg_mask_prompt_type"] = "this_is"
     data_config_dict["type"] = "imageopenseg"
     data_config_dict["batch_size"] = 1
-    data_config_dict["num_workers"] = 0
+    data_config_dict["num_workers"] = 8
 
     valid_dl = create_valid_dl_list([data_config_dict])[0]
 
@@ -539,6 +539,7 @@ class CTClipTrainer(nn.Module):
 
 
     def train_step_single_dataset(self, dataset_index=None, vis=False):
+        print(f"start training on dataset: {dataset_index} for step: {self.steps.item()}")
         batch = next(self.dl_iter_list[dataset_index])
         batch = self.prepare_batch(batch)
         #video = video
