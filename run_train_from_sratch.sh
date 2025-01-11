@@ -1,4 +1,4 @@
-accelerate launch scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v2_1_80g.yaml  #--auto_resume
+accelerate launch scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v5_1_80g.yaml  #--auto_resume
 # accelerate launch scripts/run_train.py --config ct_clip_ori_hpc_1.yaml
 
 # debug

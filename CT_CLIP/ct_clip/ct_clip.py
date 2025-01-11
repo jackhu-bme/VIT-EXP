@@ -911,7 +911,7 @@ class CTCLIP(nn.Module):
         seg_logits = self.open_seg_head(tokens_to_seg)
         # continue_train = input("Continue training? 2")
         # reshape the logits to the original shape, with each pixel
-        seg_preds = seg_logits.reshape(b, d, w, h, p_d, p_w, p_h, -1)
+        seg_preds = seg_logits.view(b, d, w, h, p_d, p_w, p_h, -1)
         seg_preds = seg_preds.permute(0, 7, 1, 4, 2, 5, 3, 6).reshape(b, -1, D, W, H) # B, C, D, W, H as voxel embeddings
         # downsample the seg_logits
         seg_preds = self.random_downsample(seg_preds, self.open_seg_loss_down_factor, start_index=start_index)[0]
