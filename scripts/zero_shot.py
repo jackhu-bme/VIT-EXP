@@ -495,7 +495,7 @@ class CTClipInferenceFast(nn.Module):
     def is_main(self):
         return self.accelerator.is_main_process
 
-    def train_step(self, save_results=True, return_dict=False):
+    def train_step(self, save_results=True, return_dict=False, debug=False):
         steps = int(self.steps.item())
         # logs
         logs = {}
@@ -510,8 +510,8 @@ class CTClipInferenceFast(nn.Module):
             
             for i in tqdm.tqdm(range(len(self.ds))):
                 # print(f"fast inference on ct clip, batch {i}")
-                # if i > 10:
-                #     break
+                if i > 10 and debug:
+                    break
                 valid_data, text, onehotlabels, acc_name = next(self.dl_iter)
 
                 valid_data = valid_data.cuda()
@@ -592,7 +592,8 @@ class CTClipInferenceFast(nn.Module):
     def infer_return_res_dict(self):
         device = next(self.CTClip.parameters()).device
         device=torch.device('cuda')
-        result_dict = self.train_step(return_dict=True, save_results=False)
+        debug = os.environ.get("CTCLIP_DEBUG", False)
+        result_dict = self.train_step(return_dict=True, save_results=False, debug=debug)
         return result_dict
 
 
@@ -742,8 +743,8 @@ class CTClipInferenceSeg(nn.Module):
             dice_scores = []    # save for each channel, corresponding to each seg label
             
             for i in tqdm.tqdm(range(len(self.ds))):
-                if i > 10:
-                    break # for debug only
+                # if i > 10:
+                #     break # for debug only
                 # try:
                 batch = next(self.dl_iter)
 
