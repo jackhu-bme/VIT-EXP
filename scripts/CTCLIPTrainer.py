@@ -52,7 +52,7 @@ def radgenome_image_open_seg_test_ten_images(model):
     data_config_dict["seg_mask_prompt_type"] = "this_is"
     data_config_dict["type"] = "imageopenseg"
     data_config_dict["batch_size"] = 1
-    data_config_dict["num_workers"] = 0
+    data_config_dict["num_workers"] = 4
 
     valid_dl = create_valid_dl_list([data_config_dict])[0]
 
