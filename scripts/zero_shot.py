@@ -688,7 +688,7 @@ class CTClipInferenceFastMultiGPU(nn.Module):
         self.text_transformer = self.text_transformer.to(torch.device('cuda:0'))
 
         # self.CTClip = nn.DataParallel(self.CTClip)
-        self.CTClip.to(torch.deivce('cuda:0'))
+        self.CTClip.to(torch.device('cuda:0'))
 
         self.visual_transformer = self.CTClip.visual_transformer # get image mebedding using multi-gpu
         self.visual_transformer = self.visual_transformer.to(self.device)
