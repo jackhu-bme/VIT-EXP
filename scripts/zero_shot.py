@@ -788,7 +788,7 @@ class CTClipInferenceFastMultiGPU(nn.Module):
                     break
                 valid_data, text, onehotlabels, acc_name = next(self.dl_iter)
 
-                print(f"valid_data shape: {valid_data.shape} in dp mode inference")
+                # print(f"valid_data shape: {valid_data.shape} in dp mode inference")
 
                 valid_data = valid_data.cuda()
 
@@ -796,7 +796,7 @@ class CTClipInferenceFastMultiGPU(nn.Module):
                 # image_embed = model.visual_transformer(valid_data, return_encoded_tokens=True)
                 image_embed = self.visual_transformer(valid_data, return_encoded_tokens=True)
 
-                print(f"image_embed shape: {image_embed.shape} in dp mode inference")
+                # print(f"image_embed shape: {image_embed.shape} in dp mode inference")
 
                 plotdir = self.result_folder_txt
                 Path(plotdir).mkdir(parents=True, exist_ok=True)
@@ -813,7 +813,7 @@ class CTClipInferenceFastMultiGPU(nn.Module):
                         text_tokens = patho_txtt["text_tokens"]
                         text_embed = patho_txtt["text_embed"]                    
                         output = model.forward_infer(text_tokens, valid_data_split, buffer_text_embed=text_embed, buffer_image_embed=image_embed_split)
-                        print(f"output shape: {output.shape} in dp mode inference")
+                        # print(f"output shape: {output.shape} in dp mode inference")
 
                         output = apply_softmax(output)             
                         # print(f"output: {output}")

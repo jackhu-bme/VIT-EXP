@@ -313,7 +313,7 @@ class CTClipTrainer(nn.Module):
         super().__init__()
         ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
         accelerate_kwargs = create_accelerate_kwargs(config)
-        kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=3600))
+        kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=36000))
         self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], **accelerate_kwargs)
         self.CTClip = CTClip
         if tokenizer != None:
