@@ -812,7 +812,7 @@ class CTClipInferenceFastMultiGPU(nn.Module):
                         # pathology = patho_txtt["pathology"]
                         text_tokens = patho_txtt["text_tokens"]
                         text_embed = patho_txtt["text_embed"]                    
-                        output = model.forward_infer(text_tokens, valid_data_split, buffer_text_embed=text_embed_split, buffer_image_embed=image_embed)
+                        output = model.forward_infer(text_tokens, valid_data_split, buffer_text_embed=text_embed, buffer_image_embed=image_embed_split)
                         print(f"output shape: {output.shape} in dp mode inference")
 
                         output = apply_softmax(output)             
