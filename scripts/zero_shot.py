@@ -782,11 +782,11 @@ class CTClipInferenceFastMultiGPU(nn.Module):
             realalltmp=[]
             accession_names=[]
             
-            for i in tqdm.tqdm(range(len(self.dl_iter))):
+            for i in tqdm.tqdm(range(len(self.dl))):
                 # print(f"fast inference on ct clip, batch {i}")
                 if i > 10 and debug:
                     break
-                valid_data, text, onehotlabels, acc_name = next(self.dl_iter)
+                valid_data, text, onehotlabels, acc_name = next(self.dl)
 
                 print(f"valid_data shape: {valid_data.shape} in dp mode inference")
 
