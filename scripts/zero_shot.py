@@ -687,8 +687,11 @@ class CTClipInferenceFastMultiGPU(nn.Module):
         self.text_transformer = self.CTClip.text_transformer # use single gpu to get the text embedding as they are used only once
         self.text_transformer = self.text_transformer.to(torch.device('cuda:0'))
 
-        self.CTClip = nn.DataParallel(self.CTClip)
+        # self.CTClip = nn.DataParallel(self.CTClip)
         self.CTClip.to(self.device)
+
+        self.visual_transformer = self.CTClip.visual_transformer # get image mebedding using multi-gpu
+        self.visual_transformer = self.visual_transformer.to(self.deivce)
         
         self.lr_scheduler = CosineAnnealingWarmUpRestarts(self.optim,
                                                   T_0=4000000,    # Maximum number of iterations
@@ -790,7 +793,11 @@ class CTClipInferenceFastMultiGPU(nn.Module):
                 valid_data = valid_data.cuda()
 
                 # enc_image= self.visual_transformer(image, return_encoded_tokens=True)
-                image_embed = model.visual_transformer(valid_data, return_encoded_tokens=True)
+                # image_embed = model.visual_transformer(valid_data, return_encoded_tokens=True)
+                image_embed = self.visual_transformer(valid_data, return_encoded_tokens=True)
+
+                print(f"image_embed shape: {image_embed.shape} in dp mode inference")
+
                 plotdir = self.result_folder_txt
                 Path(plotdir).mkdir(parents=True, exist_ok=True)
 
@@ -804,6 +811,9 @@ class CTClipInferenceFastMultiGPU(nn.Module):
                     text_embed = patho_txtt["text_embed"]
 
                     output = model.forward_infer(text_tokens, valid_data, buffer_text_embed=text_embed, buffer_image_embed=image_embed)
+
+                    print(f"output shape: {output.shape} in dp mode inference")
+
                     output = apply_softmax(output)             
                     # print(f"output: {output}")
                     # append_out=output.detach().cpu().numpy()
