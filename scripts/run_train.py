@@ -18,6 +18,9 @@ import wandb
 
 import time
 
+from accelerate import DistributedDataParallelKwargs
+from accelerate.utils import InitProcessGroupKwargs
+
 from accelerate import Accelerator
 
 # os.environ['NCCL_TIMEOUT_MS'] = '1800000'  # to avoid nccl time out bug for dataloader when validating the whole dataset of ct-rate
@@ -78,7 +81,11 @@ def main(config, args):
 
     wandb_mode = "offline" if args.debug else "online"
 
-    accelerator = Accelerator(log_with="wandb", project_dir=exp_folder)
+    ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
+
+    init_kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=36000))
+
+    accelerator = Accelerator(log_with="wandb", project_dir=exp_folder, kwargs_handlers=[ddp_kwargs, init_kwargs])
 
     accelerator.init_trackers(
         project_name = project_name,
