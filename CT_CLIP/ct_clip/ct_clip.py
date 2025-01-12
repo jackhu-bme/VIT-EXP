@@ -727,7 +727,7 @@ class CTCLIP(nn.Module):
         if buffer_image_embed is None:
             enc_image= self.visual_transformer(image, return_encoded_tokens=True)
         else:
-            print("buffer image embed shape: ", buffer_image_embed.shape)
+            # print("buffer image embed shape: ", buffer_image_embed.shape)
             enc_image = buffer_image_embed
         # print(f"encoded image shape: {enc_image.shape}")
         #print("This is visual encoding")
