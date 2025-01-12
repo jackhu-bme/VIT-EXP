@@ -680,7 +680,7 @@ class CTClipInferenceFastMultiGPU(nn.Module):
             shuffle = True,
         )
         # prepare with accelerator
-        self.dl_iter=cycle(self.dl)
+        self.dl_iter=iter(self.dl)
         # self.device = self.accelerator.device
         self.device = torch.device('cuda')
 
@@ -786,7 +786,7 @@ class CTClipInferenceFastMultiGPU(nn.Module):
                 # print(f"fast inference on ct clip, batch {i}")
                 if i > 10 and debug:
                     break
-                valid_data, text, onehotlabels, acc_name = next(self.dl)
+                valid_data, text, onehotlabels, acc_name = next(self.dl_iter)
 
                 print(f"valid_data shape: {valid_data.shape} in dp mode inference")
 
