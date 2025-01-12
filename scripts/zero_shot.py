@@ -688,7 +688,7 @@ class CTClipInferenceFastMultiGPU(nn.Module):
         self.text_transformer = self.text_transformer.to(torch.device('cuda:0'))
 
         # self.CTClip = nn.DataParallel(self.CTClip)
-        self.CTClip.to(self.device)
+        self.CTClip.to(torch.deivce('cuda:0'))
 
         self.visual_transformer = self.CTClip.visual_transformer # get image mebedding using multi-gpu
         self.visual_transformer = self.visual_transformer.to(self.device)
@@ -782,7 +782,7 @@ class CTClipInferenceFastMultiGPU(nn.Module):
             realalltmp=[]
             accession_names=[]
             
-            for i in tqdm.tqdm(range(len(self.ds))):
+            for i in tqdm.tqdm(range(len(self.dl_iter))):
                 # print(f"fast inference on ct clip, batch {i}")
                 if i > 10 and debug:
                     break
@@ -804,27 +804,28 @@ class CTClipInferenceFastMultiGPU(nn.Module):
                 predictedlabels=[]
                 onehotlabels_append=[]
 
-                for i, patho_txtt in enumerate(self.patho_txtt_list):
-                    # patho_txtt = self.patho_txtt_list[i]
-                    # pathology = patho_txtt["pathology"]
-                    text_tokens = patho_txtt["text_tokens"]
-                    text_embed = patho_txtt["text_embed"]
+                for j in range(valid_data.shape[0]):
+                    valid_data_split = valid_data[j:j+1]
+                    image_embed_split = image_embed[j:j+1]
+                    for i, patho_txtt in enumerate(self.patho_txtt_list):
+                        # patho_txtt = self.patho_txtt_list[i]
+                        # pathology = patho_txtt["pathology"]
+                        text_tokens = patho_txtt["text_tokens"]
+                        text_embed = patho_txtt["text_embed"]                    
+                        output = model.forward_infer(text_tokens, valid_data_split, buffer_text_embed=text_embed_split, buffer_image_embed=image_embed)
+                        print(f"output shape: {output.shape} in dp mode inference")
 
-                    output = model.forward_infer(text_tokens, valid_data, buffer_text_embed=text_embed, buffer_image_embed=image_embed)
-
-                    print(f"output shape: {output.shape} in dp mode inference")
-
-                    output = apply_softmax(output)             
-                    # print(f"output: {output}")
-                    # append_out=output.detach().cpu().numpy()
-                    # print("a out 0: ", append_out[0])
-                    predictedlabels.append(output[0])
-                    # step_3_time = time.time() - step_2_time - start_time
-                    # print(f"step 3 time: {step_3_time}")             
-                predictedall.append(predictedlabels)
-                # print(f"one hot labels in the loop: {onehotlabels}")
-                realalltmp.append(onehotlabels[0])
-                accession_names.append(acc_name[0])
+                        output = apply_softmax(output)             
+                        # print(f"output: {output}")
+                        # append_out=output.detach().cpu().numpy()
+                        # print("a out 0: ", append_out[0])
+                        predictedlabels.append(output[0])
+                        # step_3_time = time.time() - step_2_time - start_time
+                        # print(f"step 3 time: {step_3_time}")             
+                    predictedall.append(predictedlabels)
+                    # print(f"one hot labels in the loop: {onehotlabels}")
+                    realalltmp.append(onehotlabels[0])
+                    accession_names.append(acc_name[0])
 
                 # exit()
             

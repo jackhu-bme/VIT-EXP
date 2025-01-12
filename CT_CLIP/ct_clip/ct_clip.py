@@ -727,7 +727,7 @@ class CTCLIP(nn.Module):
         if buffer_image_embed is None:
             enc_image= self.visual_transformer(image, return_encoded_tokens=True)
         else:
-            # print("buffer image embed")
+            print("buffer image embed shape: ", buffer_image_embed.shape)
             enc_image = buffer_image_embed
         # print(f"encoded image shape: {enc_image.shape}")
         #print("This is visual encoding")
@@ -770,9 +770,9 @@ class CTCLIP(nn.Module):
 
         # broadcast the text latents to match with the image latents if shape mismatch
 
-        if text_latents.shape[0] != image_latents.shape[0]:
-            print(f"warning: text_latents shape: {text_latents.shape} and image_latents shape: {image_latents.shape} mismatch, broadcasting text_latents to match image_latents")
-            text_latents = text_latents.expand_as(image_latents)
+        # if text_latents.shape[0] != image_latents.shape[0]:
+        #     print(f"warning: text_latents shape: {text_latents.shape} and image_latents shape: {image_latents.shape} mismatch, broadcasting text_latents to match image_latents")
+        #     text_latents = text_latents.expand_as(image_latents)
 
         temp = self.temperature.exp()
 
