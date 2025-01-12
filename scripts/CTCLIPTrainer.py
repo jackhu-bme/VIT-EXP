@@ -755,7 +755,7 @@ class CTClipTrainer(nn.Module):
 
 
         if not (steps % self.save_model_every):
-            # state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
+            state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
             # the following code will also work, and only get state_dict on rank0
             # save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
             # with FSDP.state_dict_type(self.CTCLIP, StateDictType.FULL_STATE_DICT, save_policy):
