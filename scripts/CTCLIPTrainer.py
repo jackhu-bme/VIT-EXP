@@ -763,6 +763,8 @@ class CTClipTrainer(nn.Module):
                 self.accelerator.save_state(output_dir=self.results_folder)
                 # model_path = str(self.results_folder / f'CTClip.{steps}.pt')
                 # self.accelerator.save(state_dict, model_path)
+        
+        self.accelerator.wait_for_everyone()
         self.steps += 1
         return logs
 
