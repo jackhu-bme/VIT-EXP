@@ -691,7 +691,7 @@ class CTClipInferenceFastMultiGPU(nn.Module):
         self.CTClip.to(self.device)
 
         self.visual_transformer = self.CTClip.visual_transformer # get image mebedding using multi-gpu
-        self.visual_transformer = self.visual_transformer.to(self.deivce)
+        self.visual_transformer = self.visual_transformer.to(self.device)
         
         self.lr_scheduler = CosineAnnealingWarmUpRestarts(self.optim,
                                                   T_0=4000000,    # Maximum number of iterations
