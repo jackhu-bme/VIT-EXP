@@ -663,6 +663,7 @@ class CTClipTrainer(nn.Module):
         logs = {}
         # update CTClip model
         # video, text = next(self.dl_iter)
+        print(f"steps: {steps} before training")
         loss_dict = self.train_step_single()
         
         to_acc_dict = loss_dict.copy()
