@@ -766,6 +766,14 @@ class CTCLIP(nn.Module):
         image_latents = self.to_visual_latent(image_embeds)
         text_latents, image_latents = map(l2norm, (text_latents, image_latents))
 
+        print(f"in forward infer, shape of text_latents: {text_latents.shape} and image_latents: {image_latents.shape}")
+
+        # broadcast the text latents to match with the image latents if shape mismatch
+
+        if text_latents.shape[0] != image_latents.shape[0]:
+            print(f"warning: text_latents shape: {text_latents.shape} and image_latents shape: {image_latents.shape} mismatch, broadcasting text_latents to match image_latents")
+            text_latents = text_latents.expand_as(image_latents)
+
         temp = self.temperature.exp()
 
         einsum_args = text_latents, image_latents
