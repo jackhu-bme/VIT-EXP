@@ -785,13 +785,13 @@ class CTClipInferenceFastMultiGPU(nn.Module):
             for i in tqdm.tqdm(range(len(self.dl))):
                 # print(f"fast inference on ct clip, batch {i}")
 
-                start_time = time.time()
+                # start_time = time.time()
                 if i > 10 and debug:
                     break
                 valid_data, text, onehotlabels, acc_name = next(self.dl_iter)
 
-                step_1_time = time.time() - start_time
-                print(f"step 1 time: {step_1_time}")
+                # step_1_time = time.time() - start_time
+                # print(f"step 1 time: {step_1_time}")
 
                 # print(f"valid_data shape: {valid_data.shape} in dp mode inference")
 
@@ -801,8 +801,8 @@ class CTClipInferenceFastMultiGPU(nn.Module):
                 # image_embed = model.visual_transformer(valid_data, return_encoded_tokens=True)
                 image_embed = self.visual_transformer(valid_data, return_encoded_tokens=True)
 
-                step_2_time = time.time() - step_1_time - start_time
-                print(f"step 2 time: {step_2_time}")
+                # step_2_time = time.time() - step_1_time - start_time
+                # print(f"step 2 time: {step_2_time}")
 
                 # print(f"image_embed shape: {image_embed.shape} in dp mode inference")
 
@@ -822,8 +822,8 @@ class CTClipInferenceFastMultiGPU(nn.Module):
                         text_embed = patho_txtt["text_embed"]                    
                         output = model.forward_infer(text_tokens, valid_data_split, buffer_text_embed=text_embed, buffer_image_embed=image_embed_split)
 
-                        step_3_time = time.time() - step_2_time - step_1_time - start_time
-                        print(f"step 3 time: {step_3_time}")
+                        # step_3_time = time.time() - step_2_time - step_1_time - start_time
+                        # print(f"step 3 time: {step_3_time}")
 
 
                         # print(f"output shape: {output.shape} in dp mode inference")
