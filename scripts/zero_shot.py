@@ -683,6 +683,10 @@ class CTClipInferenceFastMultiGPU(nn.Module):
         self.dl_iter=cycle(self.dl)
         # self.device = self.accelerator.device
         self.device = torch.device('cuda')
+
+        self.text_transformer = self.CTClip.text_transformer # use single gpu to get the text embedding as they are used only once
+        self.text_transformer = self.text_transformer.to(torch.device('cuda:0'))
+
         self.CTClip = nn.DataParallel(self.CTClip)
         self.CTClip.to(self.device)
         
@@ -725,7 +729,8 @@ class CTClipInferenceFastMultiGPU(nn.Module):
             text = [f"{pathology} is present.", f"{pathology} is not present."]
             text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(self.device)
             # self.text_transformer(text.input_ids, attention_mask = text.attention_mask )
-            text_embed = self.CTClip.text_transformer(text_tokens.input_ids, text_tokens.attention_mask)
+            text_embed = self.CTClip.text_transformer(text_tokens.input_ids, text_tokens.attention_mask).to(self.device)
+            print(f"text embed device: {text_embed.device}, shape: {text_embed.shape}")
             patho_txtt_list.append({"pathology": pathology, "text_tokens": text_tokens, "text_embed": text_embed})
         self.patho_txtt_list = patho_txtt_list
 
