@@ -20,6 +20,7 @@ import time
 
 from accelerate import Accelerator
 
+os.environ['NCCL_TIMEOUT_MS'] = '1800000'  # to avoid nccl time out bug for dataloader when validating the whole dataset of ct-rate
 
 def create_img_encoder(config):
     if config.get("use_seg", False):
