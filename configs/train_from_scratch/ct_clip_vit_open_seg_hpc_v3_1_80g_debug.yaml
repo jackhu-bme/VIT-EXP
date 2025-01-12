@@ -64,8 +64,8 @@ train_data_list:
 #     labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv
 
 
-valid_test_list:
-  - ctclip_image_report_zero_shot_cls_test
+valid_test_list: 
+  - ctclip_image_report_zero_shot_cls_test_multi_gpu
 
 sample_test_list:
   - radgenome_image_open_seg_test_ten_images

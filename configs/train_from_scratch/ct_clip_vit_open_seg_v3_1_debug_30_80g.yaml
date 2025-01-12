@@ -52,8 +52,8 @@ train_data_list:
 valid_test_list: []
   # - ctclip_image_report_zero_shot_cls_test
 
-sample_test_list:
-  - radgenome_image_open_seg_test_ten_images
+sample_test_list: []
+  # - radgenome_image_open_seg_test_ten_images
 
 # DatasetSampler:
 #   type: Random # Combined means combine the weight of different data types in a training step

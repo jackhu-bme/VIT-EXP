@@ -14,7 +14,7 @@ from torch import nn
 
 from data import create_train_dl_list, create_valid_dl_list
 
-from zero_shot import ctclip_image_report_zero_shot_cls_test
+from zero_shot import ctclip_image_report_zero_shot_cls_test, ctclip_image_report_zero_shot_cls_test_multi_gpu
 
 import numpy as np
 import pandas as pd
@@ -268,6 +268,8 @@ def create_valid_tests(test_name_list):
     for test_name in test_name_list:
         if test_name == "ctclip_image_report_zero_shot_cls_test":
             tests.append(ctclip_image_report_zero_shot_cls_test)
+        elif test_name == "ctclip_image_report_zero_shot_cls_test_multi_gpu":
+            tests.append(ctclip_image_report_zero_shot_cls_test_multi_gpu)
         elif test_name == "radgenome_image_open_seg_test_ten_images":
             tests.append(radgenome_image_open_seg_test_ten_images)
         else:
