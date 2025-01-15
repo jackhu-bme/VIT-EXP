@@ -1,8 +1,8 @@
 # setting the environment for NCCL timeout, as validation on full dataset causes waiting of training dataloaders!!!
 
-export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=1200
+export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=3600
 
-accelerate launch scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v5_1_80g.yaml  #--auto_resume
+accelerate launch scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v4_1_80g.yaml  #--auto_resume
 # accelerate launch scripts/run_train.py --config ct_clip_ori_hpc_1.yaml
 
 # debug
