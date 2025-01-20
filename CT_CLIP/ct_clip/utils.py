@@ -5,6 +5,8 @@ import wandb
 
 import cv2
 
+import os
+
 
 def vis_3d_img_list(img_list, slice_ratio_list=[0.25, 0.5, 0.75], img_name="image"):
     """
