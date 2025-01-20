@@ -430,40 +430,53 @@ class CTClipTrainer(nn.Module):
             self.print(f"resuming the sheduler and the model from {resume_path}")
             # set the step according to the model's name
             self.print(f"before loading, steps: {self.steps}")
-            # self.resume_step = int(os.path.basename(resume_path).split(".")[-2]) # this is for old ctclip version checkpoints
-            self.resume_step = int(resume_path.split("_")[1].split(".")[0])
+            self.resume_step = int(os.path.basename(resume_path).split(".")[-2])
             self.steps += self.resume_step
             self.print(f"resuming from step {self.steps} according to the model's name: {resume_path}")
-            self.load(resume_path)
             # restore the state of the dataloader
             self.dl = accelerate.skip_first_batches(self.dl, self.steps)
-        elif auto_resume:
-            # try to find the lastest checkpoint that is saved properly and could be loaded
-            ckpt_list = sorted([*self.results_folder.glob('checkpoint_*')])
-            # sort the ckpt_list according to the step
-            ckpt_list = sorted(ckpt_list, key=lambda x: int(x.name.split("_")[1].split(".")[0]))
-            chosen_ckpt = None
-            for ckpt in ckpt_list:
-                try:
-                    self.print(f"try to load from checkpoint: {ckpt}")
-                    self.load(ckpt)
-                    self.print(f"successfully loaded from checkpoint: {ckpt}")
-                    chosen_ckpt = ckpt
-                    break
-                except Exception as e:
-                    self.print(f"failed to load from checkpoint: {ckpt}, error: {e}")
-                    continue
-            if chosen_ckpt is not None:
-                self.print(f"resuming from step {self.steps} according to the model's name: {chosen_ckpt}")
-                self.resume_step = int(ckpt.name.split("_")[1].split(".")[0])
-                self.steps += self.resume_step
-                self.dl = accelerate.skip_first_batches(self.dl, self.steps)
-            else:
-                self.resume_step = None
-                print(f"no valid checkpoint found for auto resume, start from scratch")
-                # raise ValueError("no valid checkpoint found for auto resume")
         else:
             self.resume_step = None
+
+        # if resume_path is not None:
+        #     # self.load_model(resume_path)
+        #     self.print(f"resuming the sheduler and the model from {resume_path}")
+        #     # set the step according to the model's name
+        #     self.print(f"before loading, steps: {self.steps}")
+        #     # self.resume_step = int(os.path.basename(resume_path).split(".")[-2]) # this is for old ctclip version checkpoints
+        #     self.resume_step = int(resume_path.split("_")[1].split(".")[0])
+        #     self.steps += self.resume_step
+        #     self.print(f"resuming from step {self.steps} according to the model's name: {resume_path}")
+        #     self.load(resume_path)
+        #     # restore the state of the dataloader
+        #     self.dl = accelerate.skip_first_batches(self.dl, self.steps)
+        # elif auto_resume:
+        #     # try to find the lastest checkpoint that is saved properly and could be loaded
+        #     ckpt_list = sorted([*self.results_folder.glob('checkpoint_*')])
+        #     # sort the ckpt_list according to the step
+        #     ckpt_list = sorted(ckpt_list, key=lambda x: int(x.name.split("_")[1].split(".")[0]))
+        #     chosen_ckpt = None
+        #     for ckpt in ckpt_list:
+        #         try:
+        #             self.print(f"try to load from checkpoint: {ckpt}")
+        #             self.load(ckpt)
+        #             self.print(f"successfully loaded from checkpoint: {ckpt}")
+        #             chosen_ckpt = ckpt
+        #             break
+        #         except Exception as e:
+        #             self.print(f"failed to load from checkpoint: {ckpt}, error: {e}")
+        #             continue
+        #     if chosen_ckpt is not None:
+        #         self.print(f"resuming from step {self.steps} according to the model's name: {chosen_ckpt}")
+        #         self.resume_step = int(ckpt.name.split("_")[1].split(".")[0])
+        #         self.steps += self.resume_step
+        #         self.dl = accelerate.skip_first_batches(self.dl, self.steps)
+        #     else:
+        #         self.resume_step = None
+        #         print(f"no valid checkpoint found for auto resume, start from scratch")
+        #         # raise ValueError("no valid checkpoint found for auto resume")
+        # else:
+        #     self.resume_step = None
         
         self.wandb_logger = wandb_logger
         
