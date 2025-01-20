@@ -611,6 +611,8 @@ class CTClipTrainer(nn.Module):
             for j in range(acc_step):
                 loss_dict_single = self.train_step_single_dataset(dataset_index=i, vis = vis_list[i] and j==0) # only vis for the first step in acc_step
                 loss_dict = self.loss_update(loss_dict, loss_dict_single)
+                # update the dl_step_list
+                self.dl_step_list[i] += 1
         return loss_dict
     
     def eval_tests(self, models_to_evaluate):
