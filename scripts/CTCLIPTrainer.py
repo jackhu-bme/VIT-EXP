@@ -604,6 +604,7 @@ class CTClipTrainer(nn.Module):
         for i in range(len(self.vis_train_interval)):
             if self.vis_train_interval[i] > 0 and self.dl_step_list[i] % self.vis_train_interval[i] == 0:
                 vis_list[i] = True
+        print(f"steps: {self.steps}, acc_steps_list: {acc_steps_list}, vis_list: {vis_list}")
         loss_dict = {}
         for i, acc_step in enumerate(acc_steps_list):
             for j in range(acc_step):
