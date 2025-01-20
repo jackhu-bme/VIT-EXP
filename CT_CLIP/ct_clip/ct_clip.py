@@ -25,6 +25,8 @@ import matplotlib.pyplot as plt
 
 from ct_clip.utils import vis_3d_img_list
 
+import wandb
+
 # helper functions
 
 def identity(t, *args, **kwargs):
@@ -106,6 +108,32 @@ def groupby_prefix_and_trim(prefix, d):
     kwargs_with_prefix, kwargs = group_dict_by_key(partial(string_begins_with, prefix), d)
     kwargs_without_prefix = dict(map(lambda x: (x[0][len(prefix):], x[1]), tuple(kwargs_with_prefix.items())))
     return kwargs_without_prefix, kwargs
+
+def calculate_vis_auc(input, target):
+    """
+    Calculate AUC and log the ROC curve using WandB.
+
+    Parameters:
+    - input: numpy array or torch tensor of predicted probabilities (0-1 range).
+    - target: numpy array or torch tensor of binary ground truth values (0 or 1).
+    """
+    # Convert to numpy if input and target are tensors
+    if not isinstance(input, np.ndarray):
+        input = input.cpu().detach().numpy()
+    if not isinstance(target, np.ndarray):
+        target = target.cpu().detach().numpy()
+    
+    # Flatten the inputs and targets
+    input_flat = input.flatten()
+    target_flat = target.flatten()
+    
+    # Calculate AUC
+    auc_score = roc_auc_score(target_flat, input_flat)
+    # print(f"AUC Score: {auc_score}")
+    
+    
+    return auc_score, wandb.plot.roc_curve(target_flat, input_flat)
+
 
 # helper classes
 
@@ -928,7 +956,7 @@ class CTCLIP(nn.Module):
         loss_dict["open_seg_loss"] = open_seg_loss.item()
         return_list = [open_seg_loss, loss_dict]
 
-        # visualize when training
+        # visualize when training, just the things to be logged in wandb
         vis = kwargs.get("return_visualize", False) or kwargs.get("return_vis", False)
         down_img = self.random_downsample(image, self.open_seg_loss_down_factor, start_index=start_index)[0]
         B, C, D_down, W_down, H_down = down_img.shape
@@ -937,19 +965,32 @@ class CTCLIP(nn.Module):
             # visualize the normed similarity and the gt mask for each class
             with torch.no_grad():
                 vis_dict = {}
+                # visualize the segmentation results, for each image in the batch, with slices plot
                 for i in range(C_seg):
                     # get the prompt logits for the i-th class
                     prompt_logits = prompt_logits_batch[:, i, :] # [B, n_hidden_dim=16]
                     # continue_train = input("Continue training? 4")
                     sim = F.cosine_similarity(seg_preds, prompt_logits.unsqueeze(1), dim=-1)
+                    sim = (sim + 1) / 2  # fix the range to [0, 1], after v3-5 exps!
                     sim_vis_0 = sim.reshape(B_seg, D_down, W_down, H_down)[0]
                     mask_gt_vis_0 = seg_mask_flatten[:, :, i].reshape(B_seg, D_down, W_down, H_down)[0]
                     down_img_vis_0 = down_img[0, 0].reshape(D_down, W_down, H_down)
                     # vis the similarity, gt mask, and downsampled image
-                    img_name = f"{img_prefix}_channel_{i}" if img_prefix else f"channel_{i}"
+                    img_name = f"{img_prefix}_channel_{i}_seg" if img_prefix else f"channel_{i}"
                     vis_res = vis_3d_img_list([down_img_vis_0, sim_vis_0, mask_gt_vis_0], img_name=img_name)
                     # update the vis dict with each key-value pair
                     vis_dict.update(vis_res)
+                # visulize the auc based on the cosine simliarity and whether this voxel is positive or negative for each class
+                for i in range(C_seg):
+                    # get the prompt logits for the i-th class
+                    prompt_logits = prompt_logits_batch[:, i, :]
+                    sim = F.cosine_similarity(seg_preds, prompt_logits.unsqueeze(1), dim=-1)
+                    sim = (sim + 1) / 2  # fix the range to [0, 1], after v3-5 exps!
+                    sim_vis_0 = sim.reshape(B_seg, D_down, W_down, H_down)[0]
+                    mask_gt_vis_0 = seg_mask_flatten[:, :, i].reshape(B_seg, D_down, W_down, H_down)[0]
+                    auc, auc_plot = calculate_vis_auc(sim_vis_0, mask_gt_vis_0)
+                    vis_dict[f"auc_channel_{i}"] = auc
+                    vis_dict[f"auc_plot_channel_{i}"] = auc_plot
                 return_list.append(vis_dict)
         return return_list
 
