@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import torch
 import wandb
 
+import cv2
+
 
 def vis_3d_img_list(img_list, slice_ratio_list=[0.25, 0.5, 0.75], img_name="image"):
     """
@@ -66,6 +68,11 @@ def vis_3d_img_list(img_list, slice_ratio_list=[0.25, 0.5, 0.75], img_name="imag
 
         # Add a suffix to the image name based on the dimension
         image_name = f"{img_name}_{dim_name}"
+
+        # save to the wandb folder
+        os.makedirs("wandb", exist_ok=True)
+        save_path = f"wandb/{image_name}.png"
+        cv2.imwrite(save_path, slices * 255)
 
         # Convert the figure to a WandB image object
         wandb_img = wandb.Image(slices, caption=image_name)
