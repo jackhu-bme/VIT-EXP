@@ -7,6 +7,7 @@ accelerate launch scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v3_1_80
 
 # debug
 # python scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v1_1_div_0_80g.yaml --debug
+python scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v3_1_80g_debug.yaml --debug
 python scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v3_1_80g_debug_resume.yaml --resume /mnt/input/CT-CLIP/ctclip_vit_open_seg_hpc_v4_1_80g_final2/checkpoints/CTClip.30000.pt
 
 # local 3195 machine debug

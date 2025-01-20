@@ -21,6 +21,8 @@ import pandas as pd
 # import tqdm
 from tqdm import tqdm
 
+import time
+
 
 from einops import rearrange
 import accelerate
@@ -620,12 +622,17 @@ class CTClipTrainer(nn.Module):
                 vis_list[i] = True
         # print(f"steps: {self.steps}, acc_steps_list: {acc_steps_list}, vis_list: {vis_list}")
         loss_dict = {}
+        
         for i, acc_step in enumerate(acc_steps_list):
+            start_time = time.time()
             for j in range(acc_step):
                 loss_dict_single = self.train_step_single_dataset(dataset_index=i, vis = vis_list[i] and j==0) # only vis for the first step in acc_step
                 loss_dict = self.loss_update(loss_dict, loss_dict_single)
                 # update the dl_step_list
                 self.dl_step_list[i] += 1
+            end_time = time.time()
+            print(f"dataset {i} time: {end_time - start_time}")
+        exit()
         return loss_dict
     
     def eval_tests(self, models_to_evaluate):

@@ -989,6 +989,7 @@ class CTCLIP(nn.Module):
         open_seg_loss = self.open_seg_loss(seg_preds, seg_mask_flatten, prompt_logits_batch) # keep the start index same
         step_7_time = time.time()-start_time-step_1_time-step_2_time-step_3_time-step_4_time-step_5_time-step_6_time
         print(f"Time taken for step 7: {step_7_time}")
+        # exit()
         loss_dict["open_seg_loss"] = open_seg_loss.item()
         return_list = [open_seg_loss, loss_dict]
 
