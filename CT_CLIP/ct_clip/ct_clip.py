@@ -27,6 +27,8 @@ from ct_clip.utils import vis_3d_img_list
 
 import wandb
 
+import numpy as np
+
 # helper functions
 
 def identity(t, *args, **kwargs):
