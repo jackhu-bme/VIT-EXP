@@ -24,7 +24,7 @@ def main(args):
     if seg_config is None:
         seg_kwargs["use_seg"] = False
         # use_seg = False
-        raise NotImplementedError # todo: deal with this later
+        # raise NotImplementedError # todo: deal with this later
     else:
         # use_seg = True
         seg_kwargs["use_seg"] = True
