@@ -27,6 +27,8 @@ from ct_clip.utils import vis_3d_img_list
 
 import wandb
 
+from sklearn.metrics import roc_auc_score
+
 import numpy as np
 
 # helper functions
