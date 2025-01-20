@@ -153,9 +153,9 @@ def main(config, args):
         config=config["ct_clip_arch"],
     )
 
-    # if resume_path is not None:
-    #     print(f"Resuming state dict from checkpoint: {resume_path}")
-    #     clip.load(resume_path)
+    if resume_path is not None:
+        print(f"Resuming state dict from checkpoint: {resume_path}")
+        clip.load(resume_path)
 
     # also resume the trainer
     trainer = CTClipTrainer(
