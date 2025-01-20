@@ -632,7 +632,7 @@ class CTClipTrainer(nn.Module):
                 self.dl_step_list[i] += 1
             end_time = time.time()
             print(f"dataset {i} time: {end_time - start_time}")
-        exit()
+        # exit()
         return loss_dict
     
     def eval_tests(self, models_to_evaluate):
