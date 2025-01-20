@@ -920,7 +920,7 @@ class CTCLIP(nn.Module):
 
 
     def forward_batch_image_open_seg(self, batch, device=None, accelerator=None, **kwargs):
-        start_time = time.time()
+        # start_time = time.time()
         image = batch["image"]
         seg_mask = batch["seg_mask"] # [B, C, H, W, D]
         B_seg, C_seg, D, W, H = seg_mask.shape
@@ -933,8 +933,8 @@ class CTCLIP(nn.Module):
         # print(f"seg_mask_prompts shape: {seg_mask_prompts.shape}")
         # get text embeddings by text transformers
         seg_prompt_text_embeddings = self.text_transformer(seg_mask_prompts)[0] # [C, length=512, n_hidden_dim]
-        step_1_time = time.time()-start_time
-        print(f"Time taken for step 1: {step_1_time}")
+        # step_1_time = time.time()-start_time
+        # print(f"Time taken for step 1: {step_1_time}")
         # print(f"seg_prompt_text_embeddings shape: {seg_prompt_text_embeddings.shape}")
         # exit()
         
@@ -951,14 +951,14 @@ class CTCLIP(nn.Module):
         loss_dict = {}
         B, C, D, W, H = image.shape
 
-        step_2_time = time.time()-start_time-step_1_time
-        print(f"Time taken for step 2: {step_2_time}")
+        # step_2_time = time.time()-start_time-step_1_time
+        # print(f"Time taken for step 2: {step_2_time}")
 
 
         enc_image= self.visual_transformer(image, return_encoded_tokens=True)
 
-        step_3_time = time.time()-start_time-step_1_time-step_2_time
-        print(f"Time taken for step 3: {step_3_time}")
+        # step_3_time = time.time()-start_time-step_1_time-step_2_time
+        # print(f"Time taken for step 3: {step_3_time}")
         # continue_train = input("Continue training? 1")
         # use the seg valid mask to choose the image to be segmented
         # due to memory issues, use one for seg only now
@@ -971,24 +971,24 @@ class CTCLIP(nn.Module):
         # use the linear head for 
         seg_logits = self.open_seg_head(tokens_to_seg)
 
-        step_4_time = time.time()-start_time-step_1_time-step_2_time-step_3_time
-        print(f"Time taken for step 4: {step_4_time}")
+        # step_4_time = time.time()-start_time-step_1_time-step_2_time-step_3_time
+        # print(f"Time taken for step 4: {step_4_time}")
         # continue_train = input("Continue training? 2")
         # reshape the logits to the original shape, with each pixel
         seg_preds = seg_logits.view(b, d, w, h, p_d, p_w, p_h, -1)
         seg_preds = seg_preds.permute(0, 7, 1, 4, 2, 5, 3, 6).reshape(b, -1, D, W, H) # B, C, D, W, H as voxel embeddings
 
-        step_5_time = time.time()-start_time-step_1_time-step_2_time-step_3_time-step_4_time
-        print(f"Time taken for step 5: {step_5_time}")
+        # step_5_time = time.time()-start_time-step_1_time-step_2_time-step_3_time-step_4_time
+        # print(f"Time taken for step 5: {step_5_time}")
         # downsample the seg_logits
         seg_preds = self.random_downsample(seg_preds, self.open_seg_loss_down_factor, start_index=start_index)[0]
         seg_preds = seg_preds.permute((0, 2, 3, 4, 1)).reshape(B_seg, -1, low_latent_dim) # (B, L, n_hidden_dim=16)
 
-        step_6_time = time.time()-start_time-step_1_time-step_2_time-step_3_time-step_4_time-step_5_time
-        print(f"Time taken for step 6: {step_6_time}")
+        # step_6_time = time.time()-start_time-step_1_time-step_2_time-step_3_time-step_4_time-step_5_time
+        # print(f"Time taken for step 6: {step_6_time}")
         open_seg_loss = self.open_seg_loss(seg_preds, seg_mask_flatten, prompt_logits_batch) # keep the start index same
-        step_7_time = time.time()-start_time-step_1_time-step_2_time-step_3_time-step_4_time-step_5_time-step_6_time
-        print(f"Time taken for step 7: {step_7_time}")
+        # step_7_time = time.time()-start_time-step_1_time-step_2_time-step_3_time-step_4_time-step_5_time-step_6_time
+        # print(f"Time taken for step 7: {step_7_time}")
         # exit()
         loss_dict["open_seg_loss"] = open_seg_loss.item()
         return_list = [open_seg_loss, loss_dict]
