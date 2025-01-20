@@ -131,6 +131,11 @@ def calculate_vis_auc(input, target):
     input_flat = input.flatten()
     target_flat = target.flatten()
 
+    target_flat[target_flat > 0.5] = 1
+    target_flat[target_flat <= 0.5] = 0
+    # to int
+    target_flat = target_flat.astype(int)
+
     print(f"input flat shape: {input_flat.shape}, type: {type(input_flat)}")
     print(f"target flat shape: {target_flat.shape}, type: {type(target_flat)}")
     
