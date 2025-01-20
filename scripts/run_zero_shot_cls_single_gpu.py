@@ -68,8 +68,10 @@ def main(args):
         extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
         use_mlm=False,
         downsample_image_embeds = False,
-        use_all_token_embeds = False
+        use_all_token_embeds = False,
+        config=config["ct_clip_arch"],
     )
+
 
     # clip_model_path_for_infer = "../output_train_scratch/train_from_scratch_vit_hpc_1_dim_384/2024-11-16_06-57-22/checkpoints/CTClip.100000.pt"
     clip_model_path_for_infer = args.model_path
