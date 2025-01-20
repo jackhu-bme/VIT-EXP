@@ -583,7 +583,7 @@ class CTClipTrainer(nn.Module):
         #video = video
 
         loading_time = time.time()
-        print(f"loading time: {loading_time - start_time}")
+        # print(f"loading time: {loading_time - start_time}")
         
         with self.accelerator.accumulate(self.CTClip):
             with self.accelerator.autocast():
@@ -601,10 +601,10 @@ class CTClipTrainer(nn.Module):
                     bal_loss_dict[key] = value * self.balance_loss_weight[dataset_index]
 
         forward_finish_time = time.time()
-        print(f"forward time: {forward_finish_time - loading_time}")
+        # print(f"forward time: {forward_finish_time - loading_time}")
         self.accelerator.backward(loss)
         backward_finish_time = time.time()
-        print(f"backward time: {backward_finish_time - forward_finish_time}")
+        # print(f"backward time: {backward_finish_time - forward_finish_time}")
         return bal_loss_dict
 
     @staticmethod
@@ -633,14 +633,14 @@ class CTClipTrainer(nn.Module):
         loss_dict = {}
         
         for i, acc_step in enumerate(acc_steps_list):
-            start_time = time.time()
+            # start_time = time.time()
             for j in range(acc_step):
                 loss_dict_single = self.train_step_single_dataset(dataset_index=i, vis = vis_list[i] and j==0) # only vis for the first step in acc_step
                 loss_dict = self.loss_update(loss_dict, loss_dict_single)
                 # update the dl_step_list
                 self.dl_step_list[i] += 1
-            end_time = time.time()
-            print(f"dataset {i} time: {end_time - start_time}")
+            # end_time = time.time()
+            # print(f"dataset {i} time: {end_time - start_time}")
         # exit()
         return loss_dict
     

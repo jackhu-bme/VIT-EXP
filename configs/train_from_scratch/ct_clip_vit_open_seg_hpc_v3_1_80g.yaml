@@ -31,7 +31,7 @@ train_data_list:
   - name: RadGenome
     type: imageopenseg
     batch_size: 1
-    num_workers: 4
+    num_workers: 16
     seg_data_train: /mnt/input/RadGenome/train_preprocessed_img_organized_fp16
     # seg_data_valid: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/val
     metadata_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv
