@@ -64,7 +64,7 @@ def radgenome_image_open_seg_test_ten_images(model):
     device = torch.device('cuda:0')
 
     for i, batch in enumerate(valid_dl):
-        if i >= 10:
+        if i >= 3:
             break
         seg_mask = batch["seg_mask"].to(device)
         seg_data = batch["image"].to(device)

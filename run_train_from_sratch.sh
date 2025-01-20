@@ -2,7 +2,7 @@
 
 export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=3600
 
-accelerate launch scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v4_1_80g.yaml  #--auto_resume
+accelerate launch scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v3_1_80g.yaml  #--auto_resume
 # accelerate launch scripts/run_train.py --config ct_clip_ori_hpc_1.yaml
 
 # debug

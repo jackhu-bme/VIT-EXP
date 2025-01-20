@@ -1,7 +1,7 @@
 random_seed: 42
 results_folder: ./output_train_scratch
 project_name: ct-clip-vit-open-seg
-exp_name: ctclip_vit_open_seg_hpc_v3_1_80g
+exp_name: ctclip_vit_open_seg_hpc_v3_1_80g_final1
 
 trainer:
   lr: 1.25e-6
@@ -10,10 +10,10 @@ trainer:
   max_grad_norm: 0.5
   gradient_accumulation_steps: 1 # todo: in future, if pass [1, 2], means 1 for ct-rate, 2 for total-segmentator, not supported yet
   save_results_every: 1000
-  save_model_every: 2
+  save_model_every: 1000
   eval_model_every: 2000
-  vis_train_every: [-1, 100] # visualization while training, each element is for correpsonding training, dataset
-  sample_val_every: 200 # the interval of visualization for validation on valid dataset
+  vis_train_every: [-1, 500] # visualization while training, each element is for correpsonding training, dataset
+  sample_val_every: 1000 # the interval of visualization for validation on valid dataset
   balance_loss_weight: [1.0, 2.0]
 
 
