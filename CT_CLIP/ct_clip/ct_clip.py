@@ -130,6 +130,9 @@ def calculate_vis_auc(input, target):
     # Flatten the inputs and targets
     input_flat = input.flatten()
     target_flat = target.flatten()
+
+    print(f"input flat shape: {input_flat.shape}, type: {type(input_flat)}")
+    print(f"target flat shape: {target_flat.shape}, type: {type(target_flat)}")
     
     # Calculate AUC
     auc_score = roc_auc_score(target_flat, input_flat)
