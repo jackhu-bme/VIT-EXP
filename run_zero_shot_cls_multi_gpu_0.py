@@ -2,7 +2,7 @@ import os
 
 # this is for multi gpu inference, but actually we split the ckpts and run them on single gpu individually
 
-CONFIG="configs/train_from_scratch/ct_clip_vit_hpc_v3_1.yaml"
+CONFIG="configs/train_from_scratch/ct_clip_vit_open_seg_hpc_v5_1_80g.yaml"
 
 model_dir = "/mnt/input/CT-CLIP/ctclip_vit_open_seg_hpc_v5_1_80g_final3/checkpoints"
 
