@@ -140,8 +140,8 @@ def calculate_vis_auc(input, target):
     print(f"target flat shape: {target_flat.shape}, type: {type(target_flat)}")
     
     # Calculate AUC
-    auc_score = roc_auc_score(target_flat, input_flat)
-    # print(f"AUC Score: {auc_score}")
+    auc_score = roc_auc_score(target_flat.copy(), input_flat.copy())
+    print(f"AUC Score: {auc_score}")
     
     
     return auc_score, wandb.plot.roc_curve(target_flat, input_flat)
