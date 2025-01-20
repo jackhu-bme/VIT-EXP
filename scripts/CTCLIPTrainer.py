@@ -630,7 +630,7 @@ class CTClipTrainer(nn.Module):
                 loss_dict = self.loss_update(loss_dict, loss_dict_single)
                 # update the dl_step_list
                 self.dl_step_list[i] += 1
-            # end_time = time.time()
+            end_time = time.time()
             print(f"dataset {i} time: {end_time - start_time}")
         # exit()
         return loss_dict
