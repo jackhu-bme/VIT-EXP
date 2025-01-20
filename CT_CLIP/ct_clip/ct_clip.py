@@ -142,9 +142,11 @@ def calculate_vis_auc(input, target):
     # Calculate AUC
     auc_score = roc_auc_score(target_flat.copy(), input_flat.copy())
     print(f"AUC Score: {auc_score}")
+
+    pred = np.concatenate((1-input_flat.reshape(-1,1), input_flat.reshape(-1,1)), axis=1)
     
     
-    return auc_score, wandb.plot.roc_curve(target_flat, input_flat)
+    return auc_score, wandb.plot.roc_curve(target_flat, pred, ["Negative", "Positive"])
 
 
 # helper classes
