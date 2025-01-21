@@ -31,6 +31,10 @@ from sklearn.metrics import roc_auc_score
 
 import numpy as np
 
+import nibabel as nib
+
+import os
+
 # helper functions
 
 def identity(t, *args, **kwargs):
@@ -1003,6 +1007,8 @@ class CTCLIP(nn.Module):
             with torch.no_grad():
                 vis_dict = {}
                 # visualize the segmentation results, for each image in the batch, with slices plot
+                local_vis_save_dir = "./wandb_nii_gz"
+                os.makedirs(local_vis_save_dir, exist_ok=True)
                 for i in range(C_seg):
                     # get the prompt logits for the i-th class
                     prompt_logits = prompt_logits_batch[:, i, :] # [B, n_hidden_dim=16]
@@ -1015,6 +1021,21 @@ class CTCLIP(nn.Module):
                     # vis the similarity, gt mask, and downsampled image
                     img_name = f"{img_prefix}_channel_{i}_seg" if img_prefix else f"channel_{i}"
                     vis_res = vis_3d_img_list([down_img_vis_0, sim_vis_0, mask_gt_vis_0], img_name=img_name)
+                    # save image at local, for debug vis only
+                    local_save = True
+                    if local_save:
+                        down_img = down_img_vis_0.cpu().numpy() * 1000
+                        down_img_nii = nib.Nifti1Image(down_img, np.eye(4))
+                        nib.save(down_img_nii, os.path.join(local_vis_save_dir, f"{img_name}_down_img_channel_{i}.nii.gz"))
+                        sim_img = sim_vis_0.cpu().numpy() * 1000
+                        sim_img_nii = nib.Nifti1Image(sim_img, np.eye(4))
+                        nib.save(sim_img_nii, os.path.join(local_vis_save_dir, f"{img_name}_sim_channel_{i}.nii.gz"))
+                        mask_img = mask_gt_vis_0.cpu().numpy() * 1000
+                        mask_img_nii = nib.Nifti1Image(mask_img, np.eye(4))
+                        nib.save(mask_img_nii, os.path.join(local_vis_save_dir, f"{img_name}_mask_channel_{i}.nii.gz"))
+
+
+
                     # update the vis dict with each key-value pair
                     vis_dict.update(vis_res)
                 # visulize the auc based on the cosine simliarity and whether this voxel is positive or negative for each class
