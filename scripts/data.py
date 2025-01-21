@@ -441,18 +441,18 @@ class CTOpenSegDataset(Dataset):
         return samples
 
     def __getitem__(self, index):
-        start_time = time.time()
+        # start_time = time.time()
         data_file, mask_file = self.samples[index]
         # the seg data is already preprocessed, no need to resize, pad, just load
         # try:
         # video_tensor = torch.tensor(np.load(data_file)['arr_0'].unsqueeze(0) # missing channel dim in the saved data
         video_tensor = npz_to_tensor(data_file)
-        step1 = time.time()
-        print(f"step1 in loading: {step1 - start_time}")
+        # step1 = time.time()
+        # print(f"step1 in loading: {step1 - start_time}")
         # mask_tensor = torch.tensor(np.load(mask_file)['arr_0'])
         mask_tensor = npz_mask_to_tensor(mask_file)
-        step2 = time.time()
-        print(f"step2 in loading: {step2 - step1}")
+        # step2 = time.time()
+        # print(f"step2 in loading: {step2 - step1}")
         # except Exception as e:
         #     print(f"error loading seg data: {e} for data file: {data_file}")
         #     print(f"mask file: {mask_file}")

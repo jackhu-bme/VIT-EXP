@@ -1007,8 +1007,10 @@ class CTCLIP(nn.Module):
             with torch.no_grad():
                 vis_dict = {}
                 # visualize the segmentation results, for each image in the batch, with slices plot
-                local_vis_save_dir = "./wandb_nii_gz"
-                os.makedirs(local_vis_save_dir, exist_ok=True)
+                local_save = False
+                if local_save:
+                    local_vis_save_dir = "./wandb_nii_gz"
+                    os.makedirs(local_vis_save_dir, exist_ok=True)
                 for i in range(C_seg):
                     # get the prompt logits for the i-th class
                     prompt_logits = prompt_logits_batch[:, i, :] # [B, n_hidden_dim=16]
@@ -1022,7 +1024,6 @@ class CTCLIP(nn.Module):
                     img_name = f"{img_prefix}_channel_{i}_seg" if img_prefix else f"channel_{i}"
                     vis_res = vis_3d_img_list([down_img_vis_0, sim_vis_0, mask_gt_vis_0], img_name=img_name)
                     # save image at local, for debug vis only
-                    local_save = True
                     if local_save:
                         down_img_arr = down_img_vis_0.cpu().numpy() * 1000
                         down_img_nii = nib.Nifti1Image(down_img_arr, np.eye(4))
@@ -1047,7 +1048,7 @@ class CTCLIP(nn.Module):
                     vis_dict[f"auc_channel_{i}"] = auc
                     vis_dict[f"auc_plot_channel_{i}"] = auc_plot
                 return_list.append(vis_dict)
-                exit()
+                # exit()
         return return_list
 
     
