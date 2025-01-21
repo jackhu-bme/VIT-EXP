@@ -1024,8 +1024,8 @@ class CTCLIP(nn.Module):
                     # save image at local, for debug vis only
                     local_save = True
                     if local_save:
-                        down_img = down_img_vis_0.cpu().numpy() * 1000
-                        down_img_nii = nib.Nifti1Image(down_img, np.eye(4))
+                        down_img_arr = down_img_vis_0.cpu().numpy() * 1000
+                        down_img_nii = nib.Nifti1Image(down_img_arr, np.eye(4))
                         nib.save(down_img_nii, os.path.join(local_vis_save_dir, f"{img_name}_down_img_channel_{i}.nii.gz"))
                         sim_img = sim_vis_0.cpu().numpy() * 1000
                         sim_img_nii = nib.Nifti1Image(sim_img, np.eye(4))
@@ -1033,9 +1033,6 @@ class CTCLIP(nn.Module):
                         mask_img = mask_gt_vis_0.cpu().numpy() * 1000
                         mask_img_nii = nib.Nifti1Image(mask_img, np.eye(4))
                         nib.save(mask_img_nii, os.path.join(local_vis_save_dir, f"{img_name}_mask_channel_{i}.nii.gz"))
-
-
-
                     # update the vis dict with each key-value pair
                     vis_dict.update(vis_res)
                 # visulize the auc based on the cosine simliarity and whether this voxel is positive or negative for each class
@@ -1050,6 +1047,7 @@ class CTCLIP(nn.Module):
                     vis_dict[f"auc_channel_{i}"] = auc
                     vis_dict[f"auc_plot_channel_{i}"] = auc_plot
                 return_list.append(vis_dict)
+                exit()
         return return_list
 
     
