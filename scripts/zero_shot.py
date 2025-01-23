@@ -334,7 +334,7 @@ def ctclip_image_report_zero_shot_cls_test(ctclip):
     """
     ctclip: CTCLIP model
     """
-    if not isinstance(ctclip, nn.Module):
+    if isinstance(ctclip, nn.DistributedDataParallel):
         ctclip = ctclip.to(torch.device('cuda:0')).module # get the single gpu object
     data_folder = '/mnt/input/CT-RATE/organized_dataset/val_images_preprocessed'
     reports_file= "/mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv"
