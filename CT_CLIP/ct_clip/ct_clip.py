@@ -1158,6 +1158,8 @@ class CTCLIP(nn.Module):
         # enc_image = enc_image.view(enc_image.shape[0], -1)
         enc_image = enc_image.view(-1, C_img)
 
+        image_embeds = enc_image[:, :] if enc_image.ndim == 3 else enc_image
+
         image_latents_all = self.to_visual_latent(image_embeds)
 
         image_latents_all = image_latents_all.reshape(B, h_r * w_r * z_r, -1)
@@ -1173,7 +1175,7 @@ class CTCLIP(nn.Module):
         # depending on whether to do fine-grained CLIP or not, select either all tokens, or CLS tokens only
 
         text_embeds = enc_text[:, :] if enc_text.ndim == 3 else enc_text
-        image_embeds = enc_image[:, :] if enc_image.ndim == 3 else enc_image
+        
 
         # project to latents
         #text_embeds = text_embeds.view(text_embeds.shape[0], -1)
