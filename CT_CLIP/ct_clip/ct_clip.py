@@ -1144,21 +1144,31 @@ class CTCLIP(nn.Module):
         text_embeddings = self.text_transformer(text.input_ids, attention_mask = text.attention_mask)
         enc_text = text_embeddings[0]
 
-        enc_image= self.visual_transformer(image, return_encoded_tokens=True)
+        enc_image= self.visual_transformer(image, return_encoded_tokens=True) # (B, H, W, Z, C)
 
         print(f"encoded image shape: {enc_image.shape}")
-        exit()
+        # exit()
         #print("This is visual encoding")
         global h_r, w_r, z_r
-        h_r, w_r, z_r = enc_image.shape[1], enc_image.shape[2], enc_image.shape[3]
-
+        (B, h_r, w_r, z_r, C_img) = enc_image.shape
         #enc_image, max_indices = torch.max(enc_image, dim=1)
         # enc_image_send = enc_image
 
-        enc_image = torch.mean(enc_image, dim=1)
-        enc_image = enc_image.view(enc_image.shape[0], -1)
+        # enc_image = torch.mean(enc_image, dim=1)
+        # enc_image = enc_image.view(enc_image.shape[0], -1)
+        enc_image = enc_image.view(-1, C_img)
 
-        image_latents = self.to_visual_latent(image_embeds)
+        image_latents_all = self.to_visual_latent(image_embeds)
+
+        image_latents_all = image_latents_all.reshape(B, h_r * w_r * z_r, -1)
+
+        print(f"image latents all shape: {image_latents_all.shape}")
+
+        # mean on dim 1 to get the image latents
+        image_latents = torch.mean(image_latents_all, dim=1)
+
+        print(f"image latents shape: {image_latents.shape}")
+        exit()
 
         # depending on whether to do fine-grained CLIP or not, select either all tokens, or CLS tokens only
 
