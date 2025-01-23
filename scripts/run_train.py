@@ -144,7 +144,7 @@ def main(config, args):
         image_encoder = image_encoder,
         text_encoder = text_encoder,
         dim_text = 768,
-        dim_image = 442368,
+        dim_image = 768, #442368,
         dim_latent = 768,
         extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
         use_mlm=False,
