@@ -334,10 +334,16 @@ def ctclip_image_report_zero_shot_cls_test(ctclip):
     """
     ctclip: CTCLIP model
     """
-    ctclip = ctclip.to(torch.device('cuda:0')).module # get the single gpu object
+    if not isinstance(ctclip, nn.Module):
+        ctclip = ctclip.to(torch.device('cuda:0')).module # get the single gpu object
     data_folder = '/mnt/input/CT-RATE/organized_dataset/val_images_preprocessed'
     reports_file= "/mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv"
     labels = "/mnt/input/CT-RATE/organized_dataset/csv_dir/labels/valid_predicted_labels.csv"
+    if not os.path.exists(data_folder):
+        print(f"now in single gpu debug mode!")
+        data_folder = '/home/xufluo/ct-clip-vit/ct_rate/sub_sample_30_dataset/train_img_pre'
+        reports_file= "/home/xufluo/ct-clip-vit/ct_rate/sub_sample_30_dataset/csv_dir/reports/train_reports.csv"
+        labels = "/home/xufluo/ct-clip-vit/ct_rate/sub_sample_30_dataset/csv_dir/labels/train_predicted_labels.csv"
     batch_size = 1
     num_train_steps = 1
     inference = CTClipInferenceFast(

@@ -780,50 +780,43 @@ class CTCLIP(nn.Module):
         else:
             # print("buffer image embed shape: ", buffer_image_embed.shape)
             enc_image = buffer_image_embed
-        # print(f"encoded image shape: {enc_image.shape}")
-        #print("This is visual encoding")
 
-        # step_1_time = time.time()-start_time
-        # print(f"Time taken for step 1: {step_1_time}")
-
-        global h_r, w_r, z_r
-        h_r, w_r, z_r = enc_image.shape[1], enc_image.shape[2], enc_image.shape[3]
-
+        (B, h_r, w_r, z_r, C_img) = enc_image.shape
         #enc_image, max_indices = torch.max(enc_image, dim=1)
+        # enc_image_send = enc_image
 
-        # step_2_time = time.time()-start_time-step_1_time
-        # print(f"Time taken for step 2: {step_2_time}")
+        # enc_image = torch.mean(enc_image, dim=1)
+        # enc_image = enc_image.view(enc_image.shape[0], -1)
+        enc_image = enc_image.view(-1, C_img)
 
-        enc_image = torch.mean(enc_image, dim=1)
-        enc_image = enc_image.view(enc_image.shape[0], -1)
-
-        # step_3_time = time.time()-start_time-step_1_time-step_2_time
-        # print(f"Time taken for step 3: {step_3_time}")
-
-        # early return of encodings, if needed (for DALL-E2)
-        text_embeds = enc_text[:, :] if enc_text.ndim == 3 else enc_text
         image_embeds = enc_image[:, :] if enc_image.ndim == 3 else enc_image
 
-        # step_4_time = time.time()-start_time-step_1_time-step_2_time-step_3_time
-        # print(f"Time taken for step 4: {step_4_time}")
+        image_latents_all = self.to_visual_latent(image_embeds)
 
+        image_latents_all = image_latents_all.reshape(B, h_r * w_r * z_r, -1)
+
+        # print(f"image latents all shape: {image_latents_all.shape}")
+
+        # mean on dim 1 to get the image latents
+        image_latents = torch.mean(image_latents_all, dim=1)
+
+        # print(f"image latents shape: {image_latents.shape}")
+        # exit()
+
+        # depending on whether to do fine-grained CLIP or not, select either all tokens, or CLS tokens only
+
+        text_embeds = enc_text[:, :] if enc_text.ndim == 3 else enc_text
+        
         # project to latents
         #text_embeds = text_embeds.view(text_embeds.shape[0], -1)
         text_embeds = text_embeds[:,0,:]
 
-
+        
+        #text_embeds = torch.mean(text_embeds, dim=1)
         text_latents = self.to_text_latent(text_embeds)
 
-        image_latents = self.to_visual_latent(image_embeds)
+
         text_latents, image_latents = map(l2norm, (text_latents, image_latents))
-
-        # print(f"in forward infer, shape of text_latents: {text_latents.shape} and image_latents: {image_latents.shape}")
-
-        # broadcast the text latents to match with the image latents if shape mismatch
-
-        # if text_latents.shape[0] != image_latents.shape[0]:
-        #     print(f"warning: text_latents shape: {text_latents.shape} and image_latents shape: {image_latents.shape} mismatch, broadcasting text_latents to match image_latents")
-        #     text_latents = text_latents.expand_as(image_latents)
 
         temp = self.temperature.exp()
 
@@ -1149,7 +1142,7 @@ class CTCLIP(nn.Module):
         # print(f"encoded image shape: {enc_image.shape}")
         # exit()
         #print("This is visual encoding")
-        global h_r, w_r, z_r
+        # global h_r, w_r, z_r
         (B, h_r, w_r, z_r, C_img) = enc_image.shape
         #enc_image, max_indices = torch.max(enc_image, dim=1)
         # enc_image_send = enc_image
