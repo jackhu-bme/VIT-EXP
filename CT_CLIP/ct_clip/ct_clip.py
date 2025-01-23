@@ -1146,7 +1146,7 @@ class CTCLIP(nn.Module):
 
         enc_image= self.visual_transformer(image, return_encoded_tokens=True) # (B, H, W, Z, C)
 
-        print(f"encoded image shape: {enc_image.shape}")
+        # print(f"encoded image shape: {enc_image.shape}")
         # exit()
         #print("This is visual encoding")
         global h_r, w_r, z_r
@@ -1164,13 +1164,13 @@ class CTCLIP(nn.Module):
 
         image_latents_all = image_latents_all.reshape(B, h_r * w_r * z_r, -1)
 
-        print(f"image latents all shape: {image_latents_all.shape}")
+        # print(f"image latents all shape: {image_latents_all.shape}")
 
         # mean on dim 1 to get the image latents
         image_latents = torch.mean(image_latents_all, dim=1)
 
-        print(f"image latents shape: {image_latents.shape}")
-        exit()
+        # print(f"image latents shape: {image_latents.shape}")
+        # exit()
 
         # depending on whether to do fine-grained CLIP or not, select either all tokens, or CLS tokens only
 
