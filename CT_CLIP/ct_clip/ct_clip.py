@@ -1055,7 +1055,7 @@ class CTCLIP(nn.Module):
                 #     auc, auc_plot = calculate_vis_auc(sim_vis_0, mask_gt_vis_0)
                 #     vis_dict[f"auc_channel_{i}"] = auc
                 #     vis_dict[f"auc_plot_channel_{i}"] = auc_plot
-                # return_list.append(vis_dict)
+                return_list.append(vis_dict)
                 # exit()
         return return_list
 
