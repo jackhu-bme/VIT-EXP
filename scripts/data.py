@@ -447,8 +447,8 @@ class CTOpenSegDataset(Dataset):
         # try:
         # video_tensor = torch.tensor(np.load(data_file)['arr_0'].unsqueeze(0) # missing channel dim in the saved data
         video_tensor = npz_to_tensor(data_file)
-        step1 = time.time()
-        print(f"step1 in loading: {step1 - start_time}")
+        # step1 = time.time()
+        # print(f"step1 in loading: {step1 - start_time}")
         # mask_tensor = torch.tensor(np.load(mask_file)['arr_0'])
         mask_tensor = npz_mask_to_tensor(mask_file)
         # step2 = time.time()

@@ -1040,17 +1040,18 @@ class CTCLIP(nn.Module):
                     # update the vis dict with each key-value pair
                     vis_dict.update(vis_res)
                 # visulize the auc based on the cosine simliarity and whether this voxel is positive or negative for each class
-                for i in range(C_seg):
-                    # get the prompt logits for the i-th class
-                    prompt_logits = prompt_logits_batch[:, i, :]
-                    sim = F.cosine_similarity(seg_preds, prompt_logits.unsqueeze(1), dim=-1)
-                    sim = (sim + 1) / 2  # fix the range to [0, 1], after v3-5 exps!
-                    sim_vis_0 = sim.reshape(B_seg, D_down, W_down, H_down)[0]
-                    mask_gt_vis_0 = seg_mask_flatten[:, :, i].reshape(B_seg, D_down, W_down, H_down)[0]
-                    auc, auc_plot = calculate_vis_auc(sim_vis_0, mask_gt_vis_0)
-                    vis_dict[f"auc_channel_{i}"] = auc
-                    vis_dict[f"auc_plot_channel_{i}"] = auc_plot
-                return_list.append(vis_dict)
+                # todo: fix the problem of ploting auc in the future (np.float64 unsupport type!), tmp just do not cal and log it
+                # for i in range(C_seg):
+                #     # get the prompt logits for the i-th class
+                #     prompt_logits = prompt_logits_batch[:, i, :]
+                #     sim = F.cosine_similarity(seg_preds, prompt_logits.unsqueeze(1), dim=-1)
+                #     sim = (sim + 1) / 2  # fix the range to [0, 1], after v3-5 exps!
+                #     sim_vis_0 = sim.reshape(B_seg, D_down, W_down, H_down)[0]
+                #     mask_gt_vis_0 = seg_mask_flatten[:, :, i].reshape(B_seg, D_down, W_down, H_down)[0]
+                #     auc, auc_plot = calculate_vis_auc(sim_vis_0, mask_gt_vis_0)
+                #     vis_dict[f"auc_channel_{i}"] = auc
+                #     vis_dict[f"auc_plot_channel_{i}"] = auc_plot
+                # return_list.append(vis_dict)
                 # exit()
         return return_list
 
