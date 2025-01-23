@@ -649,6 +649,8 @@ class CTCLIP(nn.Module):
 
         self.seg_criterion = nn.BCEWithLogitsLoss()
 
+        self.fix_text_encoder = config.get("fix_text_encoder", False)
+
         self.use_seg = config.get("use_seg", False)
         if self.use_seg:
             seg_head_config = config.get("seg_head", {})
@@ -939,6 +941,8 @@ class CTCLIP(nn.Module):
         seg_mask_prompts = torch.cat(seg_mask_prompt_list, dim=0) # already tokens, [C, length=512], C=num_labels
         # print(f"seg_mask_prompts shape: {seg_mask_prompts.shape}")
         # get text embeddings by text transformers
+        if self.fix_text_encoder:
+            self.text_transformer.eval()
         seg_prompt_text_embeddings = self.text_transformer(seg_mask_prompts)[0] # [C, length=512, n_hidden_dim]
         # step_1_time = time.time()-start_time
         # print(f"Time taken for step 1: {step_1_time}")
@@ -1135,6 +1139,8 @@ class CTCLIP(nn.Module):
         if not self.text_encode_without_mask:
             text_args = (*text_args, text_mask)
 
+        if self.fix_text_encoder:
+            self.text_transformer.eval()
         text_embeddings = self.text_transformer(text.input_ids, attention_mask = text.attention_mask)
         enc_text = text_embeddings[0]
 
