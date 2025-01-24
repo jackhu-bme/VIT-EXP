@@ -334,7 +334,7 @@ def ctclip_image_report_zero_shot_cls_test(ctclip):
     """
     ctclip: CTCLIP model
     """
-    if isinstance(ctclip, nn.DistributedDataParallel):
+    if isinstance(ctclip, nn.parallel.DistributedDataParallel):
         print(f"change the model to single gpu object as a nn.DistributedDataParallel object")
         ctclip = ctclip.to(torch.device('cuda:0')).module # get the single gpu object
     else:
