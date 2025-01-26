@@ -844,6 +844,15 @@ class CTCLIP(nn.Module):
         # print(f"seg_mask_flatten shape: {seg_mask_flatten.shape}")
         # print(f"prompt_logits_batch shape: {prompt_logits_batch.shape}")
         # exit()
+        choose_cls = self.open_seg_loss_hyper_config.get("choose_cls", None)
+        if choose_cls is not None:
+            # choose the class by indexes in choose_cls
+            choose_cls = [int(cls_ind) for cls_ind in choose_cls]
+            # print(f"choose_cls: {choose_cls}")
+            seg_mask_flatten = seg_mask_flatten[:, :, choose_cls]
+            prompt_logits_batch = prompt_logits_batch[:, choose_cls, :]
+            print(f"after choose_cls, seg_mask_flatten shape: {seg_mask_flatten.shape}")
+            print(f"after choose_cls, prompt_logits_batch shape: {prompt_logits_batch.shape}")
         if self.open_seg_loss_type == "cos_sim_l2":
             # calculate the cosine similarity for each class
             B, L, n_hidden_dim = seg_preds.shape
