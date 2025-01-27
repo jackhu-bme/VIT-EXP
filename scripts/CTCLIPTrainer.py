@@ -318,6 +318,9 @@ class CTClipTrainer(nn.Module):
         init_kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=36000))
         self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, init_kwargs], **accelerate_kwargs)
         self.CTClip = CTClip
+
+
+        
         if tokenizer != None:
             self.tokenizer=tokenizer
         else:

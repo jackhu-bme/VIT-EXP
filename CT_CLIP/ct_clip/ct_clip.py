@@ -651,6 +651,10 @@ class CTCLIP(nn.Module):
 
         self.fix_text_encoder = config.get("fix_text_encoder", False)
 
+        if self.fix_text_encoder:
+            for name, param in self.text_transformer.named_parameters():
+                param.requires_grad = False
+
         self.use_seg = config.get("use_seg", False)
         if self.use_seg:
             seg_head_config = config.get("seg_head", {})
