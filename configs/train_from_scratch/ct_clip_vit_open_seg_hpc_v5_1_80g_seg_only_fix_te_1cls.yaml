@@ -1,7 +1,7 @@
 random_seed: 42
 results_folder: ./output_train_scratch
-project_name: ct-clip-vit-open-seg-hpc-single_branch
-exp_name: ctclip_vit_open_seg_hpc_v5_1_80g_final2_seg_only_fix_text_encoder_1_cls
+project_name: ct-clip-vit-open-seg-hpc-single_branch_try2
+exp_name: ctclip_vit_open_seg_hpc_v5_1_80g_final2_seg_only_fix_text_encoder_1_cls_try2
 
 trainer:
   lr: 1.25e-6
