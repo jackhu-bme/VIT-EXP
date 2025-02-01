@@ -1,0 +1,112 @@
+random_seed: 42
+results_folder: ./output_train_scratch
+project_name: ct-clip-vit-open-seg-hpc-double-branch
+exp_name: ctclip_vit_open_seg_hpc_v5_1_80g_retry1
+
+trainer:
+  lr: 1.25e-6
+  wd: 0.
+  num_train_steps: 200001
+  max_grad_norm: 0.5
+  gradient_accumulation_steps: 1 # todo: in future, if pass [1, 2], means 1 for ct-rate, 2 for total-segmentator, not supported yet
+  save_results_every: 1000
+  save_model_every: 1000
+  eval_model_every: 2000
+  vis_train_every: [-1, 100] # visualization while training, each element is for correpsonding training, dataset
+  sample_val_every: 1000 # the interval of visualization for validation on valid dataset
+  balance_loss_weight: [1.0, 5.0]
+
+
+train_data_list:
+  - name: CT-RATE
+    type: imagereport
+    batch_size: 4
+    num_workers: 8
+    reports_file_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/reports/train_reports.csv
+    # reports_file_valid: /mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv
+    metadata_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv
+    data_train: /mnt/input/CT-RATE/organized_dataset/train_images_preprocessed
+    # data_valid: /mnt/input/CT-RATE/organized_dataset/val_images_preprocessed
+    labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv
+  - name: RadGenome
+    type: imageopenseg
+    batch_size: 1
+    num_workers: 4
+    seg_data_train: /mnt/input/RadGenome/train_preprocessed_img_organized_fp16
+    # seg_data_valid: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/val
+    metadata_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv
+    seg_mask_train: /mnt/input/RadGenome/train_preprocessed_mask_combined_bool
+    # seg_mask_valid: /mnt/input/RadGenome/seg_final_dataset_17cls/valid_mask
+    seg_mask_name_table: /mnt/input/RadGenome/label_mappings/radgenome_labels.xlsx
+    seg_mask_prompt_type: this_is
+
+    # sampler_type: InfinteCycleSampler
+  # - name: TotalSegmentator
+  #   type: imageseg
+  #   batch_size: 1 # test if 2 is ok for 80g a100, if not ok, use 1 !
+  #   num_workers: 8
+  #   seg_data_train: /mnt/input/TotalSegmentator/seg_final_dataset/train_data
+  #   seg_data_valid: /mnt/input/TotalSegmentator/seg_final_dataset/valid_data
+  #   seg_mask_train: /mnt/input/TotalSegmentator/seg_final_dataset/train_mask
+  #   seg_mask_valid: /mnt/input/TotalSegmentator/seg_final_dataset/valid_mask
+    # sampler_type: InfinteCycleSampler
+
+# valid_data_list:
+#   - name: CT-RATE
+#     type: imagereport
+#     batch_size: 4
+#     num_workers: 8
+#     reports_file_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/reports/train_reports.csv
+#     reports_file_valid: /mnt/input/CT-RATE/organized_dataset/csv_dir/reports/validation_reports.csv
+#     metadata_train: /mnt/input/CT-RATE/organized_dataset/csv_dir/metadata/train_metadata.csv
+#     data_train: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/train
+#     data_valid: /mnt/input/CT-RATE/sub_dataset/prepocessed_float32_divide_5/divide_0/val
+#     labels: /mnt/input/CT-RATE/organized_dataset/csv_dir/labels/train_predicted_labels.csv
+
+
+valid_test_list:
+  - ctclip_image_report_zero_shot_cls_test
+
+sample_test_list:
+  - radgenome_image_open_seg_test_ten_images
+
+
+DatasetSampler:
+  type: Combined # Combined means combine the weight of different data types in a training step
+  acc_steps_list: [1, 1]
+
+# arch for img
+arch:
+  arch_name: CTViT3D # this is vit_vanilla_3D
+  dim: 768 # this change is due to errors in the previous training, the previous value was 768, but actually 384 is more unified
+  image_size: 480
+  patch_size: 20
+  temporal_size: 240
+  temporal_patch_size: 10
+  transformer_blocks: 8
+  dim_head: 32
+  heads: 8
+  use_flash_attention: True
+
+# arch for ct-clip model
+ct_clip_arch:
+  use_seg: False
+  use_open_seg: True
+  open_seg_loss_type: clip_focal_loss
+  open_seg_loss_down_factor: 4
+  open_seg_loss_hyper_config:
+    alpha: 0.25
+    gamma: 2.0
+  open_seg_head:
+    n_layers: 2
+    layer_type: mlp
+    in_dim: 768
+    mid_dim: 128
+    out_dim: 8 # a low dim representation for each voxel
+  open_text_head:
+    n_layers: 2
+    layer_type: mlp
+    in_dim: 768
+    mid_dim: 128
+    out_dim: 8 # a low dim representation for each voxel
+  
