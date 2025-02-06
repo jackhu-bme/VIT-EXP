@@ -194,7 +194,7 @@ def npz_mask_to_tensor(path):
     
     dh, dw, dd = target_shape
 
-    print(f"padding mask tensor: {tensor.shape}")
+    # print(f"padding mask tensor: {tensor.shape}")
     # assert h == dh and w == dw and d == dd, f"mask shape not equal to target shape: {h, w, d} vs {dh, dw, dd}"
 
     h_start = max((h - dh) // 2, 0)
