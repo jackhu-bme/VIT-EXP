@@ -130,7 +130,7 @@ def npz_mask_to_tensor(path):
     # img_data = (img_data / 1000).astype(np.float32)
     min_value, max_value = 0, 1
     img_data = torch.clip(img_data, min_value, max_value)
-    img_data = (img_data - min_value) / (max_value - min_value)
+    tensor = (img_data - min_value) / (max_value - min_value)
 
     # slices=[]
     time_2 = time.time()
