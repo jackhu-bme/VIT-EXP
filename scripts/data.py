@@ -47,10 +47,10 @@ def resize_array(array, current_spacing, target_spacing):
     return resized_array
 
 def npz_to_tensor(path):
-    start_time = time.time()
+    # start_time = time.time()
     img_data = np.load(path)['arr_0']
-    time_1 = time.time()
-    print(f"loading npz time: {time_1 - start_time}")
+    # time_1 = time.time()
+    # print(f"loading npz time: {time_1 - start_time}")
     img_data= np.transpose(img_data, (1, 2, 0))
     # img_data = img_data*1000
     # hu_min, hu_max = -1000, 1000
@@ -66,8 +66,8 @@ def npz_to_tensor(path):
 
     tensor = torch.tensor(img_data)
 
-    time_2 = time.time()
-    print(f"converting npz to tensor time: {time_2 - time_1}")
+    # time_2 = time.time()
+    # print(f"converting npz to tensor time: {time_2 - time_1}")
 
     # Get the dimensions of the input tensor
     target_shape = (480,480,240)
@@ -98,21 +98,26 @@ def npz_to_tensor(path):
 
     tensor = torch.nn.functional.pad(tensor, (pad_d_before, pad_d_after, pad_w_before, pad_w_after, pad_h_before, pad_h_after), value=-1)
 
-    time_3 = time.time()
-    print(f"padding time: {time_3 - time_2}")
+    # time_3 = time.time()
+    # print(f"padding time: {time_3 - time_2}")
 
     tensor = tensor.permute(2, 0, 1)
 
     tensor = tensor.unsqueeze(0)
 
-    time_4 = time.time()
-    print(f"final processing time: {time_4 - time_3}")
+    # time_4 = time.time()
+    # print(f"final processing time: {time_4 - time_3}")
 
     return tensor
 
 
 def npz_mask_to_tensor(path):
+    time_0 = time.time()
     img_data = np.load(path)['arr_0']
+
+    time_1 = time.time()
+    print(f"loading npz mask time: {time_1 - time_0}")
+
     img_data= np.transpose(img_data, (0, 2, 3, 1))
     # img_data = img_data*1000
     # hu_min, hu_max = -1000, 1000
@@ -125,6 +130,8 @@ def npz_mask_to_tensor(path):
     img_data = img_data.astype(np.float32)
 
     # slices=[]
+    time_2 = time.time()
+    print(f"transposing npz mask time: {time_2 - time_1}")
 
     tensor = torch.tensor(img_data)
     # Get the dimensions of the input tensor
@@ -163,6 +170,9 @@ def npz_mask_to_tensor(path):
     tensor = tensor.permute(0, 3, 1, 2)
 
     tensor = tensor #.unsqueeze(0)
+
+    time_3 = time.time()
+    print(f"final processing mask time: {time_3 - time_2}")
 
     return tensor
 
