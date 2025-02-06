@@ -193,7 +193,7 @@ def npz_mask_to_tensor(path):
     n_c, h, w, d = tensor.shape
     
     dh, dw, dd = target_shape
-    assert h == dh and w == dw and d == dd
+    assert h == dh and w == dw and d == dd, f"mask shape not equal to target shape: {h, w, d} vs {dh, dw, dd}"
 
     # h_start = max((h - dh) // 2, 0)
     # h_end = min(h_start + dh, h)
