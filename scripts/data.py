@@ -111,75 +111,116 @@ def npz_to_tensor(path):
     return tensor
 
 
-def npz_mask_to_tensor(path):
-    time_0 = time.time()
-    img_data = np.load(path)['arr_0']
+# def npz_mask_to_tensor(path):
+#     time_0 = time.time()
+#     img_data = np.load(path)['arr_0']
 
-    time_1 = time.time()
-    print(f"loading npz mask time: {time_1 - time_0}")
+#     time_1 = time.time()
+#     print(f"loading npz mask time: {time_1 - time_0}")
+
+#     img_data = torch.tensor(img_data.astype(np.float32))
+
+#     img_data = torch.permute(img_data, (0, 2, 3, 1))
+
+#     # img_data= np.transpose(img_data, (0, 2, 3, 1))
+#     # img_data = img_data*1000
+#     # hu_min, hu_max = -1000, 1000
+#     # img_data = np.clip(img_data, hu_min, hu_max)
+
+#     # img_data = (img_data / 1000).astype(np.float32)
+#     min_value, max_value = 0, 1
+#     img_data = torch.clip(img_data, min_value, max_value)
+#     tensor = (img_data - min_value) / (max_value - min_value)
+
+#     # slices=[]
+#     time_2 = time.time()
+#     print(f"transposing npz mask time: {time_2 - time_1}")
+
+#     # tensor = torch.tensor(img_data)
+#     # Get the dimensions of the input tensor
+#     target_shape = (480,480,240)
+#     # Extract dimensions
+#     n_c, h, w, d = tensor.shape
+
+#     # Calculate cropping/padding values for height, width, and depth
+#     dh, dw, dd = target_shape
+
+#     h_start = max((h - dh) // 2, 0)
+#     h_end = min(h_start + dh, h)
+#     w_start = max((w - dw) // 2, 0)
+#     w_end = min(w_start + dw, w)
+#     d_start = max((d - dd) // 2, 0)
+#     d_end = min(d_start + dd, d)
+
+#     # Crop or pad the tensor
+#     tensor = tensor[:, h_start:h_end, w_start:w_end, d_start:d_end]
+
+#     pad_h_before = (dh - tensor.size(1)) // 2
+#     pad_h_after = dh - tensor.size(1) - pad_h_before
+
+#     pad_w_before = (dw - tensor.size(2)) // 2
+#     pad_w_after = dw - tensor.size(2) - pad_w_before
+
+#     pad_d_before = (dd - tensor.size(3)) // 2
+#     pad_d_after = dd - tensor.size(3) - pad_d_before
+
+#     # print(f"before padding: {tensor.shape}")
+
+#     tensor = torch.nn.functional.pad(tensor, (pad_d_before, pad_d_after, pad_w_before, pad_w_after, pad_h_before, pad_h_after), value=0)
+
+#     # print(f"after padding: {tensor.shape}")
+
+#     tensor = tensor.permute(0, 3, 1, 2)
+
+#     tensor = tensor #.unsqueeze(0)
+
+#     time_3 = time.time()
+#     print(f"final processing mask time: {time_3 - time_2}")
+
+#     return tensor
+
+def npz_mask_to_tensor(path):
+    img_data = np.load(path)['arr_0']
 
     img_data = torch.tensor(img_data.astype(np.float32))
 
-    img_data = torch.permute(img_data, (0, 2, 3, 1))
-
-    # img_data= np.transpose(img_data, (0, 2, 3, 1))
-    # img_data = img_data*1000
-    # hu_min, hu_max = -1000, 1000
-    # img_data = np.clip(img_data, hu_min, hu_max)
-
-    # img_data = (img_data / 1000).astype(np.float32)
+    # img_data = torch.permute(img_data, (0, 2, 3, 1))
     min_value, max_value = 0, 1
     img_data = torch.clip(img_data, min_value, max_value)
     tensor = (img_data - min_value) / (max_value - min_value)
-
-    # slices=[]
-    time_2 = time.time()
-    print(f"transposing npz mask time: {time_2 - time_1}")
-
-    # tensor = torch.tensor(img_data)
-    # Get the dimensions of the input tensor
     target_shape = (480,480,240)
     # Extract dimensions
     n_c, h, w, d = tensor.shape
-
-    # Calculate cropping/padding values for height, width, and depth
+    
     dh, dw, dd = target_shape
+    assert h == dh and w == dw and d == dd
 
-    h_start = max((h - dh) // 2, 0)
-    h_end = min(h_start + dh, h)
-    w_start = max((w - dw) // 2, 0)
-    w_end = min(w_start + dw, w)
-    d_start = max((d - dd) // 2, 0)
-    d_end = min(d_start + dd, d)
+    # h_start = max((h - dh) // 2, 0)
+    # h_end = min(h_start + dh, h)
+    # w_start = max((w - dw) // 2, 0)
+    # w_end = min(w_start + dw, w)
+    # d_start = max((d - dd) // 2, 0)
+    # d_end = min(d_start + dd, d)
 
-    # Crop or pad the tensor
-    tensor = tensor[:, h_start:h_end, w_start:w_end, d_start:d_end]
+    # # Crop or pad the tensor
+    # tensor = tensor[:, h_start:h_end, w_start:w_end, d_start:d_end]
 
-    pad_h_before = (dh - tensor.size(1)) // 2
-    pad_h_after = dh - tensor.size(1) - pad_h_before
+    # pad_h_before = (dh - tensor.size(1)) // 2
+    # pad_h_after = dh - tensor.size(1) - pad_h_before
 
-    pad_w_before = (dw - tensor.size(2)) // 2
-    pad_w_after = dw - tensor.size(2) - pad_w_before
+    # pad_w_before = (dw - tensor.size(2)) // 2
+    # pad_w_after = dw - tensor.size(2) - pad_w_before
 
-    pad_d_before = (dd - tensor.size(3)) // 2
-    pad_d_after = dd - tensor.size(3) - pad_d_before
+    # pad_d_before = (dd - tensor.size(3)) // 2
+    # pad_d_after = dd - tensor.size(3) - pad_d_before
 
-    # print(f"before padding: {tensor.shape}")
+    # tensor = torch.nn.functional.pad(tensor, (pad_d_before, pad_d_after, pad_w_before, pad_w_after, pad_h_before, pad_h_after), value=0)
 
-    tensor = torch.nn.functional.pad(tensor, (pad_d_before, pad_d_after, pad_w_before, pad_w_after, pad_h_before, pad_h_after), value=0)
+    # tensor = tensor.permute(0, 3, 1, 2)
 
-    # print(f"after padding: {tensor.shape}")
-
-    tensor = tensor.permute(0, 3, 1, 2)
-
-    tensor = tensor #.unsqueeze(0)
-
-    time_3 = time.time()
-    print(f"final processing mask time: {time_3 - time_2}")
+    tensor = tensor
 
     return tensor
-
-
 
 class CTReportDataset(Dataset):
     """
