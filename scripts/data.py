@@ -118,22 +118,25 @@ def npz_mask_to_tensor(path):
     time_1 = time.time()
     print(f"loading npz mask time: {time_1 - time_0}")
 
-    img_data= np.transpose(img_data, (0, 2, 3, 1))
+    img_data = torch.tensor(img_data.astype(np.float32))
+
+    img_data = torch.permute(img_data, (0, 2, 3, 1))
+
+    # img_data= np.transpose(img_data, (0, 2, 3, 1))
     # img_data = img_data*1000
     # hu_min, hu_max = -1000, 1000
     # img_data = np.clip(img_data, hu_min, hu_max)
 
     # img_data = (img_data / 1000).astype(np.float32)
     min_value, max_value = 0, 1
-    img_data = np.clip(img_data, min_value, max_value)
+    img_data = torch.clip(img_data, min_value, max_value)
     img_data = (img_data - min_value) / (max_value - min_value)
-    img_data = img_data.astype(np.float32)
 
     # slices=[]
     time_2 = time.time()
     print(f"transposing npz mask time: {time_2 - time_1}")
 
-    tensor = torch.tensor(img_data)
+    # tensor = torch.tensor(img_data)
     # Get the dimensions of the input tensor
     target_shape = (480,480,240)
     # Extract dimensions
