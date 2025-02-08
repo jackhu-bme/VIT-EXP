@@ -184,8 +184,8 @@ def npz_mask_to_tensor(path):
     start_time = time.time()
     img_data = np.load(path)['arr_0']
 
-    time_1 = time.time()
-    print(f"loading npz mask time: {time_1 - start_time}")
+    # time_1 = time.time()
+    # print(f"loading npz mask time: {time_1 - start_time}")
 
     img_data = torch.tensor(img_data.astype(np.float32))
 
@@ -212,8 +212,8 @@ def npz_mask_to_tensor(path):
     # Crop or pad the tensor
     tensor = tensor[:, h_start:h_end, w_start:w_end, d_start:d_end]
 
-    time_2 = time.time()
-    print(f"cropping mask time: {time_2 - time_1}")
+    # time_2 = time.time()
+    # print(f"cropping mask time: {time_2 - time_1}")
 
     pad_h_before = (dh - tensor.size(1)) // 2
     pad_h_after = dh - tensor.size(1) - pad_h_before
@@ -226,8 +226,8 @@ def npz_mask_to_tensor(path):
 
     tensor = torch.nn.functional.pad(tensor, (pad_d_before, pad_d_after, pad_w_before, pad_w_after, pad_h_before, pad_h_after), value=0)
 
-    time_3 = time.time()
-    print(f"padding mask time: {time_3 - time_2}")
+    # time_3 = time.time()
+    # print(f"padding mask time: {time_3 - time_2}")
 
     tensor = tensor
 
