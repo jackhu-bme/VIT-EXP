@@ -7,7 +7,7 @@ accelerate launch scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v5_1_80
 accelerate launch scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v5_1_80g_seg_only_fix_te_1cls.yaml # only use the segmenataion and freeze the text encoder
 accelerate launch scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v5_1_80g_fix_te_mlp_fusion_try1.yaml # only use the segmenataion and freeze the text encoder
 # CUDA_VISIBLE_DEVICES=0,1
-# accelerate launch scripts/run_train.py --config ct_clip_ori_hpc_1.yaml
+# accelerate launch --main_process_port 29600 scripts/run_train.py --config ct_clip_ori_hpc_1.yaml
 
 # debug
 # python scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v1_1_div_0_80g.yaml --debug
