@@ -6,7 +6,7 @@ project_name: ct-clip-vit-open-seg-hpc-single_branch_try5_log
 exp_name: ctclip_vit_open_seg_hpc_v5_1_80g_final2_seg_only_fix_text_encoder_try5_log
 
 trainer:
-  lr: 1.25e-4 # a much bigger learning rate
+  lr: 1.25e-6 # a much bigger learning rate
   wd: 0.
   num_train_steps: 200001
   max_grad_norm: 0.5
