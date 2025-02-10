@@ -5,7 +5,7 @@ export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=3600
 accelerate launch scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v3_1_80g.yaml  #--auto_resume
 accelerate launch scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v5_1_80g_seg_only.yaml # only use the segmenataion
 accelerate launch scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v5_1_80g_seg_only_fix_te_1cls.yaml # only use the segmenataion and freeze the text encoder
-accelerate launch scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v5_1_80g_cl_only_revised.yaml # only use the segmenataion and freeze the text encoder
+accelerate launch scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v5_1_80g_fix_te_mlp_fusion_try1.yaml # only use the segmenataion and freeze the text encoder
 # accelerate launch scripts/run_train.py --config ct_clip_ori_hpc_1.yaml
 
 # debug
