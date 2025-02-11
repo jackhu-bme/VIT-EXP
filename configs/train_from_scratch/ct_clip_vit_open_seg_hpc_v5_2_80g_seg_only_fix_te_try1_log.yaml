@@ -95,11 +95,9 @@ ct_clip_arch:
   use_seg: False
   fix_text_encoder: True # fix the text encoder when training the open seg head / VL contrastive head
   use_open_seg: True
-  open_seg_loss_type: weighted_clip_focal_loss
+  open_seg_loss_type: weighted_bce_loss
   open_seg_loss_down_factor: 4
-  open_seg_loss_hyper_config:
-    alpha: 0.25
-    gamma: 2.0
+  open_seg_loss_hyper_config: []
   open_seg_head:
     n_layers: 2
     layer_type: mlp
