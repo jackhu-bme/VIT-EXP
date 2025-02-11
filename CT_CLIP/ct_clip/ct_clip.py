@@ -937,11 +937,13 @@ class CTCLIP(nn.Module):
             weights = pos_weight * pos_inds + neg_weight * neg_inds
             if return_class_loss:
                 # return loss for each class
-                open_seg_loss = self.bce_criterion(sim_all, seg_mask_flatten, weight=weights, reduction='none')
+                open_seg_loss = self.bce_criterion(sim_all, seg_mask_flatten, reduction='none')
+                open_seg_loss = open_seg_loss * weights
                 class_loss = open_seg_loss.mean(dim=0)
                 return open_seg_loss.mean(), class_loss
-            open_seg_loss = self.bce_criterion(sim_all, seg_mask_flatten, weight=weights)
-            return open_seg_loss
+            open_seg_loss = self.bce_criterion(sim_all, seg_mask_flatten, reduction='none')
+            open_seg_loss = open_seg_loss * weights
+            return open_seg_loss.mean()
             # open_seg_loss = self.bce_criterion(sim_all.reshape(-1, C), seg_mask_flatten.reshape(-1, C))
             return open_seg_loss 
         elif self.open_seg_loss_type == "clip_focal_loss":
