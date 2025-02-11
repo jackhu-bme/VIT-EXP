@@ -914,6 +914,35 @@ class CTCLIP(nn.Module):
             sim_all = (F.cosine_similarity(seg_preds.unsqueeze(2), prompt_logits_batch.unsqueeze(1), dim=-1) + 1) / 2 # [B, L, C]
             # sim_logits = torch.einsum('bld,bcd->blc', seg_preds, prompt_logits_batch)
             open_seg_loss = self.bce_criterion(sim_all.reshape(-1, C), seg_mask_flatten.reshape(-1, C))
+            return open_seg_loss
+        elif self.open_seg_loss_type == "weighted_bce_loss":
+            # calculate the cosine similarity for each class
+            B, L, C = seg_mask_flatten.shape
+            open_seg_loss = 0.
+            sim_all = (F.cosine_similarity(seg_preds.unsqueeze(2), prompt_logits_batch.unsqueeze(1), dim=-1) + 1) / 2 # [B, L, C]
+            # sim_logits = torch.einsum('bld,bcd->blc', seg_preds, prompt_logits_batch)
+
+            # sampling same amount of positve and negative samples
+            sim_all = sim_all.reshape(-1, C)
+            seg_mask_flatten = seg_mask_flatten.reshape(-1, C)
+
+            # get the positive and negative samples
+            pos_inds = seg_mask_flatten == 1
+            neg_inds = seg_mask_flatten == 0
+            n_pos = (pos_inds.sum(dim=0) + 1e-6).float()
+            n_neg = (neg_inds.sum(dim=0) + 1e-6).float()
+            n_total = n_pos + n_neg
+            pos_weight = n_total / (2 * n_pos)
+            neg_weight = n_total / (2 * n_neg)
+            weights = pos_weight * pos_inds + neg_weight * neg_inds
+            if return_class_loss:
+                # return loss for each class
+                open_seg_loss = self.bce_criterion(sim_all, seg_mask_flatten, weight=weights, reduction='none')
+                class_loss = open_seg_loss.mean(dim=0)
+                return open_seg_loss.mean(), class_loss
+            open_seg_loss = self.bce_criterion(sim_all, seg_mask_flatten, weight=weights)
+            return open_seg_loss
+            # open_seg_loss = self.bce_criterion(sim_all.reshape(-1, C), seg_mask_flatten.reshape(-1, C))
             return open_seg_loss 
         elif self.open_seg_loss_type == "clip_focal_loss":
             gamma = self.open_seg_loss_hyper_config.get("gamma", 2)
