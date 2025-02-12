@@ -582,17 +582,13 @@ class CTClipTrainer(nn.Module):
 
 
     def train_step_single_dataset(self, dataset_index=None, vis=False):
-        start_time = time.time()
+        # start_time = time.time()
         batch = next(self.dl_iter_list[dataset_index])
         batch = self.prepare_batch(batch)
         #video = video
 
-        loading_time = time.time()
+        # loading_time = time.time()
         # print(f"loading time: {loading_time - start_time}")
-
-        data_type = batch["data_type"][0]
-
-        self.data_type_train_step_dict[data_type] += 1
         
         with self.accelerator.accumulate(self.CTClip):
             with self.accelerator.autocast():
@@ -609,10 +605,10 @@ class CTClipTrainer(nn.Module):
                 for key, value in loss_dict.items():
                     bal_loss_dict[key] = value * self.balance_loss_weight[dataset_index]
 
-        forward_finish_time = time.time()
+        # forward_finish_time = time.time()
         # print(f"forward time: {forward_finish_time - loading_time}")
         self.accelerator.backward(loss)
-        backward_finish_time = time.time()
+        # backward_finish_time = time.time()
         # print(f"backward time: {backward_finish_time - forward_finish_time}")
         return bal_loss_dict
 
