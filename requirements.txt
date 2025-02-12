@@ -1,2 +1,3 @@
 transformers
 wandb
+segmentation-models-pytorch

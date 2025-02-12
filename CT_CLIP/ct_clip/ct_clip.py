@@ -17,6 +17,8 @@ from ct_clip.distributed import AllGather
 
 from transformers import BertTokenizer, BertModel
 
+from segmentation_models_pytorch.losses import TverskyLoss
+
 import time
 
 import random
@@ -699,6 +701,12 @@ class CTCLIP(nn.Module):
             self.bce_no_reduction_criterion = nn.BCELoss(reduction='none')
             self.fusion_head = self.create_fusion_head(config.get("fusion_head", {})) # default fusion head is None, means fusion using cosine similarity
             self.sigmoid = nn.Sigmoid()
+            if self.open_seg_loss_type == "tversky_loss":
+                alpha, beta, gamma = self.open_seg_loss_hyper_config.get("alpha", 0.3), \
+                self.open_seg_loss_hyper_config.get("beta", 0.7), \
+                    self.open_seg_loss_hyper_config.get("gamma", 1.0)
+                smooth = float(self.open_seg_loss_hyper_config.get("smooth", 1e-6)) # needed to be float, or is a string
+                self.tversky_criterion = TverskyLoss(mode="binary", alpha=alpha, beta=beta, smooth=smooth, gamma=gamma)
         else:
             self.open_seg_head = None
             self.open_text_head = None
@@ -971,6 +979,27 @@ class CTCLIP(nn.Module):
                 print(f"loss wise loss: {class_loss}")
                 return open_seg_loss, class_loss
             return open_seg_loss
+        elif self.open_seg_loss_type == "tversky_loss":
+            # calculate the cosine similarity for each class
+            B, L, C = seg_mask_flatten.shape
+            open_seg_loss = 0.
+            # continue_train = input("Continue training? 3")
+            sim_all = (F.cosine_similarity(seg_preds.unsqueeze(2), prompt_logits_batch.unsqueeze(1), dim=-1) + 1) / 2 # [B, L, C]
+            p = sim_all.permute((0, 2, 1)).contiguous() # (B, C, L)
+            targets = seg_mask_flatten.permute((0, 2, 1)).contiguous() # (B, C, L)
+            if return_class_loss:
+                loss_list = []
+                for i in range(C):
+                    current_class_loss = self.tversky_criterion.forward(p[:, i, :], targets[:, i, :])
+                    loss_list.append(current_class_loss)
+                    open_seg_loss += current_class_loss / C
+                return open_seg_loss, torch.stack(loss_list, dim=0)
+            else:
+                loss = self.tversky_criterion.forward(p, targets)
+                return loss
+            # if return_class_loss:
+            #     return loss, None # no class individual loss support yet
+            # return loss
         elif self.open_seg_loss_type == "fusion_focal_loss":   
             gamma = self.open_seg_loss_hyper_config.get("gamma", 2)
             alpha = self.open_seg_loss_hyper_config.get("alpha", 0.25)
@@ -1102,8 +1131,9 @@ class CTCLIP(nn.Module):
         # print(f"Time taken for step 7: {step_7_time}")
         # exit()
         loss_dict["open_seg_loss"] = open_seg_loss.item()
-        for i in range(class_seg_loss.shape[0]):
-            loss_dict[f"open_seg_loss_class_{i}"] = class_seg_loss[i].item()
+        if class_seg_loss is not None:
+            for i in range(class_seg_loss.shape[0]):
+                loss_dict[f"open_seg_loss_class_{i}"] = class_seg_loss[i].item()
         return_list = [open_seg_loss, loss_dict]
 
         # visualize when training, just the things to be logged in wandb
