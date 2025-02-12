@@ -41,6 +41,8 @@ import random
 
 import wandb
 
+# from collections import defaultdict
+
 
 
 
@@ -319,7 +321,7 @@ class CTClipTrainer(nn.Module):
         self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, init_kwargs], **accelerate_kwargs)
         self.CTClip = CTClip
 
-
+        # sefl.data_type_train_step_dict = defaultdict(int)
         
         if tokenizer != None:
             self.tokenizer=tokenizer
@@ -587,6 +589,10 @@ class CTClipTrainer(nn.Module):
 
         loading_time = time.time()
         # print(f"loading time: {loading_time - start_time}")
+
+        data_type = batch["data_type"][0]
+
+        self.data_type_train_step_dict[data_type] += 1
         
         with self.accelerator.accumulate(self.CTClip):
             with self.accelerator.autocast():
@@ -645,6 +651,8 @@ class CTClipTrainer(nn.Module):
             # end_time = time.time()
             # print(f"dataset {i} time: {end_time - start_time}")
         # exit()
+        for i in len(self.dl_step_list):
+            loss_dict[f"dataset_{i}_steps"] = self.dl_step_list[i]
         return loss_dict
     
     def eval_tests(self, models_to_evaluate):
