@@ -647,7 +647,7 @@ class CTClipTrainer(nn.Module):
             # end_time = time.time()
             # print(f"dataset {i} time: {end_time - start_time}")
         # exit()
-        for i in len(self.dl_step_list):
+        for i in range(len(self.dl_step_list)):
             loss_dict[f"dataset_{i}_steps"] = self.dl_step_list[i]
         return loss_dict
     
