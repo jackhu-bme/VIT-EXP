@@ -333,6 +333,8 @@ class CTReportDataset(Dataset):
             #     samples = self.process_patient_folder(patient_folder, self.accession_to_text, self.paths)
             #     results.append(samples)
 
+            print(f"start prepraring samples")
+
             npz_file_lists = self.get_file_by_walk(self.data_folder, ext=".npz")
             results = self.process_patient_npz(npz_file_lists, self.accession_to_text, self.paths)
 
@@ -506,6 +508,7 @@ class CTOpenSegDataset(Dataset):
             print(f"finished preparing samples with cache txt within the open seg dataset, the number of samples: {len(samples)}")
             return samples
         else:
+            print(f"start prepraring samples for open seg dataset")
             data_names = glob.glob(os.path.join(self.data_folder, '*.npz'))
             mask_names = glob.glob(os.path.join(self.mask_folder, '*.npz'))
             assert len(data_names) == len(mask_names)
@@ -516,6 +519,7 @@ class CTOpenSegDataset(Dataset):
             with open(mask_sample_txt_path, 'w') as f:
                 for sample in mask_names:
                     f.write(f"{sample}\n")
+            print(f"finished preparing samples for open seg dataset, the number of samples: {len(samples)}")
         return samples
 
     def __getitem__(self, index):
