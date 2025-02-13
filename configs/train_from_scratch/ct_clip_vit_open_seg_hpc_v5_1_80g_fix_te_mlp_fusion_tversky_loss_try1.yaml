@@ -112,4 +112,12 @@ ct_clip_arch:
     in_dim: 768
     mid_dim: 128
     out_dim: 8 # a low dim representation for each voxel
+  fusion_head:
+    type: mlp
+    mlp:
+      n_layers: 2
+      layer_type: mlp
+      in_dim: 16
+      mid_dim: 16
+      out_dim: 1 # the final seg logits for each class
   
