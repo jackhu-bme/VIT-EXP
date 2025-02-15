@@ -22,5 +22,5 @@ accelerate launch scripts/run_train.py --config ct_clip_ori_hpc_2.yaml --resume 
 
 # debug
 
-python scripts/run_train.py --config ct_clip_debug_30_v2.yaml
+CTCLIP_DEBUG=1 python scripts/run_train.py --config ct_clip_debug_30_v2.yaml
 
