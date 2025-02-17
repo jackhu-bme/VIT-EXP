@@ -24,4 +24,4 @@ accelerate launch scripts/run_train.py --config ct_clip_ori_hpc_2.yaml --resume 
 
 CTCLIP_DEBUG=1 python scripts/run_train.py --config ct_clip_debug_30_v2.yaml
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 accelerate launch scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v5_1_80g_fix_te_mlp_fusion_tversky_loss_try1.yaml
+CUDA_VISIBLE_DEVICES=0,1,2,3 accelerate launch --main_process_port 29600 scripts/run_train.py --config ct_clip_vit_open_seg_hpc_v5_1_80g_fix_te_mlp_fusion_tversky_loss_try1.yaml
