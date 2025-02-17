@@ -706,7 +706,7 @@ class CTCLIP(nn.Module):
                 self.open_seg_loss_hyper_config.get("beta", 0.7), \
                     self.open_seg_loss_hyper_config.get("gamma", 1.0)
                 smooth = float(self.open_seg_loss_hyper_config.get("smooth", 1e-6)) # needed to be float, or is a string
-                self.tversky_criterion = TverskyLoss(mode="binary", alpha=alpha, beta=beta, smooth=smooth, gamma=gamma)
+                self.tversky_criterion = TverskyLoss(mode="binary", alpha=alpha, beta=beta, smooth=smooth, gamma=gamma, from_logits=False)
         else:
             self.open_seg_head = None
             self.open_text_head = None
