@@ -1,6 +1,6 @@
 random_seed: 42
 results_folder: ./output_train_scratch
-project_name: ct-clip-vit-open-seg-hpc-single-branch-tversky
+project_name: ct-clip-vit-open-seg-hpc-single-branch-tversky_try3
 exp_name: ctclip_vit_open_seg_hpc_v5_1_80g_tversky_loss_try3
 
 trainer:
