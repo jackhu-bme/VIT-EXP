@@ -100,6 +100,8 @@ ct_clip_arch:
     beta: 0.5 # in the running exp, this is abeta, so bugs happened! fix this in try2
     gamma: 1.0
     smooth: 1e-4
+    choose_cls:
+      - 0
   open_seg_head:
     n_layers: 2
     layer_type: mlp
