@@ -1,6 +1,6 @@
 random_seed: 42
 results_folder: ./output_train_scratch
-project_name: ct-clip-vit-open-seg-hpc-double-branch
+project_name: ct-clip-vit-open-seg-hpc-double-branch-retry5-debug
 exp_name: ctclip_vit_open_seg_hpc_v5_1_div_0_10_80g_retry5_debug
 
 trainer:
